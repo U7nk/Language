@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 
-namespace Wired;
+namespace Wired.CodeAnalysis;
+
+
 
 public class Lexer
 {
     private readonly string text;
     private int position;
-
+    private List<string> diagnostics = new List<string>();
+    public IEnumerable<string> Diagnostics => this.diagnostics;
     public Lexer(string text)
     {
         this.text = text;
@@ -41,25 +44,29 @@ public class Lexer
             return new SyntaxToken(SyntaxKind.EndOfFileToken, this.position, "\0", null);
         }
         
-        if (char.IsDigit(Current))
+        if (char.IsDigit(this.Current))
         {
             var start = this.position;
 
-            while (char.IsDigit(Current))
+            while (char.IsDigit(this.Current))
             {
                 this.Next();
             }
 
             var length = this.position - start;
             var text = this.text.Substring(start, length);
-            int.TryParse(text, out var value);
+            if (!int.TryParse(text, out var value))
+            {
+                this.diagnostics.Add($"error: The number {text} cannot be represented by Int32.");
+            }
+            
             return new SyntaxToken(SyntaxKind.NumberToken, start, text, value);
         }
 
-        if (char.IsWhiteSpace(Current))
+        if (char.IsWhiteSpace(this.Current))
         {
             var start = this.position;
-            while (char.IsWhiteSpace(Current))
+            while (char.IsWhiteSpace(this.Current))
             {
                 this.Next();
             }
@@ -69,44 +76,44 @@ public class Lexer
             return new SyntaxToken(SyntaxKind.WhitespaceToken, start, text, null);
         }
 
-        if (Current == '+')
+        if (this.Current == '+')
         {
             var token = new SyntaxToken(SyntaxKind.PlusToken, this.position, "+", null);
             this.Next();
             return token;
         }
-        else if (Current == '-')
+        else if (this.Current == '-')
         {
             var token = new SyntaxToken(SyntaxKind.MinusToken, this.position, "-", null);
             this.Next();
             return token;
         }
-        else if (Current == '*')
+        else if (this.Current == '*')
         {
             var token = new SyntaxToken(SyntaxKind.StarToken, this.position, "*", null);
             this.Next();
             return token;
         }
-        else if (Current == '/')
+        else if (this.Current == '/')
         {
             var token = new SyntaxToken(SyntaxKind.SlashToken, this.position, "/", null);
             this.Next();
             return token;
         }
-        else if (Current == '(')
+        else if (this.Current == '(')
         {
             var token = new SyntaxToken(SyntaxKind.OpenParenthesisToken, this.position, "(", null);
             this.Next();
             return token;
         }
-        else if (Current == ')')
+        else if (this.Current == ')')
         {
             var token = new SyntaxToken(SyntaxKind.CloseParenthesisToken, this.position, ")", null);
             this.Next();
             return token;
         }
-
-
+        
+        this.diagnostics.Add($"error: bad character '{this.Current}'");
         var badToken = new SyntaxToken(
             SyntaxKind.BadToken,
             this.position,

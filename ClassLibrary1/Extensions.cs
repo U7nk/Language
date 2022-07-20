@@ -4,11 +4,25 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Wired;
 
 internal static class Extensions
 {
+    [DebuggerHidden]
+    [DebuggerStepThrough]
+    public static T ThrowIfNull<T>(
+        this T? obj,
+        [CallerArgumentExpression("obj")] string objExpression = "")
+    {
+        if (obj is null)
+        {
+            throw new ArgumentNullException(objExpression);
+        }
+
+        return obj;
+    }
     internal static string CutTail(this string str, int count)
     {
         return str.Substring(0, str.Length - count);
