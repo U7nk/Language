@@ -2,6 +2,7 @@ namespace Wired.CodeAnalysis;
 
 public enum SyntaxKind
 {
+    // tokens
     NumberToken,
     WhitespaceToken,
     PlusToken,
@@ -12,7 +13,9 @@ public enum SyntaxKind
     CloseParenthesisToken,
     BadToken,
     EndOfFileToken,
-    NumberExpression,
+    
+    // expressions
+    LiteralExpression,
     BinaryExpression,
     ParenthesizedExpression
 }
