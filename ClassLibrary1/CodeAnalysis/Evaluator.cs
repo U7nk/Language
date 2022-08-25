@@ -17,9 +17,9 @@ public class Evaluator
     }
     private int EvaluateExpression(ExpressionSyntax root)
     {
-        if (root is NumberExpressionSyntax n)
+        if (root is LiteralExpressionSyntax n)
         {
-            return (int)n.NumberToken.Value.ThrowIfNull();
+            return (int)n.LiteralToken.Value.ThrowIfNull();
         }
         if (root is BinaryExpressionSyntax b)
         {
