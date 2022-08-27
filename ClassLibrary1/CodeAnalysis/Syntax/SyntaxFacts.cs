@@ -1,4 +1,4 @@
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Syntax;
 
 internal static class SyntaxFacts
 {

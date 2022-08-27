@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Syntax;
 
 public class SyntaxTree
 {

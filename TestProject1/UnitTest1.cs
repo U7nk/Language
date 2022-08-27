@@ -1,6 +1,7 @@
 using FluentAssertions;
 using FluentAssertions.Common;
 using Wired.CodeAnalysis;
+using Wired.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 namespace TestProject1;
 

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Syntax;
 
 public sealed class LiteralExpressionSyntax : ExpressionSyntax
 {
