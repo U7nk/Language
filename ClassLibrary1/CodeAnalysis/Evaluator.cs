@@ -30,24 +30,24 @@ internal class Evaluator
             if (unary.Type == typeof(int))
             {
                 var intOperand = (int)operand;
-                return unary.OperatorKind switch
+                return unary.Op.Kind switch
                 {
                     BoundUnaryOperatorKind.Negation => -intOperand,
                     BoundUnaryOperatorKind.Identity => +intOperand,
-                    _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
+                    _ => throw new Exception($"Unexpected unary operator {unary.Op}")
                 };
             }
 
             if (unary.Type == typeof(bool))
             {
                 var boolOperand = (bool)operand;
-                return unary.OperatorKind switch
+                return unary.Op.Kind switch
                 {
                     BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
-                    _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
+                    _ => throw new Exception($"Unexpected unary operator {unary.Op}")
                 };
             }
-            throw new Exception($"Unexpected unary operator {unary.OperatorKind}");
+            throw new Exception($"Unexpected unary operator {unary.Op}");
         }
         if (root is BoundBinaryExpression b)
         {
@@ -57,13 +57,13 @@ internal class Evaluator
             {
                 var intLeft = (int)left;
                 var intRight = (int)right;
-                return b.OperatorKind switch
+                return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => intLeft + intRight,
                     BoundBinaryOperatorKind.Subtraction => intLeft - intRight,
                     BoundBinaryOperatorKind.Multiplication => intLeft * intRight,
                     BoundBinaryOperatorKind.Division => intLeft / intRight,
-                    _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
+                    _ => throw new Exception($"Unknown binary operator {b.Op}")
                 };
             }
 
@@ -71,7 +71,7 @@ internal class Evaluator
             {
                 var boolLeft = (bool)left;
                 var boolRight = (bool)right;
-                return b.OperatorKind switch
+                return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.LogicalAnd => boolLeft && boolRight,
                     BoundBinaryOperatorKind.LogicalOr => boolLeft || boolRight,
@@ -81,10 +81,10 @@ internal class Evaluator
                     // BoundBinaryOperatorKind.LessThan => boolLeft < boolRight,
                     // BoundBinaryOperatorKind.GreaterThanOrEqual => boolLeft >= boolRight,
                     // BoundBinaryOperatorKind.LessThanOrEqual => boolLeft <= boolRight,
-                    _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
+                    _ => throw new Exception($"Unknown binary operator {b.Op}")
                 };
             }
-            throw new Exception($"Unknown binary operator {b.OperatorKind}");
+            throw new Exception($"Unknown binary operator {b.Op}");
         }
 
         throw new Exception($"Unexpected node  {root.Kind}");
