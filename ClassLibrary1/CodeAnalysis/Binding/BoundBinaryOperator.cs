@@ -35,6 +35,12 @@ internal class BoundBinaryOperator
         
         new BoundBinaryOperator(BoundBinaryOperatorKind.LogicalAnd, SyntaxKind.AmpersandAmpersandToken, typeof(bool)),
         new BoundBinaryOperator(BoundBinaryOperatorKind.LogicalOr, SyntaxKind.PipePipeToken, typeof(bool)),
+        
+        new BoundBinaryOperator(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, typeof(bool)),
+        new BoundBinaryOperator(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, typeof(int), typeof(int), typeof(bool)),
+        
+        new BoundBinaryOperator(BoundBinaryOperatorKind.Inequality, SyntaxKind.BangEqualsToken, typeof(bool)),
+        new BoundBinaryOperator(BoundBinaryOperatorKind.Inequality, SyntaxKind.BangEqualsToken, typeof(int), typeof(int), typeof(bool)),
     };
 
     internal static BoundBinaryOperator? Bind(SyntaxKind syntaxKind, Type leftType, Type rightType)

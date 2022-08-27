@@ -137,12 +137,6 @@ public class Lexer
                 this.Next();
                 return token;
             }
-            case '!':
-            {
-                var token = new SyntaxToken(SyntaxKind.BangToken, this.position, "!", null);
-                this.Next();
-                return token;
-            }
             case '&':
                 if (this.Lookahead is '&')
                 {
@@ -159,6 +153,27 @@ public class Lexer
                     return token;
                 }
                 break;
+            case '=':
+                if (this.Lookahead is '=')
+                {
+                    var token = new SyntaxToken(SyntaxKind.EqualsEqualsToken, this.position, "==", null);
+                    this.Next(2);
+                    return token;
+                }
+                break;
+            case '!':
+            {
+                SyntaxToken token;
+                if (this.Lookahead is '=')
+                {
+                    token = new SyntaxToken(SyntaxKind.BangEqualsToken, this.position, "!=", null);
+                    this.Next(2);
+                    return token;
+                }
+                token = new SyntaxToken(SyntaxKind.BangToken, this.position, "!", null);
+                this.Next();
+                return token;
+            }
         }
 
         this.diagnostics.Add($"error: bad character '{this.Current}'");

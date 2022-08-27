@@ -54,6 +54,17 @@ public class UnitTest1
     [InlineData("!false", true)]
     [InlineData("!false && !true", false)]
     [InlineData("!false && !false", true)]
+    [InlineData("!false == !false", true)]
+    [InlineData("!false != !false", false)]
+    [InlineData("false == !false", false)]
+    [InlineData("false == !false == true", false)]
+    [InlineData("false == !false == false", true)]
+    [InlineData("false || !false == false", false)]
+    [InlineData("15 + 11 == 26", true)]
+    [InlineData("15 * 2 + 2 == 32", true)]
+    [InlineData("15 * 2 + 2 != 42", true)]
+    [InlineData("15 * 2 + 2 == 32 && true == true", true)]
+    [InlineData("1 == 1 && true", true)]
     public void Test(string input, object expectedResult)
     {
         this.Build(input).Should().Be(expectedResult);

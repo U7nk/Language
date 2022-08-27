@@ -17,6 +17,7 @@ internal class Evaluator
     {
         return this.EvaluateExpression(this.root);
     }
+
     private object EvaluateExpression(BoundExpression root)
     {
         if (root is BoundLiteralExpression l)
@@ -47,43 +48,29 @@ internal class Evaluator
                     _ => throw new Exception($"Unexpected unary operator {unary.Op}")
                 };
             }
+
             throw new Exception($"Unexpected unary operator {unary.Op}");
         }
+
         if (root is BoundBinaryExpression b)
         {
             var left = this.EvaluateExpression(b.Left);
             var right = this.EvaluateExpression(b.Right);
-            if (b.Type == typeof(int))
+            return b.Op.Kind switch
             {
-                var intLeft = (int)left;
-                var intRight = (int)right;
-                return b.Op.Kind switch
-                {
-                    BoundBinaryOperatorKind.Addition => intLeft + intRight,
-                    BoundBinaryOperatorKind.Subtraction => intLeft - intRight,
-                    BoundBinaryOperatorKind.Multiplication => intLeft * intRight,
-                    BoundBinaryOperatorKind.Division => intLeft / intRight,
-                    _ => throw new Exception($"Unknown binary operator {b.Op}")
-                };
-            }
+                BoundBinaryOperatorKind.Addition => (int)left + (int)right,
+                BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
+                BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
+                BoundBinaryOperatorKind.Division => (int)left / (int)right,
+                
+                BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
+                BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
+                
+                BoundBinaryOperatorKind.Equality => Equals(left, right),
+                BoundBinaryOperatorKind.Inequality => !Equals(left, right),
+                _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
+            };
 
-            if (b.Type == typeof(bool))
-            {
-                var boolLeft = (bool)left;
-                var boolRight = (bool)right;
-                return b.Op.Kind switch
-                {
-                    BoundBinaryOperatorKind.LogicalAnd => boolLeft && boolRight,
-                    BoundBinaryOperatorKind.LogicalOr => boolLeft || boolRight,
-                    // BoundBinaryOperatorKind.Equality => boolLeft == boolRight,
-                    // BoundBinaryOperatorKind.Inequality => boolLeft != boolRight,
-                    // BoundBinaryOperatorKind.GreaterThan => boolLeft > boolRight,
-                    // BoundBinaryOperatorKind.LessThan => boolLeft < boolRight,
-                    // BoundBinaryOperatorKind.GreaterThanOrEqual => boolLeft >= boolRight,
-                    // BoundBinaryOperatorKind.LessThanOrEqual => boolLeft <= boolRight,
-                    _ => throw new Exception($"Unknown binary operator {b.Op}")
-                };
-            }
             throw new Exception($"Unknown binary operator {b.Op}");
         }
 
