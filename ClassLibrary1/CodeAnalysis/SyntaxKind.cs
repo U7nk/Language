@@ -17,5 +17,6 @@ public enum SyntaxKind
     // expressions
     LiteralExpression,
     BinaryExpression,
-    ParenthesizedExpression
+    ParenthesizedExpression,
+    UnaryExpression
 }

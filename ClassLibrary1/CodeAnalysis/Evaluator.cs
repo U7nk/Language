@@ -17,9 +17,20 @@ public class Evaluator
     }
     private int EvaluateExpression(ExpressionSyntax root)
     {
-        if (root is LiteralExpressionSyntax n)
+        if (root is LiteralExpressionSyntax l)
         {
-            return (int)n.LiteralToken.Value.ThrowIfNull();
+            return (int)l.LiteralToken.Value.ThrowIfNull();
+        }
+
+        if (root is UnaryExpressionSyntax unary)
+        {
+            var operand = EvaluateExpression(unary.Operand);
+            return unary.OperatorToken.Kind switch
+            {
+                SyntaxKind.MinusToken => -operand,
+                SyntaxKind.PlusToken => +operand,
+                _ => throw new Exception($"Unexpected unary operator {unary.OperatorToken.Kind}")
+            };
         }
         if (root is BinaryExpressionSyntax b)
         {

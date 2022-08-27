@@ -39,7 +39,7 @@ public class UnitTest1
     [Fact]
     public void Test()
     {
-        const string input = "1 + 2 * 3";
+        const string input = "-1 * 3";
         var syntaxTree = SyntaxTree.Parse(input);
         this.PrettyPrint(syntaxTree.Root);
         if (syntaxTree.Diagnostics.Any())
