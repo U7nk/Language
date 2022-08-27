@@ -43,8 +43,17 @@ public class UnitTest1
     [InlineData("1 - 2", -1)]
     [InlineData("1 * 2", 2)]
     [InlineData("4 / 2", 2)]
+    [InlineData("1 + 2 * 3", 7)]
     [InlineData("false", false)]
     [InlineData("true", true)]
+    [InlineData("true && false", false)]
+    [InlineData("true || false", true)]
+    [InlineData("false || false", false)]
+    [InlineData("true && true", true)]
+    [InlineData("!true", false)]
+    [InlineData("!false", true)]
+    [InlineData("!false && !true", false)]
+    [InlineData("!false && !false", true)]
     public void Test(string input, object expectedResult)
     {
         this.Build(input).Should().Be(expectedResult);
@@ -53,7 +62,7 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.Build("true * false");
+        this.Build("2 | false");
     }
 
     private object Build(string input)

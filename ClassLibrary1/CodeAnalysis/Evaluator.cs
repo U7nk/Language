@@ -26,26 +26,65 @@ internal class Evaluator
 
         if (root is BoundUnaryExpression unary)
         {
-            var operand = (int)EvaluateExpression(unary.Operand);
-            return unary.OperatorKind switch
+            var operand = EvaluateExpression(unary.Operand);
+            if (unary.Type == typeof(int))
             {
-                BoundUnaryOperatorKind.Negation => -operand,
-                BoundUnaryOperatorKind.Identity => +operand,
-                _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
-            };
+                var intOperand = (int)operand;
+                return unary.OperatorKind switch
+                {
+                    BoundUnaryOperatorKind.Negation => -intOperand,
+                    BoundUnaryOperatorKind.Identity => +intOperand,
+                    _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
+                };
+            }
+
+            if (unary.Type == typeof(bool))
+            {
+                var boolOperand = (bool)operand;
+                return unary.OperatorKind switch
+                {
+                    BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
+                    _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
+                };
+            }
+            throw new Exception($"Unexpected unary operator {unary.OperatorKind}");
         }
         if (root is BoundBinaryExpression b)
         {
-            var left = (int)this.EvaluateExpression(b.Left);
-            var right = (int)this.EvaluateExpression(b.Right);
-            return b.OperatorKind switch
+            var left = this.EvaluateExpression(b.Left);
+            var right = this.EvaluateExpression(b.Right);
+            if (b.Type == typeof(int))
             {
-                BoundBinaryOperatorKind.Addition => left + right,
-                BoundBinaryOperatorKind.Subtraction => left - right,
-                BoundBinaryOperatorKind.Multiplication => left * right,
-                BoundBinaryOperatorKind.Division => left / right,
-                _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
-            };
+                var intLeft = (int)left;
+                var intRight = (int)right;
+                return b.OperatorKind switch
+                {
+                    BoundBinaryOperatorKind.Addition => intLeft + intRight,
+                    BoundBinaryOperatorKind.Subtraction => intLeft - intRight,
+                    BoundBinaryOperatorKind.Multiplication => intLeft * intRight,
+                    BoundBinaryOperatorKind.Division => intLeft / intRight,
+                    _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
+                };
+            }
+
+            if (b.Type == typeof(bool))
+            {
+                var boolLeft = (bool)left;
+                var boolRight = (bool)right;
+                return b.OperatorKind switch
+                {
+                    BoundBinaryOperatorKind.LogicalAnd => boolLeft && boolRight,
+                    BoundBinaryOperatorKind.LogicalOr => boolLeft || boolRight,
+                    // BoundBinaryOperatorKind.Equality => boolLeft == boolRight,
+                    // BoundBinaryOperatorKind.Inequality => boolLeft != boolRight,
+                    // BoundBinaryOperatorKind.GreaterThan => boolLeft > boolRight,
+                    // BoundBinaryOperatorKind.LessThan => boolLeft < boolRight,
+                    // BoundBinaryOperatorKind.GreaterThanOrEqual => boolLeft >= boolRight,
+                    // BoundBinaryOperatorKind.LessThanOrEqual => boolLeft <= boolRight,
+                    _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
+                };
+            }
+            throw new Exception($"Unknown binary operator {b.OperatorKind}");
         }
 
         throw new Exception($"Unexpected node  {root.Kind}");

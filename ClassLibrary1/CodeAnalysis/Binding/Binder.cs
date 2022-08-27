@@ -25,32 +25,53 @@ internal sealed class Binder
 
     private BoundUnaryOperatorKind? BindUnaryOperatorKind(SyntaxKind syntaxKind, Type operandType)
     {
-        if (operandType != typeof(int))
+        if (operandType == typeof(int))
         {
-            return null;
+            return syntaxKind switch
+            {
+                SyntaxKind.PlusToken => BoundUnaryOperatorKind.Identity,
+                SyntaxKind.MinusToken => BoundUnaryOperatorKind.Negation,
+                _ => null,
+            };
         }
-        return syntaxKind switch
+
+        if (operandType == typeof(bool))
         {
-            SyntaxKind.PlusToken => BoundUnaryOperatorKind.Identity,
-            SyntaxKind.MinusToken => BoundUnaryOperatorKind.Negation,
-            _ => throw new Exception($"Unexpected syntax {syntaxKind}")
-        };
+            return syntaxKind switch
+            {
+                SyntaxKind.BangToken => BoundUnaryOperatorKind.LogicalNegation,
+                _ => null
+            };
+        }
+
+        return null;
     }
 
     private BoundBinaryOperatorKind? BindBinaryOperatorKind(SyntaxKind syntaxKind, Type leftType, Type rightType)
     {
-        if (leftType != typeof(int) || rightType != typeof(int))
+        if (leftType == typeof(int) && rightType == typeof(int))
         {
-            return null;
+            return syntaxKind switch
+            {
+                SyntaxKind.PlusToken => BoundBinaryOperatorKind.Addition,
+                SyntaxKind.MinusToken => BoundBinaryOperatorKind.Subtraction,
+                SyntaxKind.StarToken => BoundBinaryOperatorKind.Multiplication,
+                SyntaxKind.SlashToken => BoundBinaryOperatorKind.Division,
+                _ => null,
+            };
         }
-        return syntaxKind switch
+
+        if (leftType == typeof(bool) && rightType == typeof(bool))
         {
-            SyntaxKind.PlusToken => BoundBinaryOperatorKind.Addition,
-            SyntaxKind.MinusToken => BoundBinaryOperatorKind.Subtraction,
-            SyntaxKind.StarToken => BoundBinaryOperatorKind.Multiplication,
-            SyntaxKind.SlashToken => BoundBinaryOperatorKind.Division,
-            _ => throw new Exception($"Unexpected syntax {syntaxKind}")
-        };
+            return syntaxKind switch
+            {
+                SyntaxKind.AmpersandAmpersandToken => BoundBinaryOperatorKind.LogicalAnd,
+                SyntaxKind.PipePipeToken => BoundBinaryOperatorKind.LogicalOr,
+                _ => null,
+            };
+        }
+
+        return null;
     }
     private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax)
     {

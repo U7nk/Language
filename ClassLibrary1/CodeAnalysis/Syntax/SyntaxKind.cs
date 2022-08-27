@@ -14,6 +14,9 @@ public enum SyntaxKind
     CloseParenthesisToken,
     BadToken,
     EndOfFileToken,
+    BangToken,
+    AmpersandAmpersandToken,
+    PipePipeToken,
     
     // keywords
     TrueKeyword,
@@ -24,5 +27,4 @@ public enum SyntaxKind
     BinaryExpression,
     ParenthesizedExpression,
     UnaryExpression,
-    
 }
