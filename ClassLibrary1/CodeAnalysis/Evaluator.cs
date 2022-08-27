@@ -1,13 +1,14 @@
 using System;
+using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis;
 
-public class Evaluator
+internal class Evaluator
 {
-    private ExpressionSyntax root;
+    private readonly BoundExpression root;
 
-    public Evaluator(ExpressionSyntax root)
+    public Evaluator(BoundExpression root)
     {
         this.root = root;
     }
@@ -16,41 +17,37 @@ public class Evaluator
     {
         return this.EvaluateExpression(this.root);
     }
-    private int EvaluateExpression(ExpressionSyntax root)
+    private int EvaluateExpression(BoundExpression root)
     {
-        if (root is LiteralExpressionSyntax l)
+        if (root is BoundLiteralExpression l)
         {
-            return (int)l.LiteralToken.Value.ThrowIfNull();
+            return (int)l.Value.ThrowIfNull();
         }
 
-        if (root is UnaryExpressionSyntax unary)
+        if (root is BoundUnaryExpression unary)
         {
             var operand = EvaluateExpression(unary.Operand);
-            return unary.OperatorToken.Kind switch
+            return unary.OperatorKind switch
             {
-                SyntaxKind.MinusToken => -operand,
-                SyntaxKind.PlusToken => +operand,
-                _ => throw new Exception($"Unexpected unary operator {unary.OperatorToken.Kind}")
+                BoundUnaryOperatorKind.Negation => -operand,
+                BoundUnaryOperatorKind.Identity => +operand,
+                _ => throw new Exception($"Unexpected unary operator {unary.OperatorKind}")
             };
         }
-        if (root is BinaryExpressionSyntax b)
+        if (root is BoundBinaryExpression b)
         {
             var left = this.EvaluateExpression(b.Left);
             var right = this.EvaluateExpression(b.Right);
-            return b.OperatorToken.Kind.ThrowIfNull() switch
+            return b.OperatorKind switch
             {
-                SyntaxKind.PlusToken => left + right,
-                SyntaxKind.MinusToken => left - right,
-                SyntaxKind.StarToken => left * right,
-                SyntaxKind.SlashToken => left / right,
-                _ => throw new Exception($"Unknown binary operator {b.OperatorToken.Kind}")
+                BoundBinaryOperatorKind.Addition => left + right,
+                BoundBinaryOperatorKind.Subtraction => left - right,
+                BoundBinaryOperatorKind.Multiplication => left * right,
+                BoundBinaryOperatorKind.Division => left / right,
+                _ => throw new Exception($"Unknown binary operator {b.OperatorKind}")
             };
         }
-        if (root is ParenthesizedExpressionSyntax p)
-        {
-            return this.EvaluateExpression(p.Expression);
-        }
-        
+
         throw new Exception($"Unexpected node  {root.Kind}");
     }
 }

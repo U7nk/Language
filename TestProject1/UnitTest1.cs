@@ -1,6 +1,7 @@
 using FluentAssertions;
 using FluentAssertions.Common;
 using Wired.CodeAnalysis;
+using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 namespace TestProject1;
@@ -40,19 +41,22 @@ public class UnitTest1
     [Fact]
     public void Test()
     {
-        const string input = "-1 * 3";
+        const string input = "-1 * (3 + 2)";
         var syntaxTree = SyntaxTree.Parse(input);
         this.PrettyPrint(syntaxTree.Root);
-        if (syntaxTree.Diagnostics.Any())
+        var binder = new Binder();
+        var bindTree = binder.BindExpression(syntaxTree.Root);
+        var diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics); 
+        if (diagnostics.Any())
         {
             foreach (var diagnostic in syntaxTree.Diagnostics)
             {
-                this.output.WriteLine(diagnostic);   
+                this.output.WriteLine(diagnostic);
             }
         }
         else
         {
-            var e = new Evaluator(syntaxTree.Root);
+            var e = new Evaluator(bindTree);
             var result = e.Evaluate();
             this.output.WriteLine("Result: ");
             this.output.WriteLine(result.ToString());
