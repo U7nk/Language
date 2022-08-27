@@ -63,6 +63,19 @@ public class Lexer
             return new SyntaxToken(SyntaxKind.NumberToken, start, text, value);
         }
 
+        if (char.IsLetter(Current))
+        {
+            var start = this.position;
+            while (char.IsLetter(Current))
+            {
+                this.Next();
+            }
+            var letters = this.text[start..this.position];
+            var kind = SyntaxFacts.GetKeywordKind(letters);
+            return new SyntaxToken(kind, start, letters, null);
+            
+        }
+        
         if (char.IsWhiteSpace(this.Current))
         {
             var start = this.position;

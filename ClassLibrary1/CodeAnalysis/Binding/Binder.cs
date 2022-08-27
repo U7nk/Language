@@ -54,7 +54,6 @@ internal sealed class Binder
     }
     private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax)
     {
-        
         var operand = this.BindExpression(syntax.Operand);
         var unaryOperator = this.BindUnaryOperatorKind(syntax.OperatorToken.Kind, operand.Type);
         if (unaryOperator is null)
@@ -80,7 +79,11 @@ internal sealed class Binder
 
     private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
     {
-        var value = syntax.LiteralToken.Value;
+        var value = syntax.Value;
+        if (value is null)
+        {
+            throw new Exception($"Literal expression value is null. Kind: {syntax.Kind}");
+        }
         return new BoundLiteralExpression(value);
     }
 }

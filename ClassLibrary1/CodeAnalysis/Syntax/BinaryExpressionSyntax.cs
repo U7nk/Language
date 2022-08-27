@@ -20,6 +20,5 @@ public sealed class BinaryExpressionSyntax : ExpressionSyntax
         yield return this.Left;
         yield return this.OperatorToken;
         yield return this.Right;
-        
     }
 }

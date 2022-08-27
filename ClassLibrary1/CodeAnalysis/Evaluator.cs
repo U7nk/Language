@@ -13,20 +13,20 @@ internal class Evaluator
         this.root = root;
     }
 
-    public int Evaluate()
+    public object Evaluate()
     {
         return this.EvaluateExpression(this.root);
     }
-    private int EvaluateExpression(BoundExpression root)
+    private object EvaluateExpression(BoundExpression root)
     {
         if (root is BoundLiteralExpression l)
         {
-            return (int)l.Value.ThrowIfNull();
+            return l.Value;
         }
 
         if (root is BoundUnaryExpression unary)
         {
-            var operand = EvaluateExpression(unary.Operand);
+            var operand = (int)EvaluateExpression(unary.Operand);
             return unary.OperatorKind switch
             {
                 BoundUnaryOperatorKind.Negation => -operand,
@@ -36,8 +36,8 @@ internal class Evaluator
         }
         if (root is BoundBinaryExpression b)
         {
-            var left = this.EvaluateExpression(b.Left);
-            var right = this.EvaluateExpression(b.Right);
+            var left = (int)this.EvaluateExpression(b.Left);
+            var right = (int)this.EvaluateExpression(b.Right);
             return b.OperatorKind switch
             {
                 BoundBinaryOperatorKind.Addition => left + right,

@@ -112,6 +112,13 @@ public class Parser
                 right);
         }
 
+        if (Current.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
+        {
+            var value = Current.Kind == SyntaxKind.TrueKeyword;
+            var token = this.NextToken();
+            return new LiteralExpressionSyntax(token, value);
+        }
+
         var numberToken = this.Match(SyntaxKind.NumberToken);
         return new LiteralExpressionSyntax(numberToken);
     }

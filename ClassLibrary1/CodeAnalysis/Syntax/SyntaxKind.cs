@@ -3,6 +3,7 @@ namespace Wired.CodeAnalysis.Syntax;
 public enum SyntaxKind
 {
     // tokens
+    IdentifierToken,
     NumberToken,
     WhitespaceToken,
     PlusToken,
@@ -14,9 +15,14 @@ public enum SyntaxKind
     BadToken,
     EndOfFileToken,
     
+    // keywords
+    TrueKeyword,
+    FalseKeyword,
+
     // expressions
     LiteralExpression,
     BinaryExpression,
     ParenthesizedExpression,
-    UnaryExpression
+    UnaryExpression,
+    
 }

@@ -38,18 +38,34 @@ public class UnitTest1
         this.output = output;
     }
 
-    [Fact]
-    public void Test()
+    [Theory]
+    [InlineData("1 + 2", 3)]
+    [InlineData("1 - 2", -1)]
+    [InlineData("1 * 2", 2)]
+    [InlineData("4 / 2", 2)]
+    [InlineData("false", false)]
+    [InlineData("true", true)]
+    public void Test(string input, object expectedResult)
     {
-        const string input = "-1 * (3 + 2)";
+        this.Build(input).Should().Be(expectedResult);
+    }
+
+    [Fact]
+    public void Custom()
+    {
+        this.Build("true * false");
+    }
+
+    private object Build(string input)
+    {
         var syntaxTree = SyntaxTree.Parse(input);
         this.PrettyPrint(syntaxTree.Root);
         var binder = new Binder();
         var bindTree = binder.BindExpression(syntaxTree.Root);
-        var diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics); 
+        var diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToList(); 
         if (diagnostics.Any())
         {
-            foreach (var diagnostic in syntaxTree.Diagnostics)
+            foreach (var diagnostic in diagnostics)
             {
                 this.output.WriteLine(diagnostic);
             }
@@ -58,9 +74,9 @@ public class UnitTest1
         {
             var e = new Evaluator(bindTree);
             var result = e.Evaluate();
-            this.output.WriteLine("Result: ");
-            this.output.WriteLine(result.ToString());
+            return result;
         }
-        
+
+        return diagnostics;
     }
 }
