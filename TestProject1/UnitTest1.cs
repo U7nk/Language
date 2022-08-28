@@ -65,6 +65,10 @@ public class UnitTest1
     [InlineData("15 * 2 + 2 != 42", true)]
     [InlineData("15 * 2 + 2 == 32 && true == true", true)]
     [InlineData("1 == 1 && true", true)]
+    [InlineData("a = 1", 1)]
+    [InlineData("a = b = 1", 1)]
+    [InlineData("(a = b = 1) == b == true", true)]
+    [InlineData("(a = b = 1) == b && false", false)]
     public void Test(string input, object expectedResult)
     {
         this.Build(input).Should().Be(expectedResult);
@@ -73,14 +77,15 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.Build("1 && 3");
+        this.output.WriteLine("Result: " + this.Build("(a = false) == (a)"));
     }
 
     private object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
         this.PrettyPrint(syntaxTree.Root);
-        var binder = new Binder();
+        var variables = new Dictionary<VariableSymbol, object?>();
+        var binder = new Binder(variables);
         var bindTree = binder.BindExpression(syntaxTree.Root);
         var diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToList(); 
         if (diagnostics.Any())
@@ -96,7 +101,7 @@ public class UnitTest1
         }
         else
         {
-            var e = new Evaluator(bindTree);
+            var e = new Evaluator(bindTree, variables);
             var result = e.Evaluate();
             return result;
         }

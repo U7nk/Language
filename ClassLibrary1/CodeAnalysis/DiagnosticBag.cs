@@ -49,4 +49,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"Invalid binary operator '{operatorText}' for types '{leftType}' and '{rightType}'";
         this.Report(span, message);
     }
+
+    public void ReportUndefinedName(TextSpan identifierTokenSpan, string name)
+    {
+        var message = $"'{name}' is undefined";
+        this.Report(identifierTokenSpan, message);
+    }
 }

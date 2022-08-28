@@ -60,7 +60,7 @@ public class Parser
         return new SyntaxToken(kind, this.Current.Position, string.Empty, null);
     }
 
-    private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
+    private ExpressionSyntax ParseBinaryExpression(int parentPrecedence = 0)
     {
         ExpressionSyntax left;
 
@@ -68,7 +68,7 @@ public class Parser
         if (unaryOperatorPrecedence is not 0 && unaryOperatorPrecedence >= parentPrecedence)
         {
             var unaryOperator = this.NextToken();
-            var operand = this.ParseExpression(unaryOperatorPrecedence);
+            var operand = this.ParseBinaryExpression(unaryOperatorPrecedence);
             left = new UnaryExpressionSyntax(unaryOperator, operand);
         }
         else
@@ -85,12 +85,14 @@ public class Parser
             }
 
             var operatorToken = this.NextToken();
-            var right = this.ParseExpression(precedence);
+            var right = this.ParseBinaryExpression(precedence);
             left = new BinaryExpressionSyntax(left, operatorToken, right);
         }
 
         return left;
     }
+    
+    
 
     public SyntaxTree Parse()
     {
@@ -99,7 +101,40 @@ public class Parser
         return new SyntaxTree(this.diagnostic, expression, endOfFileToken);
     }
 
+    private ExpressionSyntax ParseExpression() 
+        => this.ParseAssignmentExpression();
 
+    private ExpressionSyntax ParseAssignmentExpression()
+    {
+        // a + b + 5
+        // is left associative
+        //      +
+        //     / \
+        //    +   5
+        //   / \
+        //  a   b
+        //
+        // a = b = 5
+        // is right associative
+        //      =
+        //     / \
+        //    a   =
+        //       / \
+        //      b   5
+        
+        if (this.Current.Kind is SyntaxKind.IdentifierToken
+            && this.Peek(1).Kind is SyntaxKind.EqualsToken)
+        {
+            
+            var identifier = this.Match(SyntaxKind.IdentifierToken);
+            var equalsToken = this.Match(SyntaxKind.EqualsToken);
+            var right = this.ParseAssignmentExpression();
+            return new AssignmentExpressionSyntax(identifier, equalsToken, right);
+        }
+
+        return this.ParseBinaryExpression();
+    } 
+    
     private ExpressionSyntax ParsePrimaryExpression()
     {
         if (this.Current.Kind == SyntaxKind.OpenParenthesisToken)
@@ -118,6 +153,12 @@ public class Parser
             var value = Current.Kind == SyntaxKind.TrueKeyword;
             var token = this.NextToken();
             return new LiteralExpressionSyntax(token, value);
+        }
+        
+        if (Current.Kind is SyntaxKind.IdentifierToken)
+        {
+            var token = this.NextToken();
+            return new NameExpressionSyntax(token);
         }
 
         var numberToken = this.Match(SyntaxKind.NumberToken);

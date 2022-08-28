@@ -154,13 +154,19 @@ public class Lexer
                 }
                 break;
             case '=':
+            {
+                SyntaxToken token;
                 if (this.Lookahead is '=')
                 {
-                    var token = new SyntaxToken(SyntaxKind.EqualsEqualsToken, this.position, "==", null);
+                    token = new SyntaxToken(SyntaxKind.EqualsEqualsToken, this.position, "==", null);
                     this.Next(2);
                     return token;
                 }
-                break;
+
+                token = new SyntaxToken(SyntaxKind.EqualsToken, this.position, "=", null);
+                this.Next();
+                return token;
+            }
             case '!':
             {
                 SyntaxToken token;

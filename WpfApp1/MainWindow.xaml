@@ -11,8 +11,7 @@
     </Window.DataContext>
     <Grid>
         <StackPanel>
-            <TextBlock Visibility="{local:MyBinding $ctx.BoolVal.Equals(true) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed }" 
-                       Text="{local:MyBinding ($ctx.StringValue.Length + 4).ToString().Length.Equals(2).ToString()}"/>
+            <TextBlock Visibility="{Binding BoolVal}"/>
             <Button Width="40" Height="40" Command="{Binding UpdateStringValue}"/>
         </StackPanel>
     </Grid>

@@ -19,6 +19,7 @@ public enum SyntaxKind
     PipePipeToken,
     EqualsEqualsToken,
     BangEqualsToken,
+    EqualsToken,
     
     // keywords
     TrueKeyword,
@@ -29,4 +30,6 @@ public enum SyntaxKind
     BinaryExpression,
     ParenthesizedExpression,
     UnaryExpression,
+    AssignmentExpression,
+    NameExpression
 }

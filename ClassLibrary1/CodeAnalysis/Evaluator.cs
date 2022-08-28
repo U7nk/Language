@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Syntax;
 
@@ -7,10 +8,12 @@ namespace Wired.CodeAnalysis;
 internal class Evaluator
 {
     private readonly BoundExpression root;
+    private readonly  Dictionary<VariableSymbol, object> variables;
 
-    public Evaluator(BoundExpression root)
+    public Evaluator(BoundExpression root, Dictionary<VariableSymbol, object> variables)
     {
         this.root = root;
+        this.variables = variables;
     }
 
     public object Evaluate()
@@ -18,14 +21,26 @@ internal class Evaluator
         return this.EvaluateExpression(this.root);
     }
 
-    private object EvaluateExpression(BoundExpression root)
+    private object EvaluateExpression(BoundExpression node)
     {
-        if (root is BoundLiteralExpression l)
+        if (node is BoundLiteralExpression l)
         {
             return l.Value;
         }
 
-        if (root is BoundUnaryExpression unary)
+        if (node is BoundAssignmentExpression a)
+        {
+            var value = this.EvaluateExpression(a.Expression);
+            this.variables[a.Variable] = value;
+            return value;
+        }
+        
+        if (node is BoundVariableExpression v)
+        {
+            return this.variables[v.Variable];
+        }
+        
+        if (node is BoundUnaryExpression unary)
         {
             var operand = EvaluateExpression(unary.Operand);
             if (unary.Type == typeof(int))
@@ -52,7 +67,7 @@ internal class Evaluator
             throw new Exception($"Unexpected unary operator {unary.Op}");
         }
 
-        if (root is BoundBinaryExpression b)
+        if (node is BoundBinaryExpression b)
         {
             var left = this.EvaluateExpression(b.Left);
             var right = this.EvaluateExpression(b.Right);
@@ -72,6 +87,6 @@ internal class Evaluator
             };
         }
 
-        throw new Exception($"Unexpected node  {root.Kind}");
+        throw new Exception($"Unexpected node  {node.Kind}");
     }
 }
