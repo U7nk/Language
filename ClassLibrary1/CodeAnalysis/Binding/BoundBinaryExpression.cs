@@ -8,7 +8,7 @@ internal class BoundBinaryExpression : BoundExpression
     internal BoundExpression Left { get; }
     internal BoundExpression Right { get; }
     internal override Type Type => this.Op.ResultType;
-    internal override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
+    internal override BoundNodeKind Kind => BoundNodeKind.BinaryExpression;
     public BoundBinaryExpression(BoundExpression left, BoundBinaryOperator op, BoundExpression right)
     {
         this.Left = left;

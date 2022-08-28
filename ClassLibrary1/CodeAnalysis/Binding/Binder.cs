@@ -18,6 +18,8 @@ internal sealed class Binder
                 return this.BindUnaryExpression((UnaryExpressionSyntax)syntax);
             case SyntaxKind.BinaryExpression:
                 return this.BindBinaryExpression((BinaryExpressionSyntax)syntax);
+            case SyntaxKind.ParenthesizedExpression:
+                return this.BindExpression((ParenthesizedExpressionSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }

@@ -70,8 +70,6 @@ internal class Evaluator
                 BoundBinaryOperatorKind.Inequality => !Equals(left, right),
                 _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
             };
-
-            throw new Exception($"Unknown binary operator {b.Op}");
         }
 
         throw new Exception($"Unexpected node  {root.Kind}");
