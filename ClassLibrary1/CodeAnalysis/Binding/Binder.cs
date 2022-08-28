@@ -6,8 +6,8 @@ namespace Wired.CodeAnalysis.Binding;
 
 internal sealed class Binder
 {
-    private readonly List<string> diagnostics = new();
-    internal IEnumerable<string> Diagnostics => this.diagnostics;
+    private readonly DiagnosticBag diagnostics = new();
+    internal IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
     public BoundExpression BindExpression(ExpressionSyntax syntax)
     {
         switch (syntax.Kind)
@@ -31,7 +31,8 @@ internal sealed class Binder
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
         if (unaryOperator is null)
         {
-            this.diagnostics.Add($"Unary operator \'{syntax.OperatorToken.Text}\' not defined for type \'{operand.Type}\'.");
+            
+            this.diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text, operand.Type);
             return operand;
         }
         return new BoundUnaryExpression(unaryOperator, operand);
@@ -44,7 +45,7 @@ internal sealed class Binder
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
         if (binaryOperator is null)
         {
-            this.diagnostics.Add($"Binary operator \'{syntax.OperatorToken.Text}\' not defined for types \'{left.Type}\' and \'{right.Type}\'.");
+            this.diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text, left.Type, right.Type);
             return left;
         }
         return new BoundBinaryExpression(left, binaryOperator, right);

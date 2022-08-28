@@ -6,8 +6,8 @@ public class Lexer
 {
     private readonly string text;
     private int position;
-    private List<string> diagnostics = new List<string>();
-    public IEnumerable<string> Diagnostics => this.diagnostics;
+    private readonly DiagnosticBag diagnostics = new();
+    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
 
     public Lexer(string text)
     {
@@ -67,7 +67,7 @@ public class Lexer
             var text = this.text.Substring(start, length);
             if (!int.TryParse(text, out var value))
             {
-                this.diagnostics.Add($"error: The number {text} cannot be represented by Int32.");
+                this.diagnostics.ReportInvalidNumber(start, length, text, typeof(int));
             }
 
             return new SyntaxToken(SyntaxKind.NumberToken, start, text, value);
@@ -176,7 +176,7 @@ public class Lexer
             }
         }
 
-        this.diagnostics.Add($"error: bad character '{this.Current}'");
+        this.diagnostics.ReportBadCharacter(this.position, this.Current);
         var badToken = new SyntaxToken(
             SyntaxKind.BadToken,
             this.position,

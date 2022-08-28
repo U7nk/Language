@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -6,8 +7,8 @@ public class Parser
 {
     public int position;
     public SyntaxToken[] tokens;
-    private List<string> diagnostics = new();
-    public IEnumerable<string> Diagnostics => this.diagnostics;
+    private readonly DiagnosticBag diagnostic = new();
+    public IEnumerable<Diagnostic> Diagnostic => this.diagnostic;
 
     public Parser(string text)
     {
@@ -25,7 +26,7 @@ public class Parser
         } while (token.Kind != SyntaxKind.EndOfFileToken);
 
         this.tokens = tokens.ToArray();
-        this.diagnostics.AddRange(lexer.Diagnostics);
+        this.diagnostic.AddRange(lexer.Diagnostics);
     }
 
     private SyntaxToken Peek(int offset)
@@ -55,8 +56,8 @@ public class Parser
             return this.NextToken();
         }
 
-        this.diagnostics.Add($"error: Unexpected token <{this.Current.Kind}> expected <{kind}>");
-        return new SyntaxToken(kind, this.Current.Position, null, null);
+        this.diagnostic.ReportUnexpectedToken(this.Current.Span, this.Current.Kind, kind);
+        return new SyntaxToken(kind, this.Current.Position, string.Empty, null);
     }
 
     private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
@@ -95,7 +96,7 @@ public class Parser
     {
         var expression = this.ParseExpression();
         var endOfFileToken = this.Match(SyntaxKind.EndOfFileToken);
-        return new SyntaxTree(this.diagnostics, expression, endOfFileToken);
+        return new SyntaxTree(this.diagnostic, expression, endOfFileToken);
     }
 
 

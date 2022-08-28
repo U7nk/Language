@@ -73,7 +73,7 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.Build("2 | false");
+        this.Build("1 && 3");
     }
 
     private object Build(string input)
@@ -87,7 +87,11 @@ public class UnitTest1
         {
             foreach (var diagnostic in diagnostics)
             {
-                this.output.WriteLine(diagnostic);
+                var prefix = input.Substring(0, diagnostic.Span.Start);
+                var error = input.Substring(diagnostic.Span.Start, diagnostic.Span.Length);
+                var suffix = input.Substring(diagnostic.Span.End);
+                this.output.WriteLine($"\"{prefix}~{error}~{suffix}\"");
+                this.output.WriteLine(diagnostic.Message);
             }
         }
         else

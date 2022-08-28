@@ -7,10 +7,10 @@ public class SyntaxTree
 {
     public ExpressionSyntax Root { get; }
     public SyntaxToken EndOfFileToken { get; }
-    public IReadOnlyList<string> Diagnostics { get; }
+    public IReadOnlyList<Diagnostic> Diagnostics { get; }
 
     public SyntaxTree(
-        IEnumerable<string> diagnostics,
+        IEnumerable<Diagnostic> diagnostics,
         ExpressionSyntax root,
         SyntaxToken endOfFileToken)
     {
