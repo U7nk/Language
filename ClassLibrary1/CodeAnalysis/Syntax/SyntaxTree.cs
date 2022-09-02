@@ -25,4 +25,11 @@ public class SyntaxTree
         var syntaxTree = parser.Parse();
         return syntaxTree;
     }
+    
+    public static ICollection<SyntaxToken> ParseTokens(string source)
+    {
+      var lexer = new Lexer(source);
+      var tokens = lexer.Parse();
+      return tokens;
+    }
 }
