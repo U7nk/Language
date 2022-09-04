@@ -39,7 +39,14 @@ public abstract class SyntaxNode
             }
         }
     }
-    
+
+    public override string ToString()
+    {
+        using var sw = new StringWriter();
+        this.WriteTo(sw);
+        return sw.ToString();
+    }
+
     public void WriteTo(TextWriter writer)
     {
         this.PrettyPrint(writer, this);
