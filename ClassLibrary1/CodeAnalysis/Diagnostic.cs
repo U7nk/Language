@@ -1,3 +1,5 @@
+using Wired.CodeAnalysis.Text;
+
 namespace Wired.CodeAnalysis;
 
 public sealed class Diagnostic

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
@@ -11,7 +12,7 @@ public class Parser
     private readonly DiagnosticBag diagnostic = new();
     public IEnumerable<Diagnostic> Diagnostic => this.diagnostic;
 
-    public Parser(string text)
+    public Parser(SourceText text)
     {
         var lexer = new Lexer(text);
         SyntaxToken token;

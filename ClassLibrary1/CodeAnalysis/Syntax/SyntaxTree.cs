@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
@@ -22,12 +23,20 @@ public class SyntaxTree
     
     public static SyntaxTree Parse(string source)
     {
+        var sourceText = SourceText.ParseFrom(source);
+        return Parse(sourceText);
+    }
+    public static SyntaxTree Parse(SourceText source)
+    {
         var parser = new Parser(source);
         var syntaxTree = parser.Parse();
         return syntaxTree;
     }
     
-    public static ICollection<SyntaxToken> ParseTokens(string source)
+    public static ICollection<SyntaxToken> ParseTokens(string source) 
+        => ParseTokens(SourceText.ParseFrom(source));
+
+    public static ICollection<SyntaxToken> ParseTokens(SourceText source)
     {
       var lexer = new Lexer(source);
       var tokens = lexer.Parse();

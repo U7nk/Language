@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
 public class Lexer
 {
-    private readonly string sourceText;
+    private readonly SourceText sourceText;
     private int position;
     private readonly DiagnosticBag diagnostics = new();
     private int start;
@@ -12,7 +13,7 @@ public class Lexer
     private object? value;
     public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
 
-    public Lexer(string sourceText)
+    public Lexer(SourceText sourceText)
     {
         this.sourceText = sourceText;
     }
@@ -157,7 +158,7 @@ public class Lexer
         var text = SyntaxFacts.GetText(this.kind);
         if (text is null)
         {
-            text = this.sourceText.Substring(this.start, length);
+            text = this.sourceText.ToString(this.start, length);
         }
 
         return new SyntaxToken(this.kind, this.start, text, this.value);
@@ -168,7 +169,7 @@ public class Lexer
         while (char.IsLetter(this.Current)) 
             this.Next();
 
-        var text = this.sourceText[this.start..this.position];
+        var text = this.sourceText.ToString(this.start, this.position - this.start);
         this.kind = SyntaxFacts.GetKeywordKind(text);
     }
 
@@ -190,7 +191,7 @@ public class Lexer
         }
 
         var length = this.position - this.start;
-        var text = this.sourceText.Substring(this.start, length);
+        var text = this.sourceText.ToString(this.start, length);
         if (!int.TryParse(text, out var number))
         {
             this.diagnostics.ReportInvalidNumber(this.start, length, text, typeof(int));

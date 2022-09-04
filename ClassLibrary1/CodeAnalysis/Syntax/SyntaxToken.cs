@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 

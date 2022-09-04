@@ -1,4 +1,4 @@
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Text;
 
 public struct TextSpan
 {

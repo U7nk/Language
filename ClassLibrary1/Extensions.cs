@@ -96,6 +96,12 @@ internal static class Extensions
     public static bool CanBeConvertedTo<T>(this Type givenType, Type type) => 
         type.IsAssignableFrom(givenType);
 
+    public static bool InRange(this int value, int left, int right)
+    {
+        if (left <= value && right >= value)
+            return true;
+        return false;
+    } 
     public static bool CanBeConvertedTo<T>(this Type givenType) => 
         typeof(T).IsAssignableFrom(givenType);
 
