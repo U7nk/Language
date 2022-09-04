@@ -148,14 +148,14 @@ public class Parser
                 right);
         }
 
-        if (Current.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
+        if (this.Current.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
         {
-            var value = Current.Kind == SyntaxKind.TrueKeyword;
+            var value = this.Current.Kind == SyntaxKind.TrueKeyword;
             var token = this.NextToken();
             return new LiteralExpressionSyntax(token, value);
         }
         
-        if (Current.Kind is SyntaxKind.IdentifierToken)
+        if (this.Current.Kind is SyntaxKind.IdentifierToken)
         {
             var token = this.NextToken();
             return new NameExpressionSyntax(token);

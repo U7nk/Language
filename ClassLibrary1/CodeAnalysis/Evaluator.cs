@@ -42,7 +42,7 @@ internal class Evaluator
         
         if (node is BoundUnaryExpression unary)
         {
-            var operand = EvaluateExpression(unary.Operand);
+            var operand = this.EvaluateExpression(unary.Operand);
             if (unary.Type == typeof(int))
             {
                 var intOperand = (int)operand;

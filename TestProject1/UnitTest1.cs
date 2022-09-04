@@ -37,43 +37,7 @@ public class UnitTest1
     {
         this.output = output;
     }
-
-    [Theory]
-    [InlineData("1 + 2", 3)]
-    [InlineData("1 - 2", -1)]
-    [InlineData("1 * 2", 2)]
-    [InlineData("4 / 2", 2)]
-    [InlineData("1 + 2 * 3", 7)]
-    [InlineData("false", false)]
-    [InlineData("true", true)]
-    [InlineData("true && false", false)]
-    [InlineData("true || false", true)]
-    [InlineData("false || false", false)]
-    [InlineData("true && true", true)]
-    [InlineData("!true", false)]
-    [InlineData("!false", true)]
-    [InlineData("!false && !true", false)]
-    [InlineData("!false && !false", true)]
-    [InlineData("!false == !false", true)]
-    [InlineData("!false != !false", false)]
-    [InlineData("false == !false", false)]
-    [InlineData("false == !false == true", false)]
-    [InlineData("false == !false == false", true)]
-    [InlineData("false || !false == false", false)]
-    [InlineData("15 + 11 == 26", true)]
-    [InlineData("15 * 2 + 2 == 32", true)]
-    [InlineData("15 * 2 + 2 != 42", true)]
-    [InlineData("15 * 2 + 2 == 32 && true == true", true)]
-    [InlineData("1 == 1 && true", true)]
-    [InlineData("a = 1", 1)]
-    [InlineData("a = b = 1", 1)]
-    [InlineData("(a = b = 1) == b == true", true)]
-    [InlineData("(a = b = 1) == b && false", false)]
-    public void Test(string input, object expectedResult)
-    {
-        this.Build(input).Should().Be(expectedResult);
-    }
-
+    
     [Fact]
     public void Custom()
     {

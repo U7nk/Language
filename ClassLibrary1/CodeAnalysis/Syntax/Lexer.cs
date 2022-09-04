@@ -4,19 +4,22 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class Lexer
 {
-    private readonly string text;
+    private readonly string sourceText;
     private int position;
     private readonly DiagnosticBag diagnostics = new();
+    private int start;
+    private SyntaxKind kind;
+    private object? value;
     public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
 
-    public Lexer(string text)
+    public Lexer(string sourceText)
     {
-        this.text = text;
+        this.sourceText = sourceText;
     }
 
 
-    private char Current => Peek(0);
-    private char Lookahead => Peek(1);
+    private char Current => this.Peek(0);
+    private char Lookahead => this.Peek(1);
 
     private void Next(int offset = 1)
     {
@@ -26,12 +29,12 @@ public class Lexer
     private char Peek(int offset)
     {
         var index = this.position + offset;
-        if (index >= this.text.Length)
+        if (index >= this.sourceText.Length)
         {
             return '\0';
         }
 
-        return this.text[index];
+        return this.sourceText[index];
     }
 
     public ICollection<SyntaxToken> Parse()
@@ -49,146 +52,151 @@ public class Lexer
 
     public SyntaxToken NextToken()
     {
-        if (this.position >= this.text.Length)
-        {
-            return new SyntaxToken(SyntaxKind.EndOfFileToken, this.position, "\0", null);
-        }
+        this.start = this.position;
+        this.kind = SyntaxKind.BadToken;
+        this.value = null;
 
-        if (char.IsDigit(this.Current))
-        {
-            var start = this.position;
-
-            while (char.IsDigit(this.Current))
-            {
-                this.Next();
-            }
-
-            var length = this.position - start;
-            var text = this.text.Substring(start, length);
-            if (!int.TryParse(text, out var value))
-            {
-                this.diagnostics.ReportInvalidNumber(start, length, text, typeof(int));
-            }
-
-            return new SyntaxToken(SyntaxKind.NumberToken, start, text, value);
-        }
-
-        if (char.IsLetter(Current))
-        {
-            var start = this.position;
-            while (char.IsLetter(Current))
-            {
-                this.Next();
-            }
-
-            var letters = this.text[start..this.position];
-            var kind = SyntaxFacts.GetKeywordKind(letters);
-            return new SyntaxToken(kind, start, letters, null);
-        }
-
-        if (char.IsWhiteSpace(this.Current))
-        {
-            var start = this.position;
-            while (char.IsWhiteSpace(this.Current))
-            {
-                this.Next();
-            }
-
-            var length = this.position - start;
-            var text = this.text.Substring(start, length);
-            return new SyntaxToken(SyntaxKind.WhitespaceToken, start, text, null);
-        }
 
         switch (this.Current)
         {
+            case '\0':
+                this.kind = SyntaxKind.EndOfFileToken;
+                break;
             case '+':
-            {
-                var token = new SyntaxToken(SyntaxKind.PlusToken, this.position, "+", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.PlusToken;
+                this.kind = (SyntaxKind.PlusToken);
+                break;
             case '-':
-            {
-                var token = new SyntaxToken(SyntaxKind.MinusToken, this.position, "-", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.MinusToken;
+                break;
             case '*':
-            {
-                var token = new SyntaxToken(SyntaxKind.StarToken, this.position, "*", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.StarToken;
+                break;
             case '/':
-            {
-                var token = new SyntaxToken(SyntaxKind.SlashToken, this.position, "/", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.SlashToken;
+                break;
             case '(':
-            {
-                var token = new SyntaxToken(SyntaxKind.OpenParenthesisToken, this.position, "(", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.OpenParenthesisToken;
+                break;
             case ')':
-            {
-                var token = new SyntaxToken(SyntaxKind.CloseParenthesisToken, this.position, ")", null);
                 this.Next();
-                return token;
-            }
+                this.kind = SyntaxKind.CloseParenthesisToken;
+                break;
             case '&':
-                if (this.Lookahead is '&')
+                this.Next();
+                if (this.Current is '&')
                 {
-                    var token = new SyntaxToken(SyntaxKind.AmpersandAmpersandToken, this.position, "&&", null);
-                    this.Next(2);
-                    return token;
+                    this.Next();
+                    this.kind = SyntaxKind.AmpersandAmpersandToken;
                 }
                 break;
             case '|':
-                if (this.Lookahead is '|')
+                this.Next();
+                if (this.Current is '|')
                 {
-                    var token = new SyntaxToken(SyntaxKind.PipePipeToken, this.position, "||", null);
-                    this.Next(2);
-                    return token;
+                    this.Next();
+                    this.kind = SyntaxKind.PipePipeToken;
                 }
                 break;
             case '=':
-            {
-                SyntaxToken token;
-                if (this.Lookahead is '=')
+                this.Next();
+                if (this.Current is '=')
                 {
-                    token = new SyntaxToken(SyntaxKind.EqualsEqualsToken, this.position, "==", null);
-                    this.Next(2);
-                    return token;
+                    this.Next();
+                    this.kind = SyntaxKind.EqualsEqualsToken;
+                }
+                else
+                {
+                    this.kind = SyntaxKind.EqualsToken;
+                }
+                break;
+            case '!':
+                this.Next();
+                if (this.Current is '=')
+                {
+                    this.Next();
+                    this.kind = SyntaxKind.BangEqualsToken;
+                }
+                else
+                {
+                    this.kind = SyntaxKind.BangToken;
                 }
 
-                token = new SyntaxToken(SyntaxKind.EqualsToken, this.position, "=", null);
-                this.Next();
-                return token;
-            }
-            case '!':
-            {
-                SyntaxToken token;
-                if (this.Lookahead is '=')
+                break;
+            case '0' or '1' or '2' or '3' or '4':
+            case '5' or '6' or '7' or '8' or '9':
+                this.ReadNumberToken();
+                break;
+            case ' ' or '\t' or '\r' or '\n':
+                this.ReadWhitespace();
+                break;
+            default:
+                if (char.IsWhiteSpace(this.Current))
                 {
-                    token = new SyntaxToken(SyntaxKind.BangEqualsToken, this.position, "!=", null);
-                    this.Next(2);
-                    return token;
+                    this.ReadWhitespace();
                 }
-                token = new SyntaxToken(SyntaxKind.BangToken, this.position, "!", null);
-                this.Next();
-                return token;
-            }
+                else if (char.IsLetter(this.Current))
+                {
+                    this.ReadKeywordOrIdentifier();
+                }
+                else
+                {
+                    this.diagnostics.ReportBadCharacter(this.position, this.Current);
+                    this.Next();
+                }
+                break;
         }
 
-        this.diagnostics.ReportBadCharacter(this.position, this.Current);
-        var badToken = new SyntaxToken(
-            SyntaxKind.BadToken,
-            this.position,
-            this.text.Substring(this.position, 1),
-            null);
-        this.Next();
-        return badToken;
+
+        var length = this.position - this.start;
+        var text = SyntaxFacts.GetText(this.kind);
+        if (text is null)
+        {
+            text = this.sourceText.Substring(this.start, length);
+        }
+
+        return new SyntaxToken(this.kind, this.start, text, this.value);
+    }
+
+    private void ReadKeywordOrIdentifier()
+    {
+        while (char.IsLetter(this.Current)) 
+            this.Next();
+
+        var text = this.sourceText[this.start..this.position];
+        this.kind = SyntaxFacts.GetKeywordKind(text);
+    }
+
+    private void ReadWhitespace()
+    {
+        while (char.IsWhiteSpace(this.Current))
+        {
+            this.Next();
+        }
+
+        this.kind = SyntaxKind.WhitespaceToken;
+    }
+
+    private void ReadNumberToken()
+    {
+        while (char.IsDigit(this.Current))
+        {
+            this.Next();
+        }
+
+        var length = this.position - this.start;
+        var text = this.sourceText.Substring(this.start, length);
+        if (!int.TryParse(text, out var number))
+        {
+            this.diagnostics.ReportInvalidNumber(this.start, length, text, typeof(int));
+        }
+
+        this.value = number;
+        this.kind = SyntaxKind.NumberToken;
     }
 }

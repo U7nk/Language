@@ -190,29 +190,29 @@ internal class ConditionalAdd<T>
     public ConditionalAdd(T obj)
     {
         this.obj = obj;
-        TrueActions = new List<Action>();
+        this.TrueActions = new List<Action>();
     }
     public ConditionalAdd<T> If(bool condition)
     {
-        Condition = condition;
-        IfState = true;
+        this.Condition = condition;
+        this.IfState = true;
         return this;
     }
     public ConditionalAdd<T> AddTo(IList list)
     {
-        if (IfState)
+        if (this.IfState)
         {
-            if (Condition == true)
+            if (this.Condition == true)
             {
-                list.Add(obj);
+                list.Add(this.obj);
                 return this;
             }
         }
-        if (IfState == false)
+        if (this.IfState == false)
         {
-            if (Condition == true)
+            if (this.Condition == true)
             {
-                list.Add(obj);
+                list.Add(this.obj);
                 return this;
             }
         }
@@ -223,7 +223,7 @@ internal class ConditionalAdd<T>
     {
         get
         {
-            IfState = false;
+            this.IfState = false;
             return this;
         }
     }
@@ -234,12 +234,12 @@ internal class MoveNexter
     private readonly Action moveNextAction;
     public MoveNexter()
     {
-        checkResult = false;
+        this.checkResult = false;
     }
 
     public MoveNexter(Action moveNextAction)
     {
-        checkResult = true;
+        this.checkResult = true;
         this.moveNextAction = moveNextAction;
     }
     public static implicit operator bool(MoveNexter moveNexter)
@@ -249,7 +249,7 @@ internal class MoveNexter
 
     public MoveNexter OnTrue(Action action, int times = 1)
     {
-        if (checkResult)
+        if (this.checkResult)
         {
             for (int i = 0; i < times; i++)
             {
@@ -263,7 +263,7 @@ internal class MoveNexter
 
     public bool OnFalse(Action action, int times = 1)
     {
-        if (checkResult)
+        if (this.checkResult)
         {
             return true;
         }

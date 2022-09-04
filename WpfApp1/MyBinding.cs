@@ -16,31 +16,31 @@ internal class MyBinding : MarkupExtension
     private Func<object> CompiledBinding { get; set; }
     public MyBinding(string value)
     {
-        Value = value;
-        contextAvailableMembers = new Dictionary<string, object>();
+        this.Value = value;
+        this.contextAvailableMembers = new Dictionary<string, object>();
     }
         
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
        
             
-        return CompiledBinding();
+        return this.CompiledBinding();
     }
         
     private void InitializeContext(IServiceProvider serviceProvider)
     {
         IProvideValueTarget provideValueTarget = (IProvideValueTarget)serviceProvider.GetService(typeof(IProvideValueTarget));
         var targetObject = provideValueTarget.TargetObject;
-        targetProperty = (DependencyProperty)provideValueTarget.TargetProperty;
+        this.targetProperty = (DependencyProperty)provideValueTarget.TargetProperty;
         if (targetObject is FrameworkElement)
         {
             var frameworkElement = (FrameworkElement)targetObject;
-            target = frameworkElement;
+            this.target = frameworkElement;
             if (frameworkElement.DataContext is INotifyPropertyChanged)
             {
-                context = (INotifyPropertyChanged)frameworkElement.DataContext;
-                context.PropertyChanged += (s, e) => { target.SetValue(targetProperty, ProvideValue(serviceProvider)); };
-                contextAvailableMembers["$ctx"] = context;
+                this.context = (INotifyPropertyChanged)frameworkElement.DataContext;
+                this.context.PropertyChanged += (s, e) => { this.target.SetValue(this.targetProperty, this.ProvideValue(serviceProvider)); };
+                this.contextAvailableMembers["$ctx"] = this.context;
             }
         }
     }

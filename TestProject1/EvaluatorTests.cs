@@ -6,7 +6,7 @@ namespace TestProject1;
 using FluentAssertions;
 using Wired.CodeAnalysis.Syntax;
 
-public class SyntaxFactTests
+public class EvaluatorTests
 {
     [Theory]
     [InlineData("1", 1)]

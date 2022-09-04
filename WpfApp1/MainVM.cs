@@ -12,7 +12,7 @@ namespace WpfApp1
         }
         public bool CanExecute(object parameter)
         {
-            mainVM.BoolVal = !mainVM.BoolVal;
+            this.mainVM.BoolVal = !this.mainVM.BoolVal;
             return true;
         }
 
@@ -21,7 +21,7 @@ namespace WpfApp1
 
         public void Execute(object parameter)
         {
-            mainVM.StringValue = "NewValue";
+            this.mainVM.StringValue = "NewValue";
         }
     }
     public class MainVM : INotifyPropertyChanged
@@ -31,12 +31,12 @@ namespace WpfApp1
         {
             get
             {
-                return stringValue;
+                return this.stringValue;
             }
             set
             {
-                stringValue = value;
-                PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StringValue"));
+                this.stringValue = value;
+                this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StringValue"));
             }
         }
 
@@ -45,12 +45,12 @@ namespace WpfApp1
         {
             get
             {
-                return boolVal;
+                return this.boolVal;
             }
             set
             {
-                boolVal = value;
-                PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BoolVal"));
+                this.boolVal = value;
+                this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BoolVal"));
             }
         }
 
