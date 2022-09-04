@@ -137,31 +137,46 @@ public class Parser
     
     private ExpressionSyntax ParsePrimaryExpression()
     {
-        if (this.Current.Kind == SyntaxKind.OpenParenthesisToken)
+        return this.Current.Kind switch
         {
-            var left = this.NextToken();
-            var expression = this.ParseExpression();
-            var right = this.Match(SyntaxKind.CloseParenthesisToken);
-            return new ParenthesizedExpressionSyntax(
-                left,
-                expression,
-                right);
-        }
+            SyntaxKind.OpenParenthesisToken =>
+                this.ParseParenthesizedExpression(),
+            SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword =>
+                this.ParseBooleanLiteralExpression(),
+            SyntaxKind.IdentifierToken =>
+                this.ParseNameExpression(),
+            _/*default*/ => 
+                this.ParseNumberLiteralExpression()
+        };
+    }
 
-        if (this.Current.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
-        {
-            var value = this.Current.Kind == SyntaxKind.TrueKeyword;
-            var token = this.NextToken();
-            return new LiteralExpressionSyntax(token, value);
-        }
-        
-        if (this.Current.Kind is SyntaxKind.IdentifierToken)
-        {
-            var token = this.NextToken();
-            return new NameExpressionSyntax(token);
-        }
-
+    private ExpressionSyntax ParseNumberLiteralExpression()
+    {
         var numberToken = this.Match(SyntaxKind.NumberToken);
         return new LiteralExpressionSyntax(numberToken);
+    }
+
+    private ExpressionSyntax ParseParenthesizedExpression()
+    {
+        var left = this.Match(SyntaxKind.OpenParenthesisToken);
+        var expression = this.ParseExpression();
+        var right = this.Match(SyntaxKind.CloseParenthesisToken);
+        return new ParenthesizedExpressionSyntax(
+            left,
+            expression,
+            right);
+    }
+
+    private ExpressionSyntax ParseBooleanLiteralExpression()
+    {
+        var isTrue = this.Current.Kind == SyntaxKind.TrueKeyword;
+        var token = this.Match(isTrue ? SyntaxKind.TrueKeyword : SyntaxKind.FalseKeyword);
+        return new LiteralExpressionSyntax(token, isTrue);
+    }
+
+    private ExpressionSyntax ParseNameExpression()
+    {
+        var token = this.Match(SyntaxKind.IdentifierToken);
+        return new NameExpressionSyntax(token);
     }
 }
