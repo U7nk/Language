@@ -4,7 +4,7 @@ using Wired.CodeAnalysis.Syntax;
 
 namespace TestProject1.CodeAnalysis;
 
-public sealed class LexerTest
+public sealed class LexerTests
 {
     [Theory]
     [MemberData(nameof(GetTokensData))]

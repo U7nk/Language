@@ -1,10 +1,14 @@
+using System;
+using System.Collections.Generic;
+
 namespace Wired.CodeAnalysis.Syntax;
 
 internal static class SyntaxFacts
 {
     public static int GetUnaryOperatorPrecedence(this SyntaxKind syntaxKind)
     {
-        switch (syntaxKind) {
+        switch (syntaxKind)
+        {
             case SyntaxKind.PlusToken:
             case SyntaxKind.MinusToken:
             case SyntaxKind.BangToken:
@@ -14,22 +18,23 @@ internal static class SyntaxFacts
                 return 0;
         }
     }
-    
+
     public static int GetBinaryOperatorPrecedence(this SyntaxKind syntaxKind)
     {
-        switch (syntaxKind) {
+        switch (syntaxKind)
+        {
             case SyntaxKind.StarToken:
             case SyntaxKind.SlashToken:
                 return 5;
-      
+
             case SyntaxKind.PlusToken:
             case SyntaxKind.MinusToken:
                 return 4;
-            
+
             case SyntaxKind.EqualsEqualsToken:
             case SyntaxKind.BangEqualsToken:
                 return 3;
-            
+
             case SyntaxKind.AmpersandAmpersandToken:
                 return 2;
             case SyntaxKind.PipePipeToken:
@@ -42,10 +47,56 @@ internal static class SyntaxFacts
 
     public static SyntaxKind GetKeywordKind(string text)
     {
-        return text switch {
+        return text switch
+        {
             "true" => SyntaxKind.TrueKeyword,
             "false" => SyntaxKind.FalseKeyword,
             _ => SyntaxKind.IdentifierToken,
+        };
+    }
+
+    public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds()
+    {
+        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
+        foreach (var kind in kinds)
+        {
+            if (GetUnaryOperatorPrecedence(kind) > 0)
+            {
+                yield return kind;
+            }
+        }
+    }
+    public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds()
+    {
+        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
+        foreach (var kind in kinds)
+        {
+            if (GetBinaryOperatorPrecedence(kind) > 0)
+            {
+                yield return kind;
+            }
+        }
+    }
+
+    public static string? GetText(SyntaxKind kind)
+    {
+        return kind switch
+        {
+            SyntaxKind.PlusToken => "+",
+            SyntaxKind.MinusToken => "-",
+            SyntaxKind.StarToken => "*",
+            SyntaxKind.SlashToken => "/",
+            SyntaxKind.OpenParenthesisToken => "(",
+            SyntaxKind.CloseParenthesisToken => ")",
+            SyntaxKind.BangToken => "!",
+            SyntaxKind.AmpersandAmpersandToken => "&&",
+            SyntaxKind.PipePipeToken => "||",
+            SyntaxKind.EqualsEqualsToken => "==",
+            SyntaxKind.BangEqualsToken => "!=",
+            SyntaxKind.EqualsToken => "=",
+            SyntaxKind.TrueKeyword => "true",
+            SyntaxKind.FalseKeyword => "false",
+            _ => null
         };
     }
 }
