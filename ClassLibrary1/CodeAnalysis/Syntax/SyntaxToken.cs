@@ -6,10 +6,6 @@ namespace Wired.CodeAnalysis.Syntax;
 public class SyntaxToken : SyntaxNode
 {
     public override SyntaxKind Kind { get; }
-    public override IEnumerable<SyntaxNode> GetChildren()
-    {
-        return Enumerable.Empty<SyntaxNode>();
-    }
 
     public int Position { get; }
     public string Text { get; }

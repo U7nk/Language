@@ -16,10 +16,5 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
     public SyntaxToken EqualsToken { get; }
     public ExpressionSyntax Expression { get; }
 
-    public override IEnumerable<SyntaxNode> GetChildren()
-    {
-        yield return this.IdentifierToken;
-        yield return this.EqualsToken;
-        yield return this.Expression;
-    }
+   
 }

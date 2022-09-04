@@ -92,6 +92,13 @@ internal static class Extensions
     {
         return new T[] { obj };
     }
+
+    public static bool CanBeConvertedTo<T>(this Type givenType, Type type) => 
+        type.IsAssignableFrom(givenType);
+
+    public static bool CanBeConvertedTo<T>(this Type givenType) => 
+        typeof(T).IsAssignableFrom(givenType);
+
     public static Type GetTypeThatAssignableToGenericOrDefault(this Type givenType, Type genericType)
     {
         var interfaceTypes = givenType.GetInterfaces();

@@ -21,11 +21,5 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
     public ExpressionSyntax Expression { get; }
 
     public SyntaxToken OpenParenthesisToken { get; }
-
-    public override IEnumerable<SyntaxNode> GetChildren()
-    {
-        yield return this.OpenParenthesisToken;
-        yield return this.Expression;
-        yield return this.CloseParenthesisToken;
-    }
+    
 }

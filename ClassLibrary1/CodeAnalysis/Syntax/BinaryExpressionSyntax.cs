@@ -11,14 +11,8 @@ public sealed class BinaryExpressionSyntax : ExpressionSyntax
         this.Right = right;
     }
 
-    public ExpressionSyntax Right { get; }
-    public SyntaxToken OperatorToken { get; }
     public ExpressionSyntax Left { get; }
+    public SyntaxToken OperatorToken { get; }
+    public ExpressionSyntax Right { get; }
     public override SyntaxKind Kind => SyntaxKind.BinaryExpression;
-    public override IEnumerable<SyntaxNode> GetChildren()
-    {
-        yield return this.Left;
-        yield return this.OperatorToken;
-        yield return this.Right;
-    }
 }

@@ -10,12 +10,7 @@ public sealed class UnaryExpressionSyntax : ExpressionSyntax
         this.Operand = operand;
     }
 
-    public ExpressionSyntax Operand { get; }
     public SyntaxToken OperatorToken { get; }
+    public ExpressionSyntax Operand { get; }
     public override SyntaxKind Kind => SyntaxKind.UnaryExpression;
-    public override IEnumerable<SyntaxNode> GetChildren()
-    {
-        yield return this.OperatorToken;
-        yield return this.Operand;
-    }
 }
