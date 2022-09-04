@@ -21,7 +21,7 @@ internal class Evaluator
         return this.EvaluateExpression(this.root);
     }
 
-    private object EvaluateExpression(BoundExpression node)
+    public object EvaluateExpression(BoundExpression node)
     {
         return node.Kind switch
         {
