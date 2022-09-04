@@ -15,7 +15,7 @@ internal sealed class Binder
         this.variables = variables;
     }
 
-    internal IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
+    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
 
     public BoundExpression BindExpression(ExpressionSyntax syntax)
     {
