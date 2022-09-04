@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -36,6 +37,34 @@ public abstract class SyntaxNode
                     yield return child;
                 }
             }
+        }
+    }
+    
+    public void WriteTo(TextWriter writer)
+    {
+        this.PrettyPrint(writer, this);
+    }
+    
+    private void PrettyPrint(TextWriter writer, SyntaxNode node, bool isLast = true, string indent = "")
+    {
+
+        var marker = isLast ? "└──" : "├──";
+        var str = indent + marker;
+        str += node.Kind.ToString();
+
+        if (node is SyntaxToken { Value: { } } t)
+        {
+            str += " ";
+            str += t.Value;
+        }
+
+        writer.WriteLine(str);
+
+        indent += isLast ? "    " : "│   ";
+        var last = node.GetChildren().LastOrDefault();
+        foreach (var child in node.GetChildren())
+        {
+            this.PrettyPrint(writer, child, child == last, indent);
         }
     }
 }

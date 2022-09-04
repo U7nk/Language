@@ -8,34 +8,12 @@ namespace TestProject1;
 
 public class UnitTest1
 {
-    private void PrettyPrint(SyntaxNode node, bool isLast = true, string indent = "")
-    {
 
-        var marker = isLast ? "└──" : "├──";
-        var str = indent + marker;
-        str += node.Kind.ToString();
-
-        if (node is SyntaxToken t && t.Value != null)
-        {
-            str += " ";
-            str += t.Value;
-        }
-
-        this.output.WriteLine(str);
-
-        indent += isLast ? "    " : "│   ";
-        var last = node.GetChildren().LastOrDefault();
-        foreach (var child in node.GetChildren())
-        {
-            this.PrettyPrint(child, child == last, indent);
-        }
-    }
-    
-    private readonly ITestOutputHelper output;
+    private readonly XUnitTextWriter output;
 
     public UnitTest1(ITestOutputHelper output)
     {
-        this.output = output;
+        this.output = new XUnitTextWriter(output);
     }
     
     [Fact]
@@ -47,7 +25,7 @@ public class UnitTest1
     private object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
-        this.PrettyPrint(syntaxTree.Root);
+        syntaxTree.Root.WriteTo(this.output);
         var variables = new Dictionary<VariableSymbol, object?>();
         var binder = new Binder(variables);
         var bindTree = binder.BindExpression(syntaxTree.Root);
