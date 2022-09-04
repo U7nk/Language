@@ -8,7 +8,7 @@ namespace Wired.CodeAnalysis;
 internal class Evaluator
 {
     private readonly BoundExpression root;
-    private readonly  Dictionary<VariableSymbol, object> variables;
+    private readonly Dictionary<VariableSymbol, object> variables;
 
     public Evaluator(BoundExpression root, Dictionary<VariableSymbol, object> variables)
     {
@@ -23,70 +23,84 @@ internal class Evaluator
 
     private object EvaluateExpression(BoundExpression node)
     {
-        if (node is BoundLiteralExpression l)
+        return node.Kind switch
         {
-            return l.Value;
-        }
+            BoundNodeKind.LiteralExpression =>
+                this.EvaluateLiteralExpression((BoundLiteralExpression)node),
+            BoundNodeKind.AssignmentExpression =>
+                this.EvaluateAssignmentExpression((BoundAssignmentExpression)node),
+            BoundNodeKind.VariableExpression =>
+                this.EvaluateVariableExpression((BoundVariableExpression)node),
+            BoundNodeKind.UnaryExpression =>
+                this.EvaluateUnaryExpression((BoundUnaryExpression)node),
+            BoundNodeKind.BinaryExpression =>
+                this.EvaluateBinaryExpression((BoundBinaryExpression)node),
+            _ =>
+                throw new Exception($"Unexpected node  {node.Kind}")
+        };
+    }
 
-        if (node is BoundAssignmentExpression a)
+    private object EvaluateBinaryExpression(BoundBinaryExpression b)
+    {
+        var left = this.EvaluateExpression(b.Left);
+        var right = this.EvaluateExpression(b.Right);
+        return b.Op.Kind switch
         {
-            var value = this.EvaluateExpression(a.Expression);
-            this.variables[a.Variable] = value;
-            return value;
-        }
-        
-        if (node is BoundVariableExpression v)
+            BoundBinaryOperatorKind.Addition => (int)left + (int)right,
+            BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
+            BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
+            BoundBinaryOperatorKind.Division => (int)left / (int)right,
+
+            BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
+            BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
+
+            BoundBinaryOperatorKind.Equality => Equals(left, right),
+            BoundBinaryOperatorKind.Inequality => !Equals(left, right),
+            _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
+        };
+    }
+
+    private object EvaluateUnaryExpression(BoundUnaryExpression unary)
+    {
+        var operand = this.EvaluateExpression(unary.Operand);
+        if (unary.Type == typeof(int))
         {
-            return this.variables[v.Variable];
-        }
-        
-        if (node is BoundUnaryExpression unary)
-        {
-            var operand = this.EvaluateExpression(unary.Operand);
-            if (unary.Type == typeof(int))
+            var intOperand = (int)operand;
+            return unary.Op.Kind switch
             {
-                var intOperand = (int)operand;
-                return unary.Op.Kind switch
-                {
-                    BoundUnaryOperatorKind.Negation => -intOperand,
-                    BoundUnaryOperatorKind.Identity => +intOperand,
-                    _ => throw new Exception($"Unexpected unary operator {unary.Op}")
-                };
-            }
-
-            if (unary.Type == typeof(bool))
-            {
-                var boolOperand = (bool)operand;
-                return unary.Op.Kind switch
-                {
-                    BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
-                    _ => throw new Exception($"Unexpected unary operator {unary.Op}")
-                };
-            }
-
-            throw new Exception($"Unexpected unary operator {unary.Op}");
-        }
-
-        if (node is BoundBinaryExpression b)
-        {
-            var left = this.EvaluateExpression(b.Left);
-            var right = this.EvaluateExpression(b.Right);
-            return b.Op.Kind switch
-            {
-                BoundBinaryOperatorKind.Addition => (int)left + (int)right,
-                BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
-                BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
-                BoundBinaryOperatorKind.Division => (int)left / (int)right,
-                
-                BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
-                BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
-                
-                BoundBinaryOperatorKind.Equality => Equals(left, right),
-                BoundBinaryOperatorKind.Inequality => !Equals(left, right),
-                _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
+                BoundUnaryOperatorKind.Negation => -intOperand,
+                BoundUnaryOperatorKind.Identity => +intOperand,
+                _ => throw new Exception($"Unexpected unary operator {unary.Op}")
             };
         }
 
-        throw new Exception($"Unexpected node  {node.Kind}");
+        if (unary.Type == typeof(bool))
+        {
+            var boolOperand = (bool)operand;
+            return unary.Op.Kind switch
+            {
+                BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
+                _ => throw new Exception($"Unexpected unary operator {unary.Op}")
+            };
+        }
+
+        throw new Exception($"Unexpected unary operator {unary.Op}");
+    }
+
+    private object EvaluateAssignmentExpression(BoundAssignmentExpression a)
+    {
+        var value = this.EvaluateExpression(a.Expression);
+        this.variables[a.Variable] = value;
+        return value;
+    }
+
+    private object EvaluateVariableExpression(BoundVariableExpression v)
+    {
+        return this.variables[v.Variable];
+    }
+
+    private object EvaluateLiteralExpression(BoundLiteralExpression l)
+    {
+        return l.Value;
     }
 }
