@@ -19,7 +19,7 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.output.WriteLine("Result: " + this.Build("(a = false) == (a)"));
+        this.output.WriteLine("Result: " + this.Build("(a = ) == (a)"));
     }
 
     private object Build(string input)
@@ -34,10 +34,14 @@ public class UnitTest1
         {
             foreach (var diagnostic in diagnostics)
             {
+                var text = syntaxTree.SourceText;
+                var lineIndex = text.GetLineIndex(diagnostic.Span.Start); 
+                var lineNumber = lineIndex + 1; 
                 var prefix = input.Substring(0, diagnostic.Span.Start);
                 var error = input.Substring(diagnostic.Span.Start, diagnostic.Span.Length);
                 var suffix = input.Substring(diagnostic.Span.End);
-                this.output.WriteLine($"\"{prefix}~{error}~{suffix}\"");
+                var line = $"({lineNumber},{diagnostic.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}~{error}~{suffix}\"";
+                this.output.WriteLine(line);
                 this.output.WriteLine(diagnostic.Message);
             }
         }

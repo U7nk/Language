@@ -102,10 +102,6 @@ internal sealed class Binder
     private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
     {
         var value = syntax.Value;
-        if (value is null)
-        {
-            throw new Exception($"Literal expression value is null. Kind: {syntax.Kind}");
-        }
         return new BoundLiteralExpression(value);
     }
 }

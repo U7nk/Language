@@ -7,15 +7,17 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class SyntaxTree
 {
+    public SourceText SourceText { get; }
     public ExpressionSyntax Root { get; }
     public SyntaxToken EndOfFileToken { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
 
-    public SyntaxTree(
+    public SyntaxTree(SourceText sourceText,
         ImmutableArray<Diagnostic> diagnostics,
         ExpressionSyntax root,
         SyntaxToken endOfFileToken)
     {
+        this.SourceText = sourceText;
         this.Root = root;
         this.EndOfFileToken = endOfFileToken;
         this.Diagnostics = diagnostics;

@@ -7,6 +7,7 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class Parser
 {
+    private readonly SourceText text;
     public int position;
     public ImmutableArray<SyntaxToken> tokens;
     private readonly DiagnosticBag diagnostic = new();
@@ -14,6 +15,7 @@ public class Parser
 
     public Parser(SourceText text)
     {
+        this.text = text;
         var lexer = new Lexer(text);
         SyntaxToken token;
         var tokens = new List<SyntaxToken>();
@@ -36,7 +38,7 @@ public class Parser
         var index = this.position + offset;
         if (index >= this.tokens.Length)
         {
-            return this.tokens[this.tokens.Length - 1];
+            return this.tokens[^1];
         }
 
         return this.tokens[index];
@@ -100,7 +102,7 @@ public class Parser
     {
         var expression = this.ParseExpression();
         var endOfFileToken = this.Match(SyntaxKind.EndOfFileToken);
-        return new SyntaxTree(this.diagnostic.ToImmutableArray(), expression, endOfFileToken);
+        return new SyntaxTree(this.text, this.diagnostic.ToImmutableArray(), expression, endOfFileToken);
     }
 
     private ExpressionSyntax ParseExpression() 

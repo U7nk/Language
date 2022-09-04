@@ -63,6 +63,10 @@ public class SourceText
                 lineStart = position;
             }
         }
+        if (position > lineStart)
+        {
+            AddLine(result, sourceText, lineStart, position, 0);
+        }
 
         return result.ToImmutable();
     }
