@@ -10,4 +10,6 @@ public struct TextSpan
         this.Start = start;
         this.Length = length;
     }
+
+    public static TextSpan FromBounds(int firstStart, int lastEnd) => new TextSpan(firstStart, lastEnd - firstStart);
 }
