@@ -7,7 +7,6 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class Parser
 {
-    private readonly SourceText text;
     public int position;
     public ImmutableArray<SyntaxToken> tokens;
     private readonly DiagnosticBag diagnostic = new();
@@ -15,7 +14,6 @@ public class Parser
 
     public Parser(SourceText text)
     {
-        this.text = text;
         var lexer = new Lexer(text);
         SyntaxToken token;
         var tokens = new List<SyntaxToken>();
@@ -95,17 +93,47 @@ public class Parser
 
         return left;
     }
-    
-    
+
 
     public CompilationUnitSyntax ParseCompilationUnit()
     {
-        var expression = this.ParseExpression();
+        var statement = this.ParseStatement();
         var endOfFileToken = this.Match(SyntaxKind.EndOfFileToken);
-        return new CompilationUnitSyntax(expression, endOfFileToken);
+        return new CompilationUnitSyntax(statement, endOfFileToken);
     }
 
-    private ExpressionSyntax ParseExpression() 
+    private StatementSyntax ParseStatement()
+    {
+        if (this.Current.Kind is SyntaxKind.OpenBraceToken)
+            return ParseBlockStatement();
+
+        return this.ParseExpressionStatement();
+    }
+
+    private StatementSyntax ParseBlockStatement()
+    {
+        var openBraceToken = this.Match(SyntaxKind.OpenBraceToken);
+        var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        while (this.Current.Kind 
+               is not SyntaxKind.CloseBraceToken
+               and not SyntaxKind.EndOfFileToken)
+        {
+            var statement = this.ParseStatement();
+            statements.Add(statement);
+        }
+
+        var closeBraceToken = this.Match(SyntaxKind.CloseBraceToken);
+        return new BlockStatementSyntax(openBraceToken, statements.ToImmutable(), closeBraceToken);
+    }
+
+    private ExpressionStatementSyntax ParseExpressionStatement()
+    {
+        var expression = this.ParseExpression();
+        var semicolonToken = this.Match(SyntaxKind.SemicolonToken);
+        return new ExpressionStatementSyntax(expression, semicolonToken);
+    }
+
+    private ExpressionSyntax ParseExpression()
         => this.ParseAssignmentExpression();
 
     private ExpressionSyntax ParseAssignmentExpression()
@@ -125,11 +153,10 @@ public class Parser
         //    a   =
         //       / \
         //      b   5
-        
+
         if (this.Current.Kind is SyntaxKind.IdentifierToken
             && this.Peek(1).Kind is SyntaxKind.EqualsToken)
         {
-            
             var identifier = this.Match(SyntaxKind.IdentifierToken);
             var equalsToken = this.Match(SyntaxKind.EqualsToken);
             var right = this.ParseAssignmentExpression();
@@ -137,8 +164,8 @@ public class Parser
         }
 
         return this.ParseBinaryExpression();
-    } 
-    
+    }
+
     private ExpressionSyntax ParsePrimaryExpression()
     {
         return this.Current.Kind switch
@@ -149,7 +176,7 @@ public class Parser
                 this.ParseBooleanLiteralExpression(),
             SyntaxKind.IdentifierToken =>
                 this.ParseNameExpression(),
-            _/*default*/ => 
+            _ /*default*/ =>
                 this.ParseNumberLiteralExpression()
         };
     }

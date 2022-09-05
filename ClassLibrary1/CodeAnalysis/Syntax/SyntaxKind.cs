@@ -20,6 +20,9 @@ public enum SyntaxKind
     EqualsEqualsToken,
     BangEqualsToken,
     EqualsToken,
+    OpenBraceToken,
+    CloseBraceToken,
+    SemicolonToken,
     
     // keywords
     TrueKeyword,
@@ -35,4 +38,6 @@ public enum SyntaxKind
     UnaryExpression,
     AssignmentExpression,
     NameExpression,
+    BlockStatement,
+    ExpressionStatement,
 }

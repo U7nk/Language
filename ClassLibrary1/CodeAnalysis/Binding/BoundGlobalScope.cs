@@ -6,15 +6,15 @@ internal sealed class BoundGlobalScope
 {
     public BoundGlobalScope? Previous { get; }
 
-    public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics, ImmutableArray<VariableSymbol> variables, BoundExpression expression)
+    public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics, ImmutableArray<VariableSymbol> variables, BoundStatement statement)
     {
         this.Previous = previous;
         this.Diagnostics = diagnostics;
         this.Variables = variables;
-        this.Expression = expression;
+        this.Statement = statement;
     }
 
-    public BoundExpression Expression { get; }
+    public BoundStatement Statement { get; }
 
     public ImmutableArray<VariableSymbol> Variables { get; }
 

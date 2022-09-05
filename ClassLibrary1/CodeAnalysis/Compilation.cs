@@ -52,7 +52,7 @@ public sealed class Compilation
             return new EvaluationResult(diagnostics, null);
         }
 
-        var boundExpression = this.GlobalScope.Expression;
+        var boundExpression = this.GlobalScope.Statement;
         var evaluator = new Evaluator(boundExpression, variables);
         var result = evaluator.Evaluate();
         return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, result);

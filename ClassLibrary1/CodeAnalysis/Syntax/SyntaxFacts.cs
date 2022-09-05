@@ -96,6 +96,9 @@ internal static class SyntaxFacts
             SyntaxKind.EqualsToken => "=",
             SyntaxKind.TrueKeyword => "true",
             SyntaxKind.FalseKeyword => "false",
+            SyntaxKind.OpenBraceToken => "{",
+            SyntaxKind.CloseBraceToken => "}",
+            SyntaxKind.SemicolonToken => ";",
             _ => null
         };
     }

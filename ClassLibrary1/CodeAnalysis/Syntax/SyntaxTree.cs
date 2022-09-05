@@ -15,8 +15,8 @@ public class SyntaxTree
     {
         this.SourceText = sourceText;
         var parser = new Parser(sourceText);
-        var diagnostics = parser.Diagnostic.ToImmutableArray();
         this.Root = parser.ParseCompilationUnit();
+        var diagnostics = parser.Diagnostic.ToImmutableArray();
         this.Diagnostics = diagnostics;
     }
     

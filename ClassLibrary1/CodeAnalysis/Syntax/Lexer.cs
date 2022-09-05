@@ -88,6 +88,18 @@ public class Lexer
                 this.Next();
                 this.kind = SyntaxKind.CloseParenthesisToken;
                 break;
+            case '{':
+                this.Next();
+                this.kind = SyntaxKind.OpenBraceToken;
+                break;
+            case '}':
+                this.Next();
+                this.kind = SyntaxKind.CloseBraceToken;
+                break;
+            case ';':
+                this.Next();
+                this.kind = SyntaxKind.SemicolonToken;
+                break;
             case '&':
                 this.Next();
                 if (this.Current is '&')

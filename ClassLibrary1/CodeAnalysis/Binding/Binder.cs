@@ -10,7 +10,7 @@ namespace Wired.CodeAnalysis.Binding;
 internal sealed class Binder
 {
     private readonly DiagnosticBag diagnostics = new();
-    private readonly BoundScope scope;
+    private BoundScope scope;
     public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
     
     public Binder(BoundScope parent)
@@ -18,11 +18,11 @@ internal sealed class Binder
         this.scope = parent;
     }
 
-    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous,CompilationUnitSyntax syntax)
+    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, CompilationUnitSyntax syntax)
     {
         var parentScope = CreateParentScopes(previous);
         var binder = new Binder(parentScope);
-        var expression = binder.BindExpression(syntax.Expression);
+        var expression = binder.BindStatement(syntax.Statement);
         var variables = binder.scope.GetDeclaredVariables();
         var diagnostics = binder.Diagnostics.ToImmutableArray();
         if (previous is not null) 
@@ -59,6 +59,40 @@ internal sealed class Binder
         return parent;
     }
 
+    private BoundStatement BindStatement(StatementSyntax syntax)
+    {
+        switch (syntax.Kind)
+        {
+            case SyntaxKind.BlockStatement:
+                return this.BindBlockStatement((BlockStatementSyntax)syntax);
+            case SyntaxKind.ExpressionStatement:
+                return this.BindExpressionStatement((ExpressionStatementSyntax)syntax);
+            default:
+                throw new Exception($"Unexpected syntax {syntax.Kind}");
+        }
+    }
+
+    private BoundExpressionStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
+    {
+        var expression = this.BindExpression(syntax.Expression);
+        return new BoundExpressionStatement(expression);
+    }
+
+    private BoundBlockStatement BindBlockStatement(BlockStatementSyntax syntax)
+    {
+        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+        this.scope = new BoundScope(this.scope);
+        foreach (var statementSyntax in syntax.Statements)
+        {
+            var statement = this.BindStatement(statementSyntax);
+            statement.AddTo(statements);
+        }
+
+        this.scope = this.scope.Parent ?? throw new InvalidOperationException();
+
+        return new BoundBlockStatement(statements.ToImmutable());
+    }
+
     public BoundExpression BindExpression(ExpressionSyntax syntax)
     {
         switch (syntax.Kind)
@@ -86,16 +120,20 @@ internal sealed class Binder
         var name = syntax.IdentifierToken.Text;
 
 
-        if (!this.scope.TryLookupVariable(name, out var variable))
+        var variable = new VariableSymbol(name, boundExpression.Type);
+        if (!this.scope.TryDeclareVariable(variable))
         {
-            variable = new VariableSymbol(name, boundExpression.Type);
-            if (!this.scope.TryDeclareVariable(variable))
+            if (!this.scope.TryLookupVariable(name, out variable))
             {
-                this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
-                return new BoundAssignmentExpression(variable, boundExpression);
+                variable = new VariableSymbol(name, boundExpression.Type);
+                if (!this.scope.TryDeclareVariable(variable))
+                {
+                    this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+                    return new BoundAssignmentExpression(variable, boundExpression);
+                }
             }
         }
-        
+
         if (boundExpression.Type != variable.Type)
         {
             this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);

@@ -7,10 +7,11 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
-    private readonly BoundExpression root;
+    private readonly BoundStatement root;
     private readonly Dictionary<VariableSymbol, object> variables;
+    private object lastValue;
 
-    public Evaluator(BoundExpression root, Dictionary<VariableSymbol, object> variables)
+    public Evaluator(BoundStatement root, Dictionary<VariableSymbol, object> variables)
     {
         this.root = root;
         this.variables = variables;
@@ -18,7 +19,34 @@ internal class Evaluator
 
     public object Evaluate()
     {
-        return this.EvaluateExpression(this.root);
+        this.EvaluateStatement(this.root);
+        return this.lastValue;
+    }
+
+    public void EvaluateStatement(BoundStatement statement)
+    {
+        switch (statement.Kind)
+        {
+            case BoundNodeKind.BlockStatement:
+                this.EvaluateBlockStatement((BoundBlockStatement)statement);
+                break;
+            case BoundNodeKind.ExpressionStatement:
+                this.EvaluateExpressionStatement((BoundExpressionStatement)statement);
+                break;
+            default:
+                throw new Exception($"Unexpected node  {statement.Kind}");
+        }
+    }
+
+    private void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
+    {
+        this.lastValue = this.EvaluateExpression(expressionStatement.Expression);
+    }
+
+    private void EvaluateBlockStatement(BoundBlockStatement blockStatement)
+    {
+        foreach (var statement in blockStatement.Statements) 
+            this.EvaluateStatement(statement);
     }
 
     public object EvaluateExpression(BoundExpression node)
