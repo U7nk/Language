@@ -19,7 +19,7 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.output.WriteLine("Result: " + this.Build("(a = ) == (a)"));
+        this.output.WriteLine("Result: " + this.Build(".\r\r\r"));
     }
 
     private object Build(string input)
@@ -40,7 +40,7 @@ public class UnitTest1
                 var prefix = input.Substring(0, diagnostic.Span.Start);
                 var error = input.Substring(diagnostic.Span.Start, diagnostic.Span.Length);
                 var suffix = input.Substring(diagnostic.Span.End);
-                var line = $"({lineNumber},{diagnostic.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}~{error}~{suffix}\"";
+                var line = $"({lineNumber},{diagnostic.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}> {error} <{suffix}\"";
                 this.output.WriteLine(line);
                 this.output.WriteLine(diagnostic.Message);
             }

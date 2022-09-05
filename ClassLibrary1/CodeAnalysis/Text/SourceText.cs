@@ -40,7 +40,7 @@ public class SourceText
     public string ToString(TextSpan span) 
         => this.text.Substring(span.Start, span.Length);
 
-    public static SourceText ParseFrom(string text)
+    public static SourceText From(string text)
     {
         return new SourceText(text);
     }
@@ -63,7 +63,7 @@ public class SourceText
                 lineStart = position;
             }
         }
-        if (position > lineStart)
+        if (position >= lineStart)
         {
             AddLine(result, sourceText, lineStart, position, 0);
         }

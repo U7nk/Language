@@ -24,6 +24,9 @@ public enum SyntaxKind
     // keywords
     TrueKeyword,
     FalseKeyword,
+    
+    // nodes
+    CompilationUnit,
 
     // expressions
     LiteralExpression,
@@ -31,5 +34,5 @@ public enum SyntaxKind
     ParenthesizedExpression,
     UnaryExpression,
     AssignmentExpression,
-    NameExpression
+    NameExpression,
 }

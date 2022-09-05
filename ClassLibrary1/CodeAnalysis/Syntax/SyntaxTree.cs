@@ -25,7 +25,7 @@ public class SyntaxTree
     
     public static SyntaxTree Parse(string source)
     {
-        var sourceText = SourceText.ParseFrom(source);
+        var sourceText = SourceText.From(source);
         return Parse(sourceText);
     }
     public static SyntaxTree Parse(SourceText source)
@@ -36,7 +36,7 @@ public class SyntaxTree
     }
     
     public static ICollection<SyntaxToken> ParseTokens(string source) 
-        => ParseTokens(SourceText.ParseFrom(source));
+        => ParseTokens(SourceText.From(source));
 
     public static ICollection<SyntaxToken> ParseTokens(SourceText source)
     {
