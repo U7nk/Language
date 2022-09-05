@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -36,7 +37,7 @@ public class Parser
         var index = this.position + offset;
         if (index >= this.tokens.Length)
         {
-            return this.tokens[^1];
+            return this.tokens.Last();
         }
 
         return this.tokens[index];
@@ -48,6 +49,7 @@ public class Parser
     {
         var current = this.Current;
         this.position++;
+        
         return current;
     }
 
