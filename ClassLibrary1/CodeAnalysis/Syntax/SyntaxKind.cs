@@ -27,6 +27,8 @@ public enum SyntaxKind
     // keywords
     TrueKeyword,
     FalseKeyword,
+    VarKeyword,
+    LetKeyword,
     
     // nodes
     CompilationUnit,
@@ -40,4 +42,5 @@ public enum SyntaxKind
     NameExpression,
     BlockStatement,
     ExpressionStatement,
+    VariableDeclaration,
 }

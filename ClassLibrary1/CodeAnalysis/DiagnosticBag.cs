@@ -68,4 +68,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"Cannot convert '{fromType}' to '{toType}'";
         this.Report(expressionSpan, message);
     }
+
+    public void ReportCannotAssignToReadonly(TextSpan span, string name)
+    {
+        var message = $"'{name}' is readonly and cannot be assigned to";
+        this.Report(span, message);
+    }
 }

@@ -19,7 +19,7 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.output.WriteLine("Result: " + this.Build("{(a = 10); a = 1; { a = false; }  b = 2 * a; a; b;}"));
+        this.output.WriteLine("Result: " + this.Build("{let a = 10; a = 20; a; }"));
     }
 
     private object Build(string input)

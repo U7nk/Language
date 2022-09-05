@@ -33,10 +33,16 @@ internal class Evaluator
             case BoundNodeKind.ExpressionStatement:
                 this.EvaluateExpressionStatement((BoundExpressionStatement)statement);
                 break;
+            case BoundNodeKind.VariableDeclarationStatement:
+                this.EvaluateVariableDeclarationStatement((BoundVariableDeclarationStatement)statement);
+                break;
             default:
                 throw new Exception($"Unexpected node  {statement.Kind}");
         }
     }
+
+    private void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement) 
+        => this.variables.Add(statement.Variable, this.EvaluateExpression(statement.Initializer));
 
     private void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {

@@ -51,6 +51,8 @@ internal static class SyntaxFacts
         {
             "true" => SyntaxKind.TrueKeyword,
             "false" => SyntaxKind.FalseKeyword,
+            "let" => SyntaxKind.LetKeyword,
+            "var" => SyntaxKind.VarKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -99,6 +101,8 @@ internal static class SyntaxFacts
             SyntaxKind.OpenBraceToken => "{",
             SyntaxKind.CloseBraceToken => "}",
             SyntaxKind.SemicolonToken => ";",
+            SyntaxKind.LetKeyword => "let",
+            SyntaxKind.VarKeyword => "var",
             _ => null
         };
     }

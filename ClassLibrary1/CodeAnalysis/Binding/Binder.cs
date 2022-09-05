@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Wired.CodeAnalysis.Syntax;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Binding;
 
@@ -12,7 +13,7 @@ internal sealed class Binder
     private readonly DiagnosticBag diagnostics = new();
     private BoundScope scope;
     public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
-    
+
     public Binder(BoundScope parent)
     {
         this.scope = parent;
@@ -25,18 +26,19 @@ internal sealed class Binder
         var expression = binder.BindStatement(syntax.Statement);
         var variables = binder.scope.GetDeclaredVariables();
         var diagnostics = binder.Diagnostics.ToImmutableArray();
-        if (previous is not null) 
+        if (previous is not null)
             diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
-        
+
         return new BoundGlobalScope(previous, diagnostics, variables, expression);
     }
-    
+
     private static BoundScope CreateParentScopes(BoundGlobalScope? previous)
     {
         if (previous is null)
         {
             return new BoundScope(null);
         }
+
         var stack = new Stack<BoundGlobalScope>();
         while (previous is not null)
         {
@@ -45,14 +47,14 @@ internal sealed class Binder
         }
 
         BoundScope parent = null!;
-        
+
         while (stack.Count > 0)
         {
             previous = stack.Pop();
             var scope = new BoundScope(parent);
-            foreach (var variable in previous.Variables) 
+            foreach (var variable in previous.Variables)
                 scope.TryDeclareVariable(variable);
-            
+
             parent = scope;
         }
 
@@ -67,9 +69,24 @@ internal sealed class Binder
                 return this.BindBlockStatement((BlockStatementSyntax)syntax);
             case SyntaxKind.ExpressionStatement:
                 return this.BindExpressionStatement((ExpressionStatementSyntax)syntax);
+            case SyntaxKind.VariableDeclaration:
+                return this.BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
+    {
+        var isReadonly = syntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
+        var initializer = this.BindExpression(syntax.InitializerExpression);
+        var name = syntax.IdentifierToken.Text;
+        var variable = new VariableSymbol(name, initializer.Type, isReadonly);
+
+        if (!this.scope.TryDeclareVariable(variable))
+            this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+
+        return new BoundVariableDeclarationStatement(variable, initializer);
     }
 
     private BoundExpressionStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
@@ -119,19 +136,17 @@ internal sealed class Binder
         var boundExpression = this.BindExpression(syntax.Expression);
         var name = syntax.IdentifierToken.Text;
 
-
-        var variable = new VariableSymbol(name, boundExpression.Type);
-        if (!this.scope.TryDeclareVariable(variable))
+        if (!this.scope.TryLookupVariable(name, out var variable))
         {
-            if (!this.scope.TryLookupVariable(name, out variable))
-            {
-                variable = new VariableSymbol(name, boundExpression.Type);
-                if (!this.scope.TryDeclareVariable(variable))
-                {
-                    this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
-                    return new BoundAssignmentExpression(variable, boundExpression);
-                }
-            }
+            this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+            return boundExpression;
+        }
+
+        if (variable.IsReadonly)
+        {
+            this.diagnostics.ReportCannotAssignToReadonly(
+                TextSpan.FromBounds(syntax.IdentifierToken.Span.Start, syntax.EqualsToken.Span.End),
+                name);
         }
 
         if (boundExpression.Type != variable.Type)
@@ -139,22 +154,23 @@ internal sealed class Binder
             this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
             return boundExpression;
         }
+
         return new BoundAssignmentExpression(variable, boundExpression);
     }
 
     private BoundExpression BindNameExpression(NameExpressionSyntax syntax)
     {
         var name = syntax.IdentifierToken.Text;
-        
+
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
             return new BoundLiteralExpression(new object());
         }
-        
+
         return new BoundVariableExpression(variable);
-        
     }
+
     private BoundExpression BindParenthesizedExpression(ParenthesizedExpressionSyntax syntax)
     {
         return this.BindExpression(syntax.Expression);
@@ -167,10 +183,11 @@ internal sealed class Binder
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
         if (unaryOperator is null)
         {
-            
-            this.diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text, operand.Type);
+            this.diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text,
+                operand.Type);
             return operand;
         }
+
         return new BoundUnaryExpression(unaryOperator, operand);
     }
 
@@ -181,9 +198,11 @@ internal sealed class Binder
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
         if (binaryOperator is null)
         {
-            this.diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text, left.Type, right.Type);
+            this.diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text,
+                left.Type, right.Type);
             return left;
         }
+
         return new BoundBinaryExpression(left, binaryOperator, right);
     }
 

@@ -107,14 +107,31 @@ public class Parser
         if (this.Current.Kind is SyntaxKind.OpenBraceToken)
             return ParseBlockStatement();
 
+        if (this.Current.Kind is SyntaxKind.LetKeyword or SyntaxKind.VarKeyword)
+            return this.ParseVariableDeclarationStatement();
+
         return this.ParseExpressionStatement();
+    }
+
+    private VariableDeclarationStatementSyntax ParseVariableDeclarationStatement()
+    {
+        var keyword = this.Match(
+            this.Current.Kind is SyntaxKind.VarKeyword
+                ? SyntaxKind.VarKeyword
+                : SyntaxKind.LetKeyword);
+        
+        var identifier = this.Match(SyntaxKind.IdentifierToken);
+        var equals = this.Match(SyntaxKind.EqualsToken);
+        var initializer = this.ParseExpression();
+        var semicolon = this.Match(SyntaxKind.SemicolonToken);
+        return new VariableDeclarationStatementSyntax(keyword, identifier, equals, initializer, semicolon);
     }
 
     private StatementSyntax ParseBlockStatement()
     {
         var openBraceToken = this.Match(SyntaxKind.OpenBraceToken);
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        while (this.Current.Kind 
+        while (this.Current.Kind
                is not SyntaxKind.CloseBraceToken
                and not SyntaxKind.EndOfFileToken)
         {
