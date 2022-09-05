@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis.Binding;
@@ -8,14 +10,54 @@ namespace Wired.CodeAnalysis.Binding;
 internal sealed class Binder
 {
     private readonly DiagnosticBag diagnostics = new();
-    private readonly Dictionary<VariableSymbol, object?> variables;
-
-    public Binder(Dictionary<VariableSymbol, object?> variables)
+    private readonly BoundScope scope;
+    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
+    
+    public Binder(BoundScope parent)
     {
-        this.variables = variables;
+        this.scope = parent;
     }
 
-    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
+    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous,CompilationUnitSyntax syntax)
+    {
+        var parentScope = CreateParentScopes(previous);
+        var binder = new Binder(parentScope);
+        var expression = binder.BindExpression(syntax.Expression);
+        var variables = binder.scope.GetDeclaredVariables();
+        var diagnostics = binder.Diagnostics.ToImmutableArray();
+        if (previous is not null) 
+            diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
+        
+        return new BoundGlobalScope(previous, diagnostics, variables, expression);
+    }
+    
+    private static BoundScope CreateParentScopes(BoundGlobalScope? previous)
+    {
+        if (previous is null)
+        {
+            return new BoundScope(null);
+        }
+        var stack = new Stack<BoundGlobalScope>();
+        while (previous is not null)
+        {
+            stack.Push(previous);
+            previous = previous.Previous;
+        }
+
+        BoundScope parent = null!;
+        
+        while (stack.Count > 0)
+        {
+            previous = stack.Pop();
+            var scope = new BoundScope(parent);
+            foreach (var variable in previous.Variables) 
+                scope.TryDeclareVariable(variable);
+            
+            parent = scope;
+        }
+
+        return parent;
+    }
 
     public BoundExpression BindExpression(ExpressionSyntax syntax)
     {
@@ -40,25 +82,33 @@ internal sealed class Binder
 
     private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
     {
-        var expression = this.BindExpression(syntax.Expression);
+        var boundExpression = this.BindExpression(syntax.Expression);
         var name = syntax.IdentifierToken.Text;
-        var existingVariable =  this.variables.Keys.FirstOrDefault(x => x.Name == name);
-        if (existingVariable is not null)
+
+
+        if (!this.scope.TryLookupVariable(name, out var variable))
         {
-            this.variables.Remove(existingVariable);
+            variable = new VariableSymbol(name, boundExpression.Type);
+            if (!this.scope.TryDeclareVariable(variable))
+            {
+                this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+                return new BoundAssignmentExpression(variable, boundExpression);
+            }
         }
         
-        var variable = new VariableSymbol(name, expression.Type);
-        this.variables[variable] = null;
-        
-        return new BoundAssignmentExpression(variable, expression);
+        if (boundExpression.Type != variable.Type)
+        {
+            this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
+            return boundExpression;
+        }
+        return new BoundAssignmentExpression(variable, boundExpression);
     }
 
     private BoundExpression BindNameExpression(NameExpressionSyntax syntax)
     {
         var name = syntax.IdentifierToken.Text;
-        var variable = this.variables.Keys.FirstOrDefault(x => x.Name == name);
-        if (variable is null)
+        
+        if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
             return new BoundLiteralExpression(new object());

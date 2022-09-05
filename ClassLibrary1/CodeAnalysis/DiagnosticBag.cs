@@ -56,4 +56,16 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"'{name}' is undefined";
         this.Report(identifierTokenSpan, message);
     }
+
+    public void ReportVariableAlreadyDeclared(TextSpan span, string name)
+    { 
+        var message = $"'{name}' is already declared";
+        this.Report(span, message);
+    }
+
+    public void ReportCannotConvert(TextSpan expressionSpan, Type fromType, Type toType)
+    {
+        var message = $"Cannot convert '{fromType}' to '{toType}'";
+        this.Report(expressionSpan, message);
+    }
 }

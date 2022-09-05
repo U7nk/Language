@@ -8,18 +8,15 @@ namespace Wired.CodeAnalysis.Syntax;
 public class SyntaxTree
 {
     public SourceText SourceText { get; }
-    public ExpressionSyntax Root { get; }
-    public SyntaxToken EndOfFileToken { get; }
+    public CompilationUnitSyntax Root { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
 
-    public SyntaxTree(SourceText sourceText,
-        ImmutableArray<Diagnostic> diagnostics,
-        ExpressionSyntax root,
-        SyntaxToken endOfFileToken)
+    private SyntaxTree(SourceText sourceText)
     {
         this.SourceText = sourceText;
-        this.Root = root;
-        this.EndOfFileToken = endOfFileToken;
+        var parser = new Parser(sourceText);
+        var diagnostics = parser.Diagnostic.ToImmutableArray();
+        this.Root = parser.ParseCompilationUnit();
         this.Diagnostics = diagnostics;
     }
     
@@ -30,9 +27,8 @@ public class SyntaxTree
     }
     public static SyntaxTree Parse(SourceText source)
     {
-        var parser = new Parser(source);
-        var syntaxTree = parser.Parse();
-        return syntaxTree;
+        
+        return new SyntaxTree(source);
     }
     
     public static ICollection<SyntaxToken> ParseTokens(string source) 

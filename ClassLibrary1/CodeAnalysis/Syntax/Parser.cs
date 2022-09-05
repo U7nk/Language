@@ -98,11 +98,11 @@ public class Parser
     
     
 
-    public SyntaxTree Parse()
+    public CompilationUnitSyntax ParseCompilationUnit()
     {
         var expression = this.ParseExpression();
         var endOfFileToken = this.Match(SyntaxKind.EndOfFileToken);
-        return new SyntaxTree(this.text, this.diagnostic.ToImmutableArray(), expression, endOfFileToken);
+        return new CompilationUnitSyntax(expression, endOfFileToken);
     }
 
     private ExpressionSyntax ParseExpression() 

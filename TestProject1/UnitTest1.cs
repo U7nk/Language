@@ -19,20 +19,21 @@ public class UnitTest1
     [Fact]
     public void Custom()
     {
-        this.output.WriteLine("Result: " + this.Build(".\r\r\r"));
+        this.output.WriteLine("Result: " + this.Build("(a = 10) + a = 1"));
     }
 
     private object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
-        syntaxTree.Root.WriteTo(this.output);
+        var compilation = new Compilation(syntaxTree);
+        
+        compilation.SyntaxTree.Root.WriteTo(this.output);
         var variables = new Dictionary<VariableSymbol, object?>();
-        var binder = new Binder(variables);
-        var bindTree = binder.BindExpression(syntaxTree.Root);
-        var diagnostics = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToList(); 
-        if (diagnostics.Any())
+
+        var evaluation = compilation.Evaluate(variables); 
+        if (evaluation.Diagnostics.Any())
         {
-            foreach (var diagnostic in diagnostics)
+            foreach (var diagnostic in evaluation.Diagnostics)
             {
                 var text = syntaxTree.SourceText;
                 var lineIndex = text.GetLineIndex(diagnostic.Span.Start); 
@@ -47,11 +48,10 @@ public class UnitTest1
         }
         else
         {
-            var e = new Evaluator(bindTree, variables);
-            var result = e.Evaluate();
-            return result;
+            
+            return evaluation.Result;
         }
 
-        return diagnostics;
+        return evaluation.Diagnostics;
     }
 }

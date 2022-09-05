@@ -4,13 +4,13 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public sealed class CompilationUnitSyntax : SyntaxNode
 {
-  public CompilationUnitSyntax(ExpressionSyntax expressionSyntax, SyntaxToken endOfFileToken)
+  public CompilationUnitSyntax(ExpressionSyntax expression, SyntaxToken endOfFileToken)
   {
-    ExpressionSyntax = expressionSyntax;
+    this.Expression = expression;
     EndOfFileToken = endOfFileToken;
   }
 
-  public ExpressionSyntax ExpressionSyntax { get; }
+  public ExpressionSyntax Expression { get; }
   public SyntaxToken EndOfFileToken { get; }
 
   public override SyntaxKind Kind => SyntaxKind.CompilationUnit;

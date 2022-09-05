@@ -44,13 +44,11 @@ public class EvaluatorTests
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
         
+        var compilation = new Compilation(syntaxTree);
         var variables = new Dictionary<VariableSymbol, object?>();
-        var binder = new Binder(variables);
-        var typeChecked = binder.BindExpression(syntaxTree.Root);
-        binder.Diagnostics.ToList().Should().BeEmpty();
+        var evaluation = compilation.Evaluate(variables);
+        evaluation.Diagnostics.ToList().Should().BeEmpty();
         
-        var evaluator = new Evaluator(typeChecked, variables);
-        var actualValue = evaluator.Evaluate();
-        actualValue.Should().Be(expectedValue);
+        evaluation.Result.Should().Be(expectedValue);
     }
 }

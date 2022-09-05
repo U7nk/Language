@@ -18,7 +18,6 @@ public class ParserTests
 
         if (op1Precedence >= op2Precedence)
         {
-            
             //          op2  
             //     /     |   \
             //    op1    +    c
@@ -26,6 +25,8 @@ public class ParserTests
             //  a   +  b    tok c
             //  |      |
             // tok a   tok b
+            //
+            // asserting nodes from up to down, left to right
             using var e = new AssertingEnumerator(expression);
             e.AssertNode(SyntaxKind.BinaryExpression);
             e.AssertNode(SyntaxKind.BinaryExpression);
