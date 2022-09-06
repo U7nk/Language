@@ -71,9 +71,21 @@ internal sealed class Binder
                 return this.BindExpressionStatement((ExpressionStatementSyntax)syntax);
             case SyntaxKind.VariableDeclaration:
                 return this.BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
+            case SyntaxKind.IfStatement:
+                return this.BindIfStatement((IfStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundStatement BindIfStatement(IfStatementSyntax syntax)
+    {
+        var condition = this.BindExpression(syntax.Condition, typeof(bool));
+        var thenStatement = this.BindStatement(syntax.ThenStatement);
+        var elseStatement = syntax.ElseClause is null
+            ? null
+            : this.BindStatement(syntax.ElseClause.ElseStatement);
+        return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
 
     private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
@@ -110,6 +122,18 @@ internal sealed class Binder
         this.scope = this.scope.Parent ?? throw new InvalidOperationException();
 
         return new BoundBlockStatement(statements.ToImmutable());
+    }
+
+    private BoundExpression BindExpression(ExpressionSyntax syntax, Type expectedType)
+    {
+        var expression = this.BindExpression(syntax);
+        if (expression.Type != expectedType)
+            this.diagnostics.ReportCannotConvert(
+                TextSpan.FromBounds(syntax.Span.Start, syntax.Span.End),
+                expression.Type,
+                expectedType);
+
+        return expression;
     }
 
     public BoundExpression BindExpression(ExpressionSyntax syntax)
@@ -213,4 +237,20 @@ internal sealed class Binder
         var value = syntax.Value;
         return new BoundLiteralExpression(value);
     }
+}
+
+internal class BoundIfStatement : BoundStatement
+{
+    public BoundExpression Condition { get; }
+    public BoundStatement ThenStatement { get; }
+    public BoundStatement? ElseStatement { get; }
+
+    public BoundIfStatement(BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement)
+    {
+        this.Condition = condition;
+        this.ThenStatement = thenStatement;
+        this.ElseStatement = elseStatement;
+    }
+
+    internal override BoundNodeKind Kind => BoundNodeKind.IfStatement;
 }

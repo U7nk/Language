@@ -111,8 +111,30 @@ public class Parser
 
         if (this.Current.Kind is SyntaxKind.LetKeyword or SyntaxKind.VarKeyword)
             return this.ParseVariableDeclarationStatement();
+        
+        if (this.Current.Kind is SyntaxKind.IfKeyword)
+            return this.ParseIfStatement();
 
         return this.ParseExpressionStatement();
+    }
+
+    private StatementSyntax ParseIfStatement()
+    {
+        var ifKeyword = this.Match(SyntaxKind.IfKeyword);
+        var condition = this.ParseExpression();
+        var thenStatement = this.ParseStatement();
+        var elseClause = this.ParseElseClause();
+        return new IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause);
+    }
+
+    private ElseClauseSyntax? ParseElseClause()
+    {
+        if (this.Current.Kind is not SyntaxKind.ElseKeyword)
+            return null;
+        
+        var elseKeyword = this.NextToken();
+        var elseStatement = this.ParseStatement();
+        return new ElseClauseSyntax(elseKeyword, elseStatement);
     }
 
     private VariableDeclarationStatementSyntax ParseVariableDeclarationStatement()

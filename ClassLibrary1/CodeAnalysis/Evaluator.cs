@@ -36,8 +36,27 @@ internal class Evaluator
             case BoundNodeKind.VariableDeclarationStatement:
                 this.EvaluateVariableDeclarationStatement((BoundVariableDeclarationStatement)statement);
                 break;
+            case BoundNodeKind.IfStatement:
+                this.EvaluateIfStatement((BoundIfStatement)statement);
+                break;
             default:
                 throw new Exception($"Unexpected node  {statement.Kind}");
+        }
+    }
+
+    private void EvaluateIfStatement(BoundIfStatement statement)
+    {
+        var conditionResult = this.EvaluateExpression(statement.Condition);
+        if (conditionResult is true)
+        {
+            this.EvaluateStatement(statement.ThenStatement);
+            return;
+        }
+
+        if (statement.ElseStatement is not null)
+        {
+            this.EvaluateStatement(statement.ElseStatement);
+            return;
         }
     }
 

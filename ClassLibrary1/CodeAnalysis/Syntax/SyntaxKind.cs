@@ -47,4 +47,8 @@ public enum SyntaxKind
     BlockStatement,
     ExpressionStatement,
     VariableDeclaration,
+    IfStatement,
+    ElseClause,
+    IfKeyword,
+    ElseKeyword
 }
