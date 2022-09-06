@@ -33,6 +33,10 @@ internal static class SyntaxFacts
 
             case SyntaxKind.EqualsEqualsToken:
             case SyntaxKind.BangEqualsToken:
+            case SyntaxKind.LessToken:
+            case SyntaxKind.LessOrEqualsToken:
+            case SyntaxKind.GreaterToken:
+            case SyntaxKind.GreaterOrEqualsToken:
                 return 3;
 
             case SyntaxKind.AmpersandAmpersandToken:
@@ -96,11 +100,16 @@ internal static class SyntaxFacts
             SyntaxKind.EqualsEqualsToken => "==",
             SyntaxKind.BangEqualsToken => "!=",
             SyntaxKind.EqualsToken => "=",
-            SyntaxKind.TrueKeyword => "true",
-            SyntaxKind.FalseKeyword => "false",
+            SyntaxKind.LessToken => "<",
+            SyntaxKind.LessOrEqualsToken => "<=",
+            SyntaxKind.GreaterToken => ">",
+            SyntaxKind.GreaterOrEqualsToken => ">=",
             SyntaxKind.OpenBraceToken => "{",
             SyntaxKind.CloseBraceToken => "}",
             SyntaxKind.SemicolonToken => ";",
+            
+            SyntaxKind.TrueKeyword => "true",
+            SyntaxKind.FalseKeyword => "false",
             SyntaxKind.LetKeyword => "let",
             SyntaxKind.VarKeyword => "var",
             _ => null

@@ -10,4 +10,8 @@ internal enum BoundBinaryOperatorKind
     LogicalAnd,
     Equality,
     Inequality,
+    LessThan,
+    GreaterThan,
+    GreaterThanOrEquals,
+    LessThanOrEquals
 }

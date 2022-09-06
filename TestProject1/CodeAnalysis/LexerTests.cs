@@ -142,6 +142,14 @@ public sealed class LexerTests
             if (t2IsKeyword || t2Kind is SyntaxKind.IdentifierToken)
                 return true;
 
+        if (t1Kind is SyntaxKind.GreaterToken)
+            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
+                return true;
+        
+        if (t1Kind is SyntaxKind.LessToken)
+            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
+                return true;
+
         if (t1Kind is SyntaxKind.NumberToken)
             if (t2Kind is SyntaxKind.NumberToken)
                 return true;

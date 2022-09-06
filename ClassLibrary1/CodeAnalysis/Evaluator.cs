@@ -90,6 +90,12 @@ internal class Evaluator
 
             BoundBinaryOperatorKind.Equality => Equals(left, right),
             BoundBinaryOperatorKind.Inequality => !Equals(left, right),
+            
+            BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
+            BoundBinaryOperatorKind.LessThanOrEquals => (int)left <= (int)right,
+            BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
+            BoundBinaryOperatorKind.GreaterThanOrEquals => (int)left >= (int)right,
+
             _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
         };
     }

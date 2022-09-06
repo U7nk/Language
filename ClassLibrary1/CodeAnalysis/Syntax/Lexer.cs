@@ -116,6 +116,31 @@ public class Lexer
                     this.kind = SyntaxKind.PipePipeToken;
                 }
                 break;
+            case '<':
+                this.Next();
+                if (this.Current is '=')
+                {
+                    this.Next();
+                    this.kind = SyntaxKind.LessOrEqualsToken;
+                }
+                else
+                {
+                    this.kind = SyntaxKind.LessToken;
+                }
+                break;
+            case '>':
+                this.Next();
+                if (this.Current is '=')
+                {
+                    this.Next();
+                    this.kind = SyntaxKind.GreaterOrEqualsToken;
+                }
+                else
+                {
+                    this.kind = SyntaxKind.GreaterToken;
+                }
+
+                break;
             case '=':
                 this.Next();
                 if (this.Current is '=')

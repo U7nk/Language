@@ -36,6 +36,10 @@ internal class BoundBinaryOperator
         new BoundBinaryOperator(BoundBinaryOperatorKind.LogicalAnd, SyntaxKind.AmpersandAmpersandToken, typeof(bool)),
         new BoundBinaryOperator(BoundBinaryOperatorKind.LogicalOr, SyntaxKind.PipePipeToken, typeof(bool)),
         
+        new BoundBinaryOperator(BoundBinaryOperatorKind.LessThan, SyntaxKind.LessToken, typeof(int), typeof(int), typeof(bool)),
+        new BoundBinaryOperator(BoundBinaryOperatorKind.GreaterThan, SyntaxKind.GreaterToken, typeof(int), typeof(int), typeof(bool)),
+        new BoundBinaryOperator(BoundBinaryOperatorKind.LessThanOrEquals, SyntaxKind.LessOrEqualsToken, typeof(int), typeof(int), typeof(bool)),
+        new BoundBinaryOperator(BoundBinaryOperatorKind.GreaterThanOrEquals, SyntaxKind.GreaterOrEqualsToken, typeof(int), typeof(int), typeof(bool)),
         new BoundBinaryOperator(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, typeof(bool)),
         new BoundBinaryOperator(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, typeof(int), typeof(int), typeof(bool)),
         
