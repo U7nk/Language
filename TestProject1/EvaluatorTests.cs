@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Binding;
 using Xunit.Abstractions;
@@ -47,32 +48,117 @@ public class EvaluatorTests
     [InlineData("12 != 12;", false)]
     [InlineData("12 != 1;", true)]
     [InlineData("{ let a = 10; a * a; }", 100)]
-    [InlineData("{ let a = 10; a = 7; }", null, true)]
     [InlineData("{ var a = 10; a * a; }", 100)]
     [InlineData("{ var a = 10; a = 5; }", 5)]
     [InlineData("{ var a = 10; { let a = false; } a = 5; }", 5)]
     [InlineData("{ var a = 10; { var a = 50; } a = 5; }", 5)]
     [InlineData("{ var a = 10; { var b = 50; } var b = false; b; }", false)]
-    public void Evaluator_Evaluates(string expression, object expectedValue, bool error = false)
+    public void Evaluator_Evaluates(string expression, object expectedValue)
+    {
+        AssertValue(expression, expectedValue);
+    }
+
+    private static void AssertValue(string expression, object expectedValue)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
-        
+
         var compilation = new Compilation(syntaxTree);
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);
-        if (!error)
-        {
-            evaluation.Diagnostics.ToList().Should().BeEmpty();
-            evaluation.Result.Should().Be(expectedValue);
-        }
-        else
-        {
-            evaluation.Diagnostics.ToList().Should().NotBeEmpty();
-            foreach (var diagnostic in evaluation.Diagnostics)
+
+        evaluation.Diagnostics.ToList().Should().BeEmpty();
+        evaluation.Result.Should().Be(expectedValue);
+    }
+
+    [Fact]
+    public void Evaluator_VariableDeclaration_Reports_Redeclaration()
+    {
+        var text = 
+            $$"""
             {
-                testOutputHelper.WriteLine(diagnostic.Message);
-            }
+                var a = 10;
+                [var a] = 10;
+            } 
+            """;
+        var diagnostics = new[] {
+            "Variable 'a' is already declared.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_NameExpression_Reports_UndefinedVariable()
+    {
+        var text = 
+            $$"""
+            {
+                var a = [b];
+            } 
+            """;
+        var diagnostics = new[] {
+            "'b' is undefined.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_AssignedExpression_Reports_CannotAssignVariable()
+    {
+        var text = 
+            $$"""
+            {
+                let a = 10;
+                [a =] 50;
+            } 
+            """;
+        var diagnostics = new[] {
+            "'a' is readonly and cannot be assigned to.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_AssignedExpression_Reports_CannotConvertVariable()
+    {
+        var text = 
+            $$"""
+            {
+                var a = 10;
+                a = [false];
+            } 
+            """;
+        var diagnostics = new[] {
+            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    private static void AssertDiagnostics(string text, string[] diagnosticsText)
+    {
+        var annotatedText = AnnotatedText.Parse(text);
+        var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
+        var compilation = new Compilation(syntaxTree);
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+        var diagnostics = result.Diagnostics.ToImmutableArray();
+
+        diagnostics.Length.Should()
+            .Be(diagnosticsText.Length)
+            .And.Be(annotatedText.Spans.Length);
+        
+        diagnostics.Length.Should().Be(
+            annotatedText.Spans.Length,
+            "Must mark as many spans as there expected diagnostics");
+
+        for (int i = 0; i < diagnostics.Length; i++)
+        {
+            var expectedSpan = annotatedText.Spans[i];
+            var actualSpan = diagnostics[i].Span;
+            actualSpan.Should().Be(expectedSpan, "Diagnostic spans do not match");
+
+            var expectedMessage = diagnosticsText[i];
+            var actualMessage = diagnostics[i].Message;
+            actualMessage.Should().Be(expectedMessage, "Diagnostic messages do not match");
         }
     }
 }

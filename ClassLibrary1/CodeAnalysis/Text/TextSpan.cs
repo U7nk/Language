@@ -11,5 +11,7 @@ public struct TextSpan
         this.Length = length;
     }
 
+    public override string ToString() => $"{this.Start}..{this.End}";
+
     public static TextSpan FromBounds(int firstStart, int lastEnd) => new TextSpan(firstStart, lastEnd - firstStart);
 }

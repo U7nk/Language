@@ -84,7 +84,9 @@ internal sealed class Binder
         var variable = new VariableSymbol(name, initializer.Type, isReadonly);
 
         if (!this.scope.TryDeclareVariable(variable))
-            this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+            this.diagnostics.ReportVariableAlreadyDeclared(
+                TextSpan.FromBounds(syntax.KeywordToken.Span.Start, syntax.IdentifierToken.Span.End),
+                name);
 
         return new BoundVariableDeclarationStatement(variable, initializer);
     }
@@ -151,7 +153,7 @@ internal sealed class Binder
 
         if (boundExpression.Type != variable.Type)
         {
-            this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
+            this.diagnostics.ReportCannotConvert(syntax.Expression.Span, variable.Type, boundExpression.Type);
             return boundExpression;
         }
 

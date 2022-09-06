@@ -56,14 +56,14 @@ public class Parser
     private SyntaxToken Match(SyntaxKind kind)
     {
         if (this.Current.Kind == kind)
-        {
+        { 
             return this.NextToken();
         }
-
+        
         this.diagnostic.ReportUnexpectedToken(this.Current.Span, this.Current.Kind, kind);
         return new SyntaxToken(kind, this.Current.Position, string.Empty, null);
     }
-
+ 
     private ExpressionSyntax ParseBinaryExpression(int parentPrecedence = 0)
     {
         ExpressionSyntax left;

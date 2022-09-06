@@ -29,49 +29,49 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportBadCharacter(int position, char character)
     {
-        var message = $"error: bad character '{character}'";
+        var message = $"error: bad character '{character}'.";
         this.Report(new TextSpan(position, 1), message);
     }
 
     public void ReportUnexpectedToken(TextSpan span, SyntaxKind token, SyntaxKind expected)
     {
-        var message = $"error: Unexpected token <{token}> expected <{expected}>";
+        var message = $"error: Unexpected token <{token}> expected <{expected}>.";
         this.Report(span, message);
     }
 
     public void ReportUndefinedUnaryOperator(TextSpan operatorTokenSpan, string text, Type operandType)
     {
-        var message = $"Invalid unary operator '{text}' for type '{operandType}'";
+        var message = $"Invalid unary operator '{text}' for type '{operandType}'.";
         this.Report(operatorTokenSpan, message);
     }
 
     public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, Type leftType, Type rightType)
     {
-        var message = $"Invalid binary operator '{operatorText}' for types '{leftType}' and '{rightType}'";
+        var message = $"Invalid binary operator '{operatorText}' for types '{leftType}' and '{rightType}'.";
         this.Report(span, message);
     }
 
     public void ReportUndefinedName(TextSpan identifierTokenSpan, string name)
     {
-        var message = $"'{name}' is undefined";
+        var message = $"'{name}' is undefined.";
         this.Report(identifierTokenSpan, message);
     }
 
     public void ReportVariableAlreadyDeclared(TextSpan span, string name)
     { 
-        var message = $"'{name}' is already declared";
+        var message = $"Variable '{name}' is already declared.";
         this.Report(span, message);
     }
 
     public void ReportCannotConvert(TextSpan expressionSpan, Type fromType, Type toType)
     {
-        var message = $"Cannot convert '{fromType}' to '{toType}'";
+        var message = $"Cannot convert '{fromType}' to '{toType}'.";
         this.Report(expressionSpan, message);
     }
 
     public void ReportCannotAssignToReadonly(TextSpan span, string name)
     {
-        var message = $"'{name}' is readonly and cannot be assigned to";
+        var message = $"'{name}' is readonly and cannot be assigned to.";
         this.Report(span, message);
     }
 }
