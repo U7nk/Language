@@ -28,7 +28,9 @@ public abstract class SyntaxNode
         {
             if (property.PropertyType.CanBeConvertedTo<SyntaxNode>())
             {
-                yield return (SyntaxNode)(property.GetValue(this) ?? throw new InvalidOperationException());
+                var value = property.GetValue(this); 
+                if (value != null)
+                    yield return (SyntaxNode)value;
             }
             else if (property.PropertyType.CanBeConvertedTo<IEnumerable<SyntaxNode>>())
             {
