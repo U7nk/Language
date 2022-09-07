@@ -20,26 +20,28 @@ internal class AnnotatedText
         var textBuilder = new StringBuilder();
         var spansBuilder = ImmutableArray.CreateBuilder<TextSpan>();
         var startStack = new Stack<int>();
-        foreach (var c in text.Select((@char, pos)=> new { @char, pos} ))
+        var position = 0;
+        foreach (var c in text)
         {
-            if (c.@char == '[')
+            if (c == '[')
             {
-                startStack.Push(c.pos);
+                startStack.Push(position);
                 continue;
             }
             
-            if (c.@char is ']')
+            if (c is ']')
             {
                 if (startStack.Count == 0)
                     throw new Exception("Unmatched ]");
                 
                 var start = startStack.Pop();
-                var end = c.pos - 1;
+                var end = position;
                 spansBuilder.Add(TextSpan.FromBounds(start, end));
                 continue;
             }
 
-            textBuilder.Append(c.@char);
+            position++;
+            textBuilder.Append(c);
         }
         return new AnnotatedText(textBuilder.ToString(), spansBuilder.ToImmutable());
     }

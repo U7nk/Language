@@ -223,6 +223,13 @@ internal sealed class Binder
     {
         var name = syntax.IdentifierToken.Text;
 
+        if (name == string.Empty)
+        {
+            // this token was inserted by the parser to recover from an error
+            // so error already reported and we can just return an error expression
+            return new BoundLiteralExpression(new object());
+        }
+        
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);

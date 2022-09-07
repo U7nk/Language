@@ -214,8 +214,21 @@ public class EvaluatorTests
         };
         AssertDiagnostics(text, diagnostics);
     }
-
     
+    [Fact]
+    public void Evaluator_OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
+    {
+        var text = 
+            $$"""
+                {[)]
+            """;
+        var diagnostics = new[] {
+            "Unexpected token .",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+
+
     [Fact]
     public void Evaluator_VariableDeclaration_Reports_Redeclaration()
     {
@@ -228,6 +241,17 @@ public class EvaluatorTests
             """;
         var diagnostics = new[] {
             "Variable 'a' is already declared.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_Reports_NoError_For_Inserted_Token()
+    {
+        var text = "[[]]";
+        var diagnostics = new String[] {
+            "error: Unexpected token <EndOfFileToken> expected <IdentifierToken>.",
+            "error: Unexpected token <EndOfFileToken> expected <SemicolonToken>.",
         };
         AssertDiagnostics(text, diagnostics);
     }

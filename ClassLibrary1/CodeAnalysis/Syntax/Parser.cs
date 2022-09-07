@@ -270,10 +270,10 @@ public class Parser
                 this.ParseParenthesizedExpression(),
             SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword =>
                 this.ParseBooleanLiteralExpression(),
-            SyntaxKind.IdentifierToken =>
-                this.ParseNameExpression(),
+            SyntaxKind.NumberToken =>
+                this.ParseNumberLiteralExpression(),
             _ /*default*/ =>
-                this.ParseNumberLiteralExpression()
+                this.ParseNameExpression()
         };
     }
 
