@@ -75,9 +75,27 @@ internal sealed class Binder
                 return this.BindIfStatement((IfStatementSyntax)syntax);
             case SyntaxKind.WhileStatement:
               return this.BindWhileStatement((WhileStatementSyntax)syntax);
+            case SyntaxKind.ForStatement:
+                return this.BindForStatement((ForStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundStatement BindForStatement(ForStatementSyntax syntax)
+    {
+        BoundVariableDeclarationStatement? variableDeclaration = null;
+        BoundExpression? expression = null;
+        if (syntax.VariableDeclaration is not null)
+            variableDeclaration = this.BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
+        else
+            expression = this.BindExpression(syntax.Expression.ThrowIfNull());
+        
+        var condition = this.BindExpression(syntax.Condition, typeof(bool));
+        var mutation = this.BindExpression(syntax.Mutation);
+        var body = this.BindStatement(syntax.Body);
+        
+        return new BoundForStatement(variableDeclaration, expression, condition, mutation, body);
     }
 
     private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
@@ -97,19 +115,27 @@ internal sealed class Binder
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
 
-    private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
+    private BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
+        VariableDeclarationAssignmentSyntax syntax)
     {
-        var isReadonly = syntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
-        var initializer = this.BindExpression(syntax.InitializerExpression);
-        var name = syntax.IdentifierToken.Text;
+        var isReadonly = syntax.VariableDeclaration.KeywordToken.Kind == SyntaxKind.LetKeyword;
+        var initializer = this.BindExpression(syntax.Initializer);
+        var name = syntax.VariableDeclaration.IdentifierToken.Text;
         var variable = new VariableSymbol(name, initializer.Type, isReadonly);
 
         if (!this.scope.TryDeclareVariable(variable))
             this.diagnostics.ReportVariableAlreadyDeclared(
-                TextSpan.FromBounds(syntax.KeywordToken.Span.Start, syntax.IdentifierToken.Span.End),
+                TextSpan.FromBounds(
+                    syntax.VariableDeclaration.KeywordToken.Span.Start, 
+                    syntax.VariableDeclaration.IdentifierToken.Span.End),
                 name);
 
         return new BoundVariableDeclarationStatement(variable, initializer);
+    }
+    
+    private BoundVariableDeclarationStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
+    {
+        return this.BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
     }
 
     private BoundExpressionStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
@@ -173,7 +199,7 @@ internal sealed class Binder
 
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
-            this.diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken.Span, name);
+            this.diagnostics.VariableDoesntExistsInCurrentScope(syntax.IdentifierToken.Span, name);
             return boundExpression;
         }
 
@@ -246,20 +272,4 @@ internal sealed class Binder
         var value = syntax.Value;
         return new BoundLiteralExpression(value);
     }
-}
-
-internal class BoundIfStatement : BoundStatement
-{
-    public BoundExpression Condition { get; }
-    public BoundStatement ThenStatement { get; }
-    public BoundStatement? ElseStatement { get; }
-
-    public BoundIfStatement(BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement)
-    {
-        this.Condition = condition;
-        this.ThenStatement = thenStatement;
-        this.ElseStatement = elseStatement;
-    }
-
-    internal override BoundNodeKind Kind => BoundNodeKind.IfStatement;
 }

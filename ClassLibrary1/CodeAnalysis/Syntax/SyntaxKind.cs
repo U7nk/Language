@@ -37,11 +37,12 @@ public enum SyntaxKind
     WhileKeyword,
     IfKeyword,
     ElseKeyword,
-    
+    ForKeyword,
     
     // nodes
     CompilationUnit,
-
+    VariableDeclarationSyntax,
+    VariableDeclarationAssignmentSyntax,
     
     // expressions
     LiteralExpression,
@@ -50,13 +51,13 @@ public enum SyntaxKind
     UnaryExpression,
     AssignmentExpression,
     NameExpression,
-    
-    
+
     // statements
     BlockStatement,
     ExpressionStatement,
     WhileStatement,
     VariableDeclarationStatement,
     IfStatement,
-    ElseClause,
+    ElseClause,   
+    ForStatement,
 }

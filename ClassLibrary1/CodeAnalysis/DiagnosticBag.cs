@@ -74,4 +74,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"'{name}' is readonly and cannot be assigned to.";
         this.Report(span, message);
     }
+
+    public void VariableDoesntExistsInCurrentScope(TextSpan identifierTokenSpan, string name)
+    {
+        var message = $"'{name}' doesn't exists in current scope.";
+        this.Report(identifierTokenSpan, message);
+    }
 }

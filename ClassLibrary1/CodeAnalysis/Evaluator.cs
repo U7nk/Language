@@ -40,22 +40,46 @@ internal class Evaluator
                 this.EvaluateIfStatement((BoundIfStatement)statement);
                 break;
             case BoundNodeKind.WhileStatement:
-              this.EvaluateWhileStatement((BoundWhileStatement)statement);
-              break;
+                this.EvaluateWhileStatement((BoundWhileStatement)statement);
+                break;
+            case BoundNodeKind.ForStatement:
+                this.EvaluateForStatement((BoundForStatement)statement);
+                break;
             default:
                 throw new Exception($"Unexpected node  {statement.Kind}");
         }
     }
 
+    private void EvaluateForStatement(BoundForStatement statement)
+    {
+        if (statement.VariableDeclaration is not null)
+            this.EvaluateVariableDeclarationStatement(statement.VariableDeclaration);
+        else
+            this.EvaluateExpression(statement.Expression.ThrowIfNull());
+
+        while (true)
+        {
+            var condition = (bool)this.EvaluateExpression(statement.Condition);
+            if (!condition)
+                break;
+
+            this.EvaluateStatement(statement.Body);
+            this.EvaluateExpression(statement.Mutation);
+        }
+    }
+    
+
     private void EvaluateWhileStatement(BoundWhileStatement statement)
     {
-      while (true) {
-        if (this.EvaluateExpression(statement.Condition) is false) {
-          break;
+        while (true)
+        {
+            if (this.EvaluateExpression(statement.Condition) is false)
+            {
+                break;
+            }
+
+            this.EvaluateStatement(statement.Body);
         }
-        
-        this.EvaluateStatement(statement.Body);
-      }
     }
 
     private void EvaluateIfStatement(BoundIfStatement statement)
@@ -74,8 +98,8 @@ internal class Evaluator
         }
     }
 
-    private void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement) 
-        => this.variables.Add(statement.Variable, this.EvaluateExpression(statement.Initializer));
+    private void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
+        => this.variables[statement.Variable] = this.EvaluateExpression(statement.Initializer);
 
     private void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {
@@ -84,7 +108,7 @@ internal class Evaluator
 
     private void EvaluateBlockStatement(BoundBlockStatement blockStatement)
     {
-        foreach (var statement in blockStatement.Statements) 
+        foreach (var statement in blockStatement.Statements)
             this.EvaluateStatement(statement);
     }
 
@@ -123,7 +147,7 @@ internal class Evaluator
 
             BoundBinaryOperatorKind.Equality => Equals(left, right),
             BoundBinaryOperatorKind.Inequality => !Equals(left, right),
-            
+
             BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
             BoundBinaryOperatorKind.LessThanOrEquals => (int)left <= (int)right,
             BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,

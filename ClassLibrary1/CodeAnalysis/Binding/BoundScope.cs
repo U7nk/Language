@@ -19,6 +19,9 @@ internal class BoundScope
         if (this.variables.ContainsKey(variable.Name))
             return false;
         
+        if (this.Parent?.TryLookupVariable(variable.Name, out _) is true)
+            return false;
+        
         this.variables.Add(variable.Name, variable);
         return true;
     }

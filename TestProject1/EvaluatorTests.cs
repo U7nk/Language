@@ -62,11 +62,30 @@ public class EvaluatorTests
     [InlineData("{ let a = 10; a * a; }", 100)]
     [InlineData("{ var a = 10; a * a; }", 100)]
     [InlineData("{ var a = 10; a = 5; }", 5)]
-    [InlineData("{ var a = 10; { let a = false; } a = 5; }", 5)]
-    [InlineData("{ var a = 10; { var a = 50; } a = 5; }", 5)]
-    [InlineData("{ var a = 10; { var b = 50; } var b = false; b; }", false)]
     [InlineData("{ var a = 10; if true == true a = 2; a; }", 2)]
     [InlineData("{ var a = 0; while a < 5 a = a + 1; a;}", 5)]
+    [InlineData(
+        $$"""
+        {   
+            var x = 10; 
+            if true != false
+            {
+                x = 5;
+            }
+            x;
+        }
+      """, 5)]
+    [InlineData(
+        $$"""
+        {   
+            var x = 10; 
+            if true == false
+            {
+                x = 5;
+            }
+            x;
+        }
+      """, 10)]
     [InlineData(
       $$"""
        { 
@@ -80,6 +99,29 @@ public class EvaluatorTests
          a + b;
        }
       """, 11)]
+    [InlineData(
+        $$"""
+       {  
+         var b = 1; 
+         var i = 5; 
+         for (i = 1; i < 4; i = i + 1)
+         {
+            b = i;
+         } 
+         b;
+       }
+      """, 3)]
+    [InlineData(
+        $$"""
+       {  
+         var b = 1; 
+         for (var i = 1; i < 4; i = i + 1)
+         {
+            b = i;
+         } 
+         b;
+       }
+      """, 3)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);
@@ -103,13 +145,29 @@ public class EvaluatorTests
     {
         var text = 
             $$"""
-            {
-                var a = 10;
-                [var a] = 10;
-            } 
+                {
+                    var a = 10;
+                    [var a] = 10;
+                } 
             """;
         var diagnostics = new[] {
             "Variable 'a' is already declared.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_ForStatement_Reports_Iterator_Redeclaration()
+    {
+        var text = 
+            $$"""
+            for (var i = 1; i < 4; i = i + 1)
+            {
+                [var i] = 5;
+            }
+            """;
+        var diagnostics = new[] {
+            "Variable 'i' is already declared.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -132,14 +190,14 @@ public class EvaluatorTests
     [Fact]
     public void Evaluator_AssignedExpression_Reports_CannotAssignVariable()
     {
-        var text = 
-            $$"""
-            {
-                let a = 10;
-                [a =] 50;
-            } 
-            """;
-        var diagnostics = new[] {
+         var text = 
+             $$"""
+             {
+                 let a = 10;
+                 [a =] 50;
+             } 
+             """;
+         var diagnostics = new[] {
             "'a' is readonly and cannot be assigned to.",
         };
         AssertDiagnostics(text, diagnostics);
@@ -169,23 +227,22 @@ public class EvaluatorTests
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
 
-        diagnostics.Length.Should()
-            .Be(diagnosticsText.Length)
-            .And.Be(annotatedText.Spans.Length);
-        
+        diagnostics.Length.Should().Be(diagnosticsText.Length);
+
         diagnostics.Length.Should().Be(
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        for (int i = 0; i < diagnostics.Length; i++)
+        for (int i = 0; i < diagnosticsText.Length; i++)
         {
-            var expectedSpan = annotatedText.Spans[i];
-            var actualSpan = diagnostics[i].Span;
-            actualSpan.Should().Be(expectedSpan, "Diagnostic spans do not match");
-
             var expectedMessage = diagnosticsText[i];
             var actualMessage = diagnostics[i].Message;
             actualMessage.Should().Be(expectedMessage, "Diagnostic messages do not match");
+            
+            
+            var expectedSpan = annotatedText.Spans[i];
+            var actualSpan = diagnostics[i].Span;
+            actualSpan.Should().Be(expectedSpan, "Diagnostic spans do not match");
         }
     }
 }

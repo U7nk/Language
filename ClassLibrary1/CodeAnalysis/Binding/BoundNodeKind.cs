@@ -16,4 +16,7 @@ internal enum BoundNodeKind
     BinaryExpression,
     VariableExpression,
     AssignmentExpression,
+    ForStatement,
+    ForVariableDeclarationInitializerStatement,
+    ForExpressionInitializerStatement
 }

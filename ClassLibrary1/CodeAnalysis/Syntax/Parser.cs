@@ -49,21 +49,21 @@ public class Parser
     {
         var current = this.Current;
         this.position++;
-        
+
         return current;
     }
 
     private SyntaxToken Match(SyntaxKind kind)
     {
         if (this.Current.Kind == kind)
-        { 
+        {
             return this.NextToken();
         }
-        
+
         this.diagnostic.ReportUnexpectedToken(this.Current.Span, this.Current.Kind, kind);
         return new SyntaxToken(kind, this.Current.Position, string.Empty, null);
     }
- 
+
     private ExpressionSyntax ParseBinaryExpression(int parentPrecedence = 0)
     {
         ExpressionSyntax left;
@@ -111,22 +111,25 @@ public class Parser
 
         if (this.Current.Kind is SyntaxKind.LetKeyword or SyntaxKind.VarKeyword)
             return this.ParseVariableDeclarationStatement();
-        
+
         if (this.Current.Kind is SyntaxKind.IfKeyword)
             return this.ParseIfStatement();
-        
+
         if (this.Current.Kind is SyntaxKind.WhileKeyword)
             return this.ParseWhileStatement();
+        
+        if (this.Current.Kind is SyntaxKind.ForKeyword)
+            return this.ParseForStatement();
 
         return this.ParseExpressionStatement();
     }
 
     private StatementSyntax ParseWhileStatement()
     {
-      var whileKeyword = this.Match(SyntaxKind.WhileKeyword);
-      var condition = this.ParseExpression();
-      var body = this.ParseStatement();
-      return new WhileStatementSyntax(whileKeyword, condition, body);
+        var whileKeyword = this.Match(SyntaxKind.WhileKeyword);
+        var condition = this.ParseExpression();
+        var body = this.ParseStatement();
+        return new WhileStatementSyntax(whileKeyword, condition, body);
     }
 
     private StatementSyntax ParseIfStatement()
@@ -138,11 +141,39 @@ public class Parser
         return new IfStatementSyntax(ifKeyword, condition, thenStatement, elseClause);
     }
 
+    private ForStatementSyntax ParseForStatement()
+    {
+        var forKeyword = this.Match(SyntaxKind.ForKeyword);
+        var openParenthesis = this.Match(SyntaxKind.OpenParenthesisToken);
+        
+        VariableDeclarationAssignmentSyntax? variableDeclaration = null;
+        ExpressionSyntax? expression = null;
+        if (this.Current.Kind is SyntaxKind.VarKeyword)
+            variableDeclaration = this.ParseVariableDeclarationAssignmentSyntax();
+        else
+            expression = this.ParseExpression();
+        
+        var semicolonToken = this.Match(SyntaxKind.SemicolonToken);
+        var condition = this.ParseExpression();
+        var middleSemicolonToken = this.Match(SyntaxKind.SemicolonToken);
+        var mutation = this.ParseExpression();
+        var closeParenthesis = this.Match(SyntaxKind.CloseParenthesisToken);
+        var body = this.ParseStatement();
+
+        return new ForStatementSyntax(
+            forKeyword, openParenthesis, 
+            variableDeclaration, expression,
+            semicolonToken, condition,
+            middleSemicolonToken, mutation,
+            closeParenthesis, body);
+    }
+    
+
     private ElseClauseSyntax? ParseElseClause()
     {
         if (this.Current.Kind is not SyntaxKind.ElseKeyword)
             return null;
-        
+
         var elseKeyword = this.NextToken();
         var elseStatement = this.ParseStatement();
         return new ElseClauseSyntax(elseKeyword, elseStatement);
@@ -150,16 +181,29 @@ public class Parser
 
     private VariableDeclarationStatementSyntax ParseVariableDeclarationStatement()
     {
+        var variableDeclarationAssignment = this.ParseVariableDeclarationAssignmentSyntax();
+        var semicolon = this.Match(SyntaxKind.SemicolonToken);
+        
+        return new VariableDeclarationStatementSyntax(variableDeclarationAssignment, semicolon);
+    }
+
+
+    private VariableDeclarationAssignmentSyntax ParseVariableDeclarationAssignmentSyntax()
+    {
+        var variableDeclaration = this.ParseVariableDeclarationSyntax();
+        var equals = this.Match(SyntaxKind.EqualsToken);
+        var initializer = this.ParseExpression();
+        return new VariableDeclarationAssignmentSyntax(variableDeclaration, equals, initializer);
+    }
+    private VariableDeclarationSyntax ParseVariableDeclarationSyntax()
+    {
         var keyword = this.Match(
             this.Current.Kind is SyntaxKind.VarKeyword
                 ? SyntaxKind.VarKeyword
                 : SyntaxKind.LetKeyword);
-        
+
         var identifier = this.Match(SyntaxKind.IdentifierToken);
-        var equals = this.Match(SyntaxKind.EqualsToken);
-        var initializer = this.ParseExpression();
-        var semicolon = this.Match(SyntaxKind.SemicolonToken);
-        return new VariableDeclarationStatementSyntax(keyword, identifier, equals, initializer, semicolon);
+        return new VariableDeclarationSyntax(keyword, identifier);
     }
 
     private StatementSyntax ParseBlockStatement()
