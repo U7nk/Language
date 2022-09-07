@@ -28,15 +28,21 @@ public enum SyntaxKind
     GreaterOrEqualsToken,
     GreaterToken,
 
+    
     // keywords
     TrueKeyword,
     FalseKeyword,
     VarKeyword,
     LetKeyword,
+    WhileKeyword,
+    IfKeyword,
+    ElseKeyword,
+    
     
     // nodes
     CompilationUnit,
 
+    
     // expressions
     LiteralExpression,
     BinaryExpression,
@@ -44,11 +50,13 @@ public enum SyntaxKind
     UnaryExpression,
     AssignmentExpression,
     NameExpression,
+    
+    
+    // statements
     BlockStatement,
     ExpressionStatement,
-    VariableDeclaration,
+    WhileStatement,
+    VariableDeclarationStatement,
     IfStatement,
     ElseClause,
-    IfKeyword,
-    ElseKeyword
 }

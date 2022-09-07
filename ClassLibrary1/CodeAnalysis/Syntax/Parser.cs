@@ -114,8 +114,19 @@ public class Parser
         
         if (this.Current.Kind is SyntaxKind.IfKeyword)
             return this.ParseIfStatement();
+        
+        if (this.Current.Kind is SyntaxKind.WhileKeyword)
+            return this.ParseWhileStatement();
 
         return this.ParseExpressionStatement();
+    }
+
+    private StatementSyntax ParseWhileStatement()
+    {
+      var whileKeyword = this.Match(SyntaxKind.WhileKeyword);
+      var condition = this.ParseExpression();
+      var body = this.ParseStatement();
+      return new WhileStatementSyntax(whileKeyword, condition, body);
     }
 
     private StatementSyntax ParseIfStatement()

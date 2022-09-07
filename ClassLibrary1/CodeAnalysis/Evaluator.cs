@@ -39,9 +39,23 @@ internal class Evaluator
             case BoundNodeKind.IfStatement:
                 this.EvaluateIfStatement((BoundIfStatement)statement);
                 break;
+            case BoundNodeKind.WhileStatement:
+              this.EvaluateWhileStatement((BoundWhileStatement)statement);
+              break;
             default:
                 throw new Exception($"Unexpected node  {statement.Kind}");
         }
+    }
+
+    private void EvaluateWhileStatement(BoundWhileStatement statement)
+    {
+      while (true) {
+        if (this.EvaluateExpression(statement.Condition) is false) {
+          break;
+        }
+        
+        this.EvaluateStatement(statement.Body);
+      }
     }
 
     private void EvaluateIfStatement(BoundIfStatement statement)

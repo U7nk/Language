@@ -7,7 +7,7 @@ public class VariableDeclarationStatementSyntax : StatementSyntax
     public SyntaxToken EqualsToken { get; }
     public ExpressionSyntax InitializerExpression { get; }
     public SyntaxToken SemicolonToken { get; }
-    public override SyntaxKind Kind => SyntaxKind.VariableDeclaration;
+    public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
     
     public VariableDeclarationStatementSyntax(
         SyntaxToken keywordToken,

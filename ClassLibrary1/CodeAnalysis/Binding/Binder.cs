@@ -69,13 +69,22 @@ internal sealed class Binder
                 return this.BindBlockStatement((BlockStatementSyntax)syntax);
             case SyntaxKind.ExpressionStatement:
                 return this.BindExpressionStatement((ExpressionStatementSyntax)syntax);
-            case SyntaxKind.VariableDeclaration:
+            case SyntaxKind.VariableDeclarationStatement:
                 return this.BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
             case SyntaxKind.IfStatement:
                 return this.BindIfStatement((IfStatementSyntax)syntax);
+            case SyntaxKind.WhileStatement:
+              return this.BindWhileStatement((WhileStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
+    {
+      var condition = this.BindExpression(syntax.Condition);
+      var body = this.BindStatement(syntax.Body);
+      return new BoundWhileStatement(condition, body);
     }
 
     private BoundStatement BindIfStatement(IfStatementSyntax syntax)
