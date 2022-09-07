@@ -100,7 +100,7 @@ internal sealed class Binder
 
     private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
     {
-      var condition = this.BindExpression(syntax.Condition);
+      var condition = this.BindExpression(syntax.Condition, typeof(bool));
       var body = this.BindStatement(syntax.Body);
       return new BoundWhileStatement(condition, body);
     }

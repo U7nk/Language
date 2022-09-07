@@ -141,6 +141,82 @@ public class EvaluatorTests
     }
 
     [Fact]
+    public void Evaluator_IfStatement_Reports_CannotConvert()
+    {
+        var text = 
+            $$"""
+                {
+                    var a = 10;
+                    if [10]
+                    {
+                        a = 5;
+                    } 
+                } 
+            """;
+        var diagnostics = new[] {
+            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    [Fact]
+    public void Evaluator_WhileStatement_Reports_CannotConvert()
+    {
+        var text = 
+            $$"""
+                {
+                    var a = 10;
+                    while [10]
+                    {
+                        a = 5;
+                    } 
+                } 
+            """;
+        var diagnostics = new[] {
+            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_ForStatement_Reports_CannotConvert()
+    {
+        var text = 
+            $$"""
+                {
+                    var a = 10;
+                    for (var i = 0; [10]; i = i + 1)
+                    {
+                        a = 5;
+                    } 
+                } 
+            """;
+        var diagnostics = new[] {
+            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_ForStatement_Reports_Mutation_CannotConvert()
+    {
+        var text = 
+            $$"""
+                {
+                    var a = 10;
+                    for (var i = false; true; i = [1])
+                    {
+                        a = 5;
+                    } 
+                } 
+            """;
+        var diagnostics = new[] {
+            "Cannot convert 'System.Boolean' to 'System.Int32'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+
+    
+    [Fact]
     public void Evaluator_VariableDeclaration_Reports_Redeclaration()
     {
         var text = 
