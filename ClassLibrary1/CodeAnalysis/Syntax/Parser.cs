@@ -214,8 +214,16 @@ public class Parser
                is not SyntaxKind.CloseBraceToken
                and not SyntaxKind.EndOfFileToken)
         {
+            var startToken = this.Current;
             var statement = this.ParseStatement();
             statements.Add(statement);
+
+            // if ParseStatement() did not consume any tokens, we're in an infinite loop
+            // so we need to consume at least one token to prevent looping
+            //
+            // no need for error reporting, because ParseStatement() already reported it
+            if (ReferenceEquals(this.Current, startToken)) 
+                this.NextToken();
         }
 
         var closeBraceToken = this.Match(SyntaxKind.CloseBraceToken);

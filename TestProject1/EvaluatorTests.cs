@@ -220,10 +220,12 @@ public class EvaluatorTests
     {
         var text = 
             $$"""
-                {[)]
+                {[[)]][]
             """;
         var diagnostics = new[] {
-            "Unexpected token .",
+            "error: Unexpected token <CloseParenthesisToken> expected <IdentifierToken>.",
+            "error: Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
+            "error: Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
         AssertDiagnostics(text, diagnostics);
     }

@@ -20,10 +20,7 @@ public class UnitTest1
     public void Custom()
     {
         this.output.WriteLine("Result: " + this.Build($$"""
-            {
-                var a = 10;
-                var a = 10;
-            } 
+            {) 
             """));
     }
 
