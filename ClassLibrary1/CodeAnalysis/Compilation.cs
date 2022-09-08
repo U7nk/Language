@@ -59,9 +59,8 @@ public sealed class Compilation
 
     public void EmitTree(TextWriter writer)
     {
-        this.GlobalScope.Statement.WriteTo(writer);
         var statement = this.GetStatement();
-        
+        statement.WriteTo(writer);
     }
 
     private BoundStatement GetStatement()
