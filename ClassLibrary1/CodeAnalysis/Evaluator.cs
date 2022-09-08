@@ -7,11 +7,11 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
-    private readonly BoundStatement root;
+    private readonly BoundBlockStatement root;
     private readonly Dictionary<VariableSymbol, object> variables;
     private object lastValue;
 
-    public Evaluator(BoundStatement root, Dictionary<VariableSymbol, object> variables)
+    public Evaluator(BoundBlockStatement root, Dictionary<VariableSymbol, object> variables)
     {
         this.root = root;
         this.variables = variables;
@@ -19,83 +19,50 @@ internal class Evaluator
 
     public object Evaluate()
     {
-        this.EvaluateStatement(this.root);
-        return this.lastValue;
-    }
+        var labelToIndex = new Dictionary<LabelSymbol, int>();
 
-    public void EvaluateStatement(BoundStatement statement)
-    {
-        switch (statement.Kind)
+        for (var index = 0; index < this.root.Statements.Length; index++)
         {
-            case BoundNodeKind.BlockStatement:
-                this.EvaluateBlockStatement((BoundBlockStatement)statement);
-                break;
-            case BoundNodeKind.ExpressionStatement:
-                this.EvaluateExpressionStatement((BoundExpressionStatement)statement);
-                break;
-            case BoundNodeKind.VariableDeclarationStatement:
-                this.EvaluateVariableDeclarationStatement((BoundVariableDeclarationStatement)statement);
-                break;
-            case BoundNodeKind.IfStatement:
-                this.EvaluateIfStatement((BoundIfStatement)statement);
-                break;
-            case BoundNodeKind.WhileStatement:
-                this.EvaluateWhileStatement((BoundWhileStatement)statement);
-                break;
-            case BoundNodeKind.ForStatement:
-                this.EvaluateForStatement((BoundForStatement)statement);
-                break;
-            default:
-                throw new Exception($"Unexpected node  {statement.Kind}");
+            var statement = this.root.Statements[index];
+            if (statement is BoundLabelStatement l) 
+                labelToIndex.Add(l.Label, index);
         }
-    }
 
-    private void EvaluateForStatement(BoundForStatement statement)
-    {
-        if (statement.VariableDeclaration is not null)
-            this.EvaluateVariableDeclarationStatement(statement.VariableDeclaration);
-        else
-            this.EvaluateExpression(statement.Expression.ThrowIfNull());
-
-        while (true)
+        var i = 0;
+        while (i < this.root.Statements.Length)
         {
-            var condition = (bool)this.EvaluateExpression(statement.Condition);
-            if (!condition)
-                break;
-
-            this.EvaluateStatement(statement.Body);
-            this.EvaluateExpression(statement.Mutation);
-        }
-    }
-    
-
-    private void EvaluateWhileStatement(BoundWhileStatement statement)
-    {
-        while (true)
-        {
-            if (this.EvaluateExpression(statement.Condition) is false)
+            var statement = this.root.Statements[i];
+            switch (statement.Kind)
             {
-                break;
+                case BoundNodeKind.ExpressionStatement:
+                    this.EvaluateExpressionStatement((BoundExpressionStatement)statement);
+                    i++;
+                    break;
+                case BoundNodeKind.VariableDeclarationStatement:
+                    var gs = (BoundVariableDeclarationStatement)statement;
+                    this.EvaluateVariableDeclarationStatement(gs);
+                    i++;
+                    break;
+                case BoundNodeKind.ConditionalGotoStatement:
+                    var cgs = (BoundConditionalGotoStatement)statement;
+                    var condition = (bool)this.EvaluateExpression(cgs.Condition);
+                    if (condition == cgs.JumpIfTrue)
+                        i = labelToIndex[cgs.Label];
+                    else
+                        i++;
+                    break;
+                case BoundNodeKind.GotoStatement:
+                    i = labelToIndex[((BoundGotoStatement)statement).Label];
+                    break;
+                case BoundNodeKind.LabelStatement:
+                    i++;
+                    break;
+                default:
+                    throw new Exception($"Unexpected node  {statement.Kind}");
             }
-
-            this.EvaluateStatement(statement.Body);
         }
-    }
-
-    private void EvaluateIfStatement(BoundIfStatement statement)
-    {
-        var conditionResult = this.EvaluateExpression(statement.Condition);
-        if (conditionResult is true)
-        {
-            this.EvaluateStatement(statement.ThenStatement);
-            return;
-        }
-
-        if (statement.ElseStatement is not null)
-        {
-            this.EvaluateStatement(statement.ElseStatement);
-            return;
-        }
+        
+        return this.lastValue;
     }
 
     private void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
@@ -104,12 +71,6 @@ internal class Evaluator
     private void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {
         this.lastValue = this.EvaluateExpression(expressionStatement.Expression);
-    }
-
-    private void EvaluateBlockStatement(BoundBlockStatement blockStatement)
-    {
-        foreach (var statement in blockStatement.Statements)
-            this.EvaluateStatement(statement);
     }
 
     public object EvaluateExpression(BoundExpression node)

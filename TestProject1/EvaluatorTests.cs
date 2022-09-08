@@ -143,6 +143,35 @@ public class EvaluatorTests
          b;
        }
       """, 3)]
+    [InlineData(
+        $$"""
+        {
+            var result = 0;
+            if 1 > 1
+                result = 1;
+            else 
+                result = 2;
+            result;
+        }
+        """, 2)]
+    [InlineData(
+        $$"""
+        {
+            var result = 0;
+            result;
+        }
+        """, 0)]
+    [InlineData(
+        $$"""
+        {
+            var result = 0;
+            for (var i = 0; i < 100; i = i + 1)
+            {
+                result = result + i;
+            }
+            result;
+        }
+        """, 4950)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);

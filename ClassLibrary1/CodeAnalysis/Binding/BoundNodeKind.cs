@@ -9,6 +9,9 @@ internal enum BoundNodeKind
     IfStatement,
     WhileStatement,
     ForStatement,
+    GotoStatement,
+    LabelStatement,
+    ConditionalGotoStatement,
     
     // expressions
     UnaryExpression,
@@ -16,4 +19,6 @@ internal enum BoundNodeKind
     BinaryExpression,
     VariableExpression,
     AssignmentExpression,
+
+    
 }

@@ -13,4 +13,6 @@ public sealed class VariableSymbol
         this.Type = type;
         this.IsReadonly = isReadonly;
     }
+    
+    public override string ToString() => $"{Type}:{Name}";
 }
