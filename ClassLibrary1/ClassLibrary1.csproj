@@ -10,4 +10,8 @@
         <Product />
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="CodeAnalysis\Lowering" />
+    </ItemGroup>
+
 </Project>

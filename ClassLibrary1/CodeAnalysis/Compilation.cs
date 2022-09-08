@@ -49,16 +49,24 @@ public sealed class Compilation
         var diagnostics = this.SyntaxTree.Diagnostics.Concat(this.GlobalScope.Diagnostics)
             .ToImmutableArray();
         if (diagnostics.Any())
-        {
-            return new EvaluationResult(diagnostics, null);
-        }
+            return new(diagnostics, null);
 
-        var boundExpression = this.GlobalScope.Statement;
-        var evaluator = new Evaluator(boundExpression, variables);
+        var statement = this.GetStatement();
+        var evaluator = new Evaluator(statement, variables);
         var result = evaluator.Evaluate();
-        return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, result);
+        return new(ImmutableArray<Diagnostic>.Empty, result);
     }
 
-    public void EmitTree(TextWriter writer) 
-        => this.GlobalScope.Statement.WriteTo(writer);
+    public void EmitTree(TextWriter writer)
+    {
+        this.GlobalScope.Statement.WriteTo(writer);
+        var statement = this.GetStatement();
+        
+    }
+
+    private BoundStatement GetStatement()
+    {
+        var result = this.GlobalScope.Statement;
+        return Lowerer.Lower(result);
+    }
 }

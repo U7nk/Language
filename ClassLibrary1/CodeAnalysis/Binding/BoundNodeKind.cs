@@ -8,7 +8,7 @@ internal enum BoundNodeKind
     VariableDeclarationStatement,
     IfStatement,
     WhileStatement,
-    
+    ForStatement,
     
     // expressions
     UnaryExpression,
@@ -16,7 +16,4 @@ internal enum BoundNodeKind
     BinaryExpression,
     VariableExpression,
     AssignmentExpression,
-    ForStatement,
-    ForVariableDeclarationInitializerStatement,
-    ForExpressionInitializerStatement
 }
