@@ -17,10 +17,10 @@ public class UnitTest1
     }
     
     [Fact]
-    public void Custom()
+    public void Evaluate()
     {
         this.output.WriteLine("Result: " + this.Build($$"""
-            {) 
+            1 + 2 * 3;
             """));
     }
 
@@ -29,10 +29,15 @@ public class UnitTest1
         var syntaxTree = SyntaxTree.Parse(input);
         var compilation = new Compilation(syntaxTree);
         
+        this.output.WriteLine("Syntax Tree:");
         compilation.SyntaxTree.Root.WriteTo(this.output);
+        this.output.WriteLine();
+        this.output.WriteLine();
+        this.output.WriteLine("Bound Tree:");
+        compilation.EmitTree(this.output);
+        
         var variables = new Dictionary<VariableSymbol, object?>();
-
-        var evaluation = compilation.Evaluate(variables); 
+        var evaluation = compilation.Evaluate(variables);
         if (evaluation.Diagnostics.Any())
         {
             foreach (var diagnostic in evaluation.Diagnostics)

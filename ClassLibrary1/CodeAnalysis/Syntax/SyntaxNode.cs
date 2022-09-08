@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -54,6 +55,7 @@ public abstract class SyntaxNode
     {
         this.PrettyPrint(writer, this);
     }
+    
     
     private void PrettyPrint(TextWriter writer, SyntaxNode node, bool isLast = true, string indent = "")
     {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Wired.CodeAnalysis.Binding;
@@ -57,4 +58,7 @@ public sealed class Compilation
         var result = evaluator.Evaluate();
         return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, result);
     }
+
+    public void EmitTree(TextWriter writer) 
+        => this.GlobalScope.Statement.WriteTo(writer);
 }
