@@ -134,38 +134,54 @@ public sealed class LexerTests
     {
         var t1IsKeyword = t1Kind.ToString().EndsWith("Keyword");
         var t2IsKeyword = t2Kind.ToString().EndsWith("Keyword");
+        
+        if (t1IsKeyword)
+            if (t2IsKeyword || t2Kind is SyntaxKind.IdentifierToken)
+                return true;
+        
         if (t1Kind is SyntaxKind.IdentifierToken)
             if (t2IsKeyword || t2Kind is SyntaxKind.IdentifierToken)
                 return true;
 
-        if (t1IsKeyword)
-            if (t2IsKeyword || t2Kind is SyntaxKind.IdentifierToken)
-                return true;
+        if (t1Kind is SyntaxKind.PipeToken)
+            switch (t2Kind)
+            {
+                case SyntaxKind.PipeToken:
+                case SyntaxKind.PipePipeToken:
+                    return true;
+            }
 
-        if (t1Kind is SyntaxKind.GreaterToken)
-            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
-                return true;
-        
-        if (t1Kind is SyntaxKind.LessToken)
-            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
-                return true;
+        if (t1Kind is SyntaxKind.AmpersandToken)
+            switch (t2Kind)
+            {
+                case SyntaxKind.AmpersandToken:
+                case SyntaxKind.AmpersandAmpersandToken:
+                    return true;
+            }
 
-        if (t1Kind is SyntaxKind.NumberToken)
-            if (t2Kind is SyntaxKind.NumberToken)
+
+
+        switch (t1Kind, t2Kind)
+        {
+            case (SyntaxKind.GreaterToken, 
+                SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
+                
+            case (SyntaxKind.LessToken,
+                SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
+            
+            case (SyntaxKind.NumberToken, SyntaxKind.NumberToken):
+                
+            case (SyntaxKind.BangToken, 
+                SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
+            
+            case (SyntaxKind.EqualsToken, 
+                SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
+            
+            case (SyntaxKind.WhitespaceToken, SyntaxKind.WhitespaceToken):
                 return true;
-
-        if (t1Kind is SyntaxKind.BangToken)
-            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
-                return true;
-
-        if (t1Kind is SyntaxKind.EqualsToken)
-            if (t2Kind is SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken)
-                return true;
-
-        if (t1Kind is SyntaxKind.WhitespaceToken && t2Kind is SyntaxKind.WhitespaceToken)
-            return true;
-
-        return false;
+            default:
+                return false;
+        }
     }
 
     public static IEnumerable<object[]> GetTokenPairsData()

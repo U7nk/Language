@@ -19,22 +19,24 @@ internal class BoundUnaryOperator
         this.ResultType = resultType;
     }
     
-    public BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, Type operandType)
+    public BoundUnaryOperator(
+        BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, Type operandType) 
         : this(kind, syntaxKind, operandType, operandType)
     {
     }
 
-    private static readonly List<BoundUnaryOperator> _operators = new()
+    private static readonly List<BoundUnaryOperator> Operators = new()
     {
-        new BoundUnaryOperator(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, typeof(int)),
-        new BoundUnaryOperator(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, typeof(int)),
+        new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, typeof(int)),
+        new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, typeof(int)),
 
-        new BoundUnaryOperator(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, typeof(bool)),
+        new(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, typeof(bool)),
+        new(BoundUnaryOperatorKind.BitwiseNegation, SyntaxKind.TildeToken, typeof(int)),
     };
 
     internal static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, Type operandType)
     {
-        foreach (var unaryOperator in _operators)
+        foreach (var unaryOperator in Operators)
         {
             if (syntaxKind == unaryOperator.SyntaxKind && unaryOperator.OperandType == operandType)
             {

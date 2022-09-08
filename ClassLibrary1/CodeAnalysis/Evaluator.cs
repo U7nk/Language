@@ -127,7 +127,7 @@ internal class Evaluator
             BoundNodeKind.BinaryExpression =>
                 this.EvaluateBinaryExpression((BoundBinaryExpression)node),
             _ =>
-                throw new Exception($"Unexpected node  {node.Kind}")
+                throw new($"Unexpected node  {node.Kind}")
         };
     }
 
@@ -153,7 +153,28 @@ internal class Evaluator
             BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
             BoundBinaryOperatorKind.GreaterThanOrEquals => (int)left >= (int)right,
 
-            _ => throw new Exception($"Unknown binary operator {b.Op.Kind}")
+            BoundBinaryOperatorKind.BitwiseAnd =>
+                b.Left.Type switch
+                {  
+                    { Name: "Int32" } => (int)left & (int)right,
+                    { Name: "Boolean" } => (bool)left & (bool)right,
+                    _ => throw new($"Unexpected type {b.Left.Type}")
+                },
+            BoundBinaryOperatorKind.BitwiseOr =>
+                b.Left.Type switch
+                {  
+                    { Name: "Int32" } => (int)left | (int)right,
+                    { Name: "Boolean" } => (bool)left | (bool)right,
+                    _ => throw new($"Unexpected type {b.Left.Type}")
+                },
+            BoundBinaryOperatorKind.BitwiseXor =>
+                b.Left.Type switch
+                {  
+                    { Name: "Int32" } => (int)left ^ (int)right,
+                    { Name: "Boolean" } => (bool)left ^ (bool)right,
+                    _ => throw new($"Unexpected type {b.Left.Type}")
+                },
+            _ => throw new($"Unknown binary operator {b.Op.Kind}")
         };
     }
 
@@ -167,7 +188,8 @@ internal class Evaluator
             {
                 BoundUnaryOperatorKind.Negation => -intOperand,
                 BoundUnaryOperatorKind.Identity => +intOperand,
-                _ => throw new Exception($"Unexpected unary operator {unary.Op}")
+                BoundUnaryOperatorKind.BitwiseNegation => ~intOperand,
+                _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }
 
@@ -177,7 +199,7 @@ internal class Evaluator
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
-                _ => throw new Exception($"Unexpected unary operator {unary.Op}")
+                _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }
 

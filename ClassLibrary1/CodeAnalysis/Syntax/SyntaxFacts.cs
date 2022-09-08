@@ -12,6 +12,7 @@ internal static class SyntaxFacts
             case SyntaxKind.PlusToken:
             case SyntaxKind.MinusToken:
             case SyntaxKind.BangToken:
+            case SyntaxKind.TildeToken:
                 return 6;
 
             default:
@@ -39,8 +40,12 @@ internal static class SyntaxFacts
             case SyntaxKind.GreaterOrEqualsToken:
                 return 3;
 
+            case SyntaxKind.AmpersandToken:
             case SyntaxKind.AmpersandAmpersandToken:
                 return 2;
+            
+            case SyntaxKind.HatToken:
+            case SyntaxKind.PipeToken:
             case SyntaxKind.PipePipeToken:
                 return 1;
 
@@ -111,6 +116,10 @@ internal static class SyntaxFacts
             SyntaxKind.OpenBraceToken => "{",
             SyntaxKind.CloseBraceToken => "}",
             SyntaxKind.SemicolonToken => ";",
+            SyntaxKind.PipeToken => "|",
+            SyntaxKind.AmpersandToken => "&",
+            SyntaxKind.HatToken => "^",
+            SyntaxKind.TildeToken => "~",
             
             SyntaxKind.TrueKeyword => "true",
             SyntaxKind.FalseKeyword => "false",

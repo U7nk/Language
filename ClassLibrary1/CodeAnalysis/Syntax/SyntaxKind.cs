@@ -27,7 +27,11 @@ public enum SyntaxKind
     LessToken,
     GreaterOrEqualsToken,
     GreaterToken,
-
+    PipeToken,
+    AmpersandToken,
+    HatToken,
+    TildeToken,
+    
     
     // keywords
     TrueKeyword,
@@ -38,6 +42,7 @@ public enum SyntaxKind
     IfKeyword,
     ElseKeyword,
     ForKeyword,
+    
     
     // nodes
     CompilationUnit,

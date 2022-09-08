@@ -22,9 +22,13 @@ public class Lexer
     private char Current => this.Peek(0);
     private char Lookahead => this.Peek(1);
 
-    private void Next(int offset = 1)
+    private void Next(int offset = 1) 
+        => this.position += offset;
+
+    private SyntaxKind Next(SyntaxKind syntaxKind, int offset = 1)
     {
-        this.position += offset;
+        this.Next(offset);
+        return syntaxKind;
     }
 
     private char Peek(int offset)
@@ -80,6 +84,7 @@ public class Lexer
                 this.Next();
                 this.kind = SyntaxKind.SlashToken;
                 break;
+      
             case '(':
                 this.Next();
                 this.kind = SyntaxKind.OpenParenthesisToken;
@@ -103,30 +108,27 @@ public class Lexer
             case '&':
                 this.Next();
                 if (this.Current is '&')
-                {
-                    this.Next();
-                    this.kind = SyntaxKind.AmpersandAmpersandToken;
-                }
+                    this.kind = this.Next(SyntaxKind.AmpersandAmpersandToken);
+                else
+                    this.kind = SyntaxKind.AmpersandToken;
                 break;
             case '|':
-                this.Next();
-                if (this.Current is '|')
-                {
-                    this.Next();
-                    this.kind = SyntaxKind.PipePipeToken;
-                }
+                if (this.Lookahead is '|')
+                    this.kind = this.Next(SyntaxKind.PipePipeToken, 2);
+                else
+                    this.kind = this.Next(SyntaxKind.PipeToken);
+                break;
+            case '^':
+                this.kind = this.Next(SyntaxKind.HatToken);
+                break;
+            case '~':
+                this.kind = this.Next(SyntaxKind.TildeToken);
                 break;
             case '<':
-                this.Next();
-                if (this.Current is '=')
-                {
-                    this.Next();
-                    this.kind = SyntaxKind.LessOrEqualsToken;
-                }
+                if (this.Lookahead is '=')
+                    this.kind = this.Next(SyntaxKind.LessOrEqualsToken, 2);
                 else
-                {
-                    this.kind = SyntaxKind.LessToken;
-                }
+                    this.kind = this.Next(SyntaxKind.LessToken);
                 break;
             case '>':
                 this.Next();
@@ -139,7 +141,6 @@ public class Lexer
                 {
                     this.kind = SyntaxKind.GreaterToken;
                 }
-
                 break;
             case '=':
                 this.Next();
@@ -164,7 +165,6 @@ public class Lexer
                 {
                     this.kind = SyntaxKind.BangToken;
                 }
-
                 break;
             case '0' or '1' or '2' or '3' or '4':
             case '5' or '6' or '7' or '8' or '9':
