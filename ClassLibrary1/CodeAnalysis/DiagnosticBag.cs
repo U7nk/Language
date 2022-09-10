@@ -80,4 +80,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"'{name}' doesn't exists in current scope.";
         this.Report(identifierTokenSpan, message);
     }
+
+    public void ReportUnterminatedString(TextSpan span)
+    {
+        var message = "Unterminated string literal.";
+        this.Report(span, message);
+    }
 }

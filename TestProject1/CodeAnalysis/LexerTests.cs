@@ -1,11 +1,27 @@
 ﻿using FluentAssertions;
 using FluentAssertions.Primitives;
 using Wired.CodeAnalysis.Syntax;
+using Wired.CodeAnalysis.Text;
 
 namespace TestProject1.CodeAnalysis;
 
 public sealed class LexerTests
 {
+    [Fact]
+    public void Lexer_Diagnostic_Unterminated_String()
+    {
+       var text = "\"Hello";
+       
+       var tokens = SyntaxTree.ParseTokens(text, out var diagnostics).ToList();
+       tokens.Count.Should().Be(1);
+       tokens.Single().Kind.Should().Be(SyntaxKind.StringToken); 
+       tokens.Single().Text.Should().Be("\"Hello");
+       tokens.Single().Value.Should().Be("Hello");
+       diagnostics.Single().Message.Should().Be("Unterminated string literal.");
+       diagnostics.Single().Span.Should().Be(new TextSpan(0, 1));
+       
+    }
+    
     [Fact]
     public void Lexer_Tests_All_Tokens()
     {
@@ -87,7 +103,11 @@ public sealed class LexerTests
             (SyntaxKind.IdentifierToken, "a"),
             (SyntaxKind.IdentifierToken, "abc"),
             (SyntaxKind.NumberToken, "1"),
-            (SyntaxKind.NumberToken, "123145")
+            (SyntaxKind.NumberToken, "123145"),
+            (SyntaxKind.StringToken, "\"\""),
+            (SyntaxKind.StringToken, "\"actual string\""),
+            (SyntaxKind.StringToken, "\"useful\""),
+            (SyntaxKind.StringToken, "\" \"\" \""),
         };
 
         return fixedTokens.Concat(dynamicTokens);
@@ -134,6 +154,9 @@ public sealed class LexerTests
     {
         var t1IsKeyword = t1Kind.ToString().EndsWith("Keyword");
         var t2IsKeyword = t2Kind.ToString().EndsWith("Keyword");
+        
+        if (t1Kind is SyntaxKind.StringToken && t2Kind is SyntaxKind.StringToken)
+            return true;
         
         if (t1IsKeyword)
             if (t2IsKeyword || t2Kind is SyntaxKind.IdentifierToken)

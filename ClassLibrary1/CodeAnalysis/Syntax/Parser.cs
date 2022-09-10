@@ -280,9 +280,17 @@ public class Parser
                 this.ParseBooleanLiteralExpression(),
             SyntaxKind.NumberToken =>
                 this.ParseNumberLiteralExpression(),
+            SyntaxKind.StringToken =>
+                this.ParseStringLiteralExpression(),
             _ /*default*/ =>
                 this.ParseNameExpression()
         };
+    }
+
+    private ExpressionSyntax ParseStringLiteralExpression()
+    {
+        var token = this.Match(SyntaxKind.StringToken);
+        return new LiteralExpressionSyntax(token);
     }
 
     private ExpressionSyntax ParseNumberLiteralExpression()

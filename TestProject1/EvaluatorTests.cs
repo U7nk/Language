@@ -85,6 +85,7 @@ public class EvaluatorTests
     [InlineData("{ var a = 10; a = 5; }", 5)]
     [InlineData("{ var a = 10; if true == true a = 2; a; }", 2)]
     [InlineData("{ var a = 0; while a < 5 a = a + 1; a;}", 5)]
+    [InlineData("{ let hello = \"hello\"; hello;}", "hello")]
     [InlineData(
         $$"""
         {   

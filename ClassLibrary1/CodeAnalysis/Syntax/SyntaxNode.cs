@@ -44,6 +44,15 @@ public abstract class SyntaxNode
         }
     }
 
+    public SyntaxToken GetLastToken()
+    {
+        if (this is SyntaxToken syntaxToken)
+            return syntaxToken;
+        
+        // fact: syntax node always have at least one token
+        return this.GetChildren().Last().GetLastToken();
+    }
+
     public override string ToString()
     {
         using var sw = new StringWriter();

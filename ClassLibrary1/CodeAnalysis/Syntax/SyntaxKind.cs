@@ -5,6 +5,7 @@ public enum SyntaxKind
     // tokens
     IdentifierToken,
     NumberToken,
+    StringToken,
     WhitespaceToken,
     PlusToken,
     MinusToken,

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -166,6 +167,9 @@ public class Lexer
                     this.kind = SyntaxKind.BangToken;
                 }
                 break;
+            case '"':
+                this.ReadString();
+                break;
             case '0' or '1' or '2' or '3' or '4':
             case '5' or '6' or '7' or '8' or '9':
                 this.ReadNumberToken();
@@ -199,6 +203,38 @@ public class Lexer
         }
 
         return new SyntaxToken(this.kind, this.start, text, this.value);
+    }
+
+    private void ReadString()
+    {
+        var sb = new StringBuilder();
+        
+        LOOP_START:
+        this.Next();
+        switch (this.Current)
+        {
+            case '\0':
+            case '\r':
+            case '\n':
+                var span = new TextSpan(this.start, 1);
+                this.diagnostics.ReportUnterminatedString(span);
+                break;
+            case '"':
+                this.Next();
+                if (this.Current is '"')
+                {
+                    sb.Append(this.Current);
+                    goto LOOP_START;
+                }
+                break;
+            default:
+                sb.Append(this.Current);
+                goto LOOP_START;
+        }
+
+
+        this.value = sb.ToString();
+        this.kind = SyntaxKind.StringToken;
     }
 
     private void ReadKeywordOrIdentifier()

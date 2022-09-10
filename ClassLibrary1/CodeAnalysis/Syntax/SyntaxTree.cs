@@ -34,10 +34,17 @@ public class SyntaxTree
     public static ICollection<SyntaxToken> ParseTokens(string source) 
         => ParseTokens(SourceText.From(source));
 
-    public static ICollection<SyntaxToken> ParseTokens(SourceText source)
+    public static ICollection<SyntaxToken> ParseTokens(SourceText source) 
+        => ParseTokens(source, out _);
+
+    public static ICollection<SyntaxToken> ParseTokens(string source, out ImmutableArray<Diagnostic> diagnostics) 
+        => ParseTokens(SourceText.From(source), out diagnostics);
+
+    public static ICollection<SyntaxToken> ParseTokens(SourceText source, out ImmutableArray<Diagnostic> diagnostics)
     {
-      var lexer = new Lexer(source);
-      var tokens = lexer.Parse();
-      return tokens;
+        var lexer = new Lexer(source);
+        var tokens = lexer.Parse();
+        diagnostics = lexer.Diagnostics.ToImmutableArray();
+        return tokens;
     }
 }
