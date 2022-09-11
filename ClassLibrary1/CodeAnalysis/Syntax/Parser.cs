@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Linq;
 using Wired.CodeAnalysis.Text;
 
@@ -283,7 +284,7 @@ public class Parser
             SyntaxKind.StringToken =>
                 this.ParseStringLiteralExpression(),
             _ /*default*/ =>
-                this.ParseNameExpression()
+                this.ParseNameOrCallExpression()
         };
     }
 
@@ -291,6 +292,43 @@ public class Parser
     {
         var token = this.Match(SyntaxKind.StringToken);
         return new LiteralExpressionSyntax(token);
+    }
+    
+    private ExpressionSyntax ParseNameOrCallExpression()
+    {
+        if (this.Current.Kind == SyntaxKind.IdentifierToken
+            && this.Peek(1).Kind == SyntaxKind.OpenParenthesisToken)
+        {
+            return this.ParseCallExpression();
+        }
+
+        return this.ParseNameExpression();
+    }
+
+    private ExpressionSyntax ParseCallExpression()
+    {
+        var identifier = this.Match(SyntaxKind.IdentifierToken);
+        var openParenthesis = this.Match(SyntaxKind.OpenParenthesisToken);
+        var arguments = ParseArguments();
+        var closeParenthesis = this.Match(SyntaxKind.CloseParenthesisToken);
+        return new CallExpressionSyntax(identifier, openParenthesis, arguments, closeParenthesis);
+    }
+
+    private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
+    {
+        if (this.Current.Kind is SyntaxKind.CloseParenthesisToken)
+            return new(ImmutableArray<SyntaxNode>.Empty);
+        
+        var arguments = ImmutableArray.CreateBuilder<SyntaxNode>();
+        arguments.Add(this.ParseExpression());
+        while (this.Current.Kind is SyntaxKind.CommaToken)
+        {
+            var comma = this.Match(SyntaxKind.CommaToken);
+            arguments.Add(comma);
+            arguments.Add(this.ParseExpression());
+        }
+        
+        return new(arguments.ToImmutable());
     }
 
     private ExpressionSyntax ParseNumberLiteralExpression()

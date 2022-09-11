@@ -2,7 +2,7 @@ using System;
 
 namespace Wired.CodeAnalysis;
 
-public sealed class VariableSymbol : Symbol
+public class VariableSymbol : Symbol
 {
     public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
@@ -11,6 +11,7 @@ public sealed class VariableSymbol : Symbol
         this.Type = type;
         this.IsReadonly = isReadonly;
     }
-    
+
+    public override SymbolKind Kind => SymbolKind.Variable;
     public override string ToString() => $"{Type}:{Name}";
 }

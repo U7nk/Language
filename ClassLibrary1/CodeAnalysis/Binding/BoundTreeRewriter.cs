@@ -13,9 +13,27 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.LiteralExpression => RewriteLiteralExpression((BoundLiteralExpression)node),
             BoundNodeKind.BinaryExpression => RewriteBinaryExpression((BoundBinaryExpression)node),
             BoundNodeKind.UnaryExpression => RewriteUnaryExpression((BoundUnaryExpression)node),
+            BoundNodeKind.CallExpression => RewriteCallExpression((BoundCallExpression)node),
             BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
+    }
+
+    protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
+    {
+        var statements = ImmutableArray.CreateBuilder<BoundExpression>();
+        var changed = false;
+        foreach (var statement in node.Arguments)
+        {
+            var rewritten = this.RewriteExpression(statement);
+            changed |= rewritten != statement;
+            statements.Add(rewritten);
+        }
+        
+        if (!changed)
+            return node;
+        
+        return new BoundCallExpression(node.FunctionSymbol, statements.ToImmutable());
     }
 
     protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node)

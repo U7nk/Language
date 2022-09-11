@@ -86,4 +86,16 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = "Unterminated string literal.";
         this.Report(span, message);
     }
+
+    public void ReportUndefinedFunction(TextSpan identifierSpan, string identifierText)
+    {
+        var message = $"Function '{identifierText}' is undefined.";
+        this.Report(identifierSpan, message);
+    }
+
+    public void ReportParameterCountMismatch(TextSpan identifierSpan, string identifierText, int parametersLength, int argumentsCount)
+    {
+        var message = $"Function '{identifierText}' requires {parametersLength} arguments but was given {argumentsCount}.";
+        this.Report(identifierSpan, message);
+    }
 }

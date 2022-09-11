@@ -1,5 +1,6 @@
 namespace Wired.CodeAnalysis.Binding;
 
+
 internal class BoundErrorExpression : BoundExpression
 {
     

@@ -4,11 +4,11 @@ namespace Wired.CodeAnalysis;
 
 public class TypeSymbol : Symbol
 {
-    public static readonly TypeSymbol Error = new TypeSymbol("error");
-    public static readonly TypeSymbol Void = new TypeSymbol("void");
-    public static readonly TypeSymbol Bool = new TypeSymbol("bool");
-    public static readonly TypeSymbol Int = new TypeSymbol("int");
-    public static readonly TypeSymbol String = new TypeSymbol("string");
+    public static readonly TypeSymbol Error = new("error");
+    public static readonly TypeSymbol Void = new("void");
+    public static readonly TypeSymbol Bool = new("bool");
+    public static readonly TypeSymbol Int = new("int");
+    public static readonly TypeSymbol String = new("string");
     private TypeSymbol(string name) : base(name)
     {
     }
@@ -26,4 +26,6 @@ public class TypeSymbol : Symbol
         
         return Error;
     }
+
+    public override SymbolKind Kind => SymbolKind.Type;
 }

@@ -32,8 +32,8 @@ public enum SyntaxKind
     AmpersandToken,
     HatToken,
     TildeToken,
-    
-    
+    CommaToken,
+
     // keywords
     TrueKeyword,
     FalseKeyword,
@@ -57,6 +57,7 @@ public enum SyntaxKind
     UnaryExpression,
     AssignmentExpression,
     NameExpression,
+    CallExpression,
 
     // statements
     BlockStatement,

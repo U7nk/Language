@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Wired.CodeAnalysis.Syntax;
 
@@ -18,5 +18,4 @@ public sealed class LiteralExpressionSyntax : ExpressionSyntax
     public object? Value { get; }
 
     public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
-    
 }

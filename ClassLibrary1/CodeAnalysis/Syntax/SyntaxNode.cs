@@ -33,6 +33,15 @@ public abstract class SyntaxNode
                 if (value != null)
                     yield return (SyntaxNode)value;
             }
+            else if (property.PropertyType.CanBeConvertedTo<SeparatedSyntaxList>())
+            {
+                var value = (SeparatedSyntaxList?)property.GetValue(this);
+                value.ThrowIfNull();
+                
+                foreach (var child in value.GetWithSeparators())
+                    yield return child;
+
+            }
             else if (property.PropertyType.CanBeConvertedTo<IEnumerable<SyntaxNode>>())
             {
                 var children = (IEnumerable<SyntaxNode>)(property.GetValue(this) ?? throw new InvalidOperationException());

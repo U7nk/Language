@@ -20,5 +20,5 @@ internal enum BoundNodeKind
     VariableExpression,
     AssignmentExpression,
     ErrorExpression,
-
+    CallExpression,
 }

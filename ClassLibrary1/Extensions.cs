@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Wired;
@@ -12,8 +13,9 @@ internal static class Extensions
 {
     [DebuggerHidden]
     [DebuggerStepThrough]
+    [return: NotNull]
     public static T ThrowIfNull<T>(
-        this T? obj,
+        [NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
         if (obj is null)

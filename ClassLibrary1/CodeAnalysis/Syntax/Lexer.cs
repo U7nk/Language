@@ -102,6 +102,9 @@ public class Lexer
                 this.Next();
                 this.kind = SyntaxKind.CloseBraceToken;
                 break;
+            case ',':
+                this.kind = this.Next(SyntaxKind.CommaToken);
+                break;
             case ';':
                 this.Next();
                 this.kind = SyntaxKind.SemicolonToken;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Syntax;
 
@@ -9,7 +10,7 @@ internal class Evaluator
 {
     private readonly BoundBlockStatement root;
     private readonly Dictionary<VariableSymbol, object> variables;
-    private object lastValue;
+    private object? lastValue;
 
     public Evaluator(BoundBlockStatement root, Dictionary<VariableSymbol, object> variables)
     {
@@ -73,7 +74,7 @@ internal class Evaluator
         this.lastValue = this.EvaluateExpression(expressionStatement.Expression);
     }
 
-    public object EvaluateExpression(BoundExpression node)
+    public object? EvaluateExpression(BoundExpression node)
     {
         return node.Kind switch
         {
@@ -87,9 +88,28 @@ internal class Evaluator
                 this.EvaluateUnaryExpression((BoundUnaryExpression)node),
             BoundNodeKind.BinaryExpression =>
                 this.EvaluateBinaryExpression((BoundBinaryExpression)node),
+            BoundNodeKind.CallExpression =>
+                this.EvaluateCallExpression((BoundCallExpression)node),
             _ =>
                 throw new($"Unexpected node  {node.Kind}")
         };
+    }
+
+    private object? EvaluateCallExpression(BoundCallExpression node)
+    {
+        var arguments = node.Arguments.Select(this.EvaluateExpression).ToList();
+        if (node.FunctionSymbol == BuiltInFunctions.Input)
+        {
+            return Console.ReadLine();
+        }
+
+        if (node.FunctionSymbol == BuiltInFunctions.Print)
+        {
+            var value = arguments[0];
+            Console.WriteLine(value);
+            return null;
+        }
+        throw new($"Unexpected function {node.FunctionSymbol.Name}");
     }
 
     private object EvaluateBinaryExpression(BoundBinaryExpression b)

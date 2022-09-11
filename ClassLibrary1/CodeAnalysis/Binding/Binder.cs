@@ -188,11 +188,39 @@ internal sealed class Binder
                 return this.BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
             case SyntaxKind.NameExpression:
                 return this.BindNameExpression((NameExpressionSyntax)syntax);
+            case SyntaxKind.CallExpression:
+                return this.BindCallExpression((CallExpressionSyntax)syntax);
             case SyntaxKind.AssignmentExpression:
                 return this.BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundExpression BindCallExpression(CallExpressionSyntax syntax)
+    {
+        var functions = BuiltInFunctions.GetAll();
+        
+        var functionSymbol = functions.FirstOrDefault(f => f.Name == syntax.Identifier.Text);
+        if (functionSymbol is null)
+        {
+            this.diagnostics.ReportUndefinedFunction(syntax.Identifier.Span, syntax.Identifier.Text);
+            return new BoundErrorExpression();
+        }
+        
+        if (functionSymbol.Parameters.Length != syntax.Arguments.Count)
+        {
+            this.diagnostics.ReportParameterCountMismatch(
+                syntax.Identifier.Span,
+                syntax.Identifier.Text,
+                functionSymbol.Parameters.Length,
+                syntax.Arguments.Count);
+        }
+
+        var arguments = syntax.Arguments
+            .Select((x, i) => this.BindExpression(x, functionSymbol.Parameters[i].Type))
+            .ToImmutableArray();
+        return new BoundCallExpression(functionSymbol, arguments);
     }
 
     private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
@@ -290,4 +318,19 @@ internal sealed class Binder
         var value = syntax.Value;
         return new BoundLiteralExpression(value, TypeSymbol.FromLiteral(syntax.LiteralToken));
     }
+}
+
+internal class BoundCallExpression : BoundExpression
+{
+    public FunctionSymbol FunctionSymbol { get; }
+    public ImmutableArray<BoundExpression> Arguments { get; }
+
+    public BoundCallExpression(FunctionSymbol functionSymbol, ImmutableArray<BoundExpression> arguments)
+    {
+        this.FunctionSymbol = functionSymbol;
+        this.Arguments = arguments;
+    }
+
+    internal override BoundNodeKind Kind => BoundNodeKind.CallExpression;
+    internal override TypeSymbol Type => this.FunctionSymbol.ReturnType;
 }
