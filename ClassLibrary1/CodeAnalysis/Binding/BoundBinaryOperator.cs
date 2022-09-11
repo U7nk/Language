@@ -29,6 +29,7 @@ internal class BoundBinaryOperator
     private static readonly List<BoundBinaryOperator> Operators = new()
     {
         new(BoundBinaryOperatorKind.Addition, SyntaxKind.PlusToken, TypeSymbol.Int),
+        new(BoundBinaryOperatorKind.Addition, SyntaxKind.PlusToken, TypeSymbol.String),
         new(BoundBinaryOperatorKind.Subtraction, SyntaxKind.MinusToken, TypeSymbol.Int),
         new(BoundBinaryOperatorKind.Multiplication, SyntaxKind.StarToken, TypeSymbol.Int),
         new(BoundBinaryOperatorKind.Division, SyntaxKind.SlashToken, TypeSymbol.Int),

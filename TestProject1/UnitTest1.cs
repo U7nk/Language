@@ -19,11 +19,9 @@ public class UnitTest1
     [Fact]
     public void Evaluate()
     {
+        
         this.output.WriteLine("Result: " + this.Build($$"""
-            for (while; 5 < 6; 1 + 1)
-            {
-                1 + 2;
-            }
+            for
             """));
     }
 

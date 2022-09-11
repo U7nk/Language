@@ -96,48 +96,68 @@ internal class Evaluator
     {
         var left = this.EvaluateExpression(b.Left);
         var right = this.EvaluateExpression(b.Right);
-        return b.Op.Kind switch
+        if (b.Left.Type == TypeSymbol.Int)
         {
-            BoundBinaryOperatorKind.Addition => (int)left + (int)right,
-            BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
-            BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
-            BoundBinaryOperatorKind.Division => (int)left / (int)right,
+            if (b.Right.Type == TypeSymbol.Int)
+            {
+                return b.Op.Kind switch
+                {
+                    BoundBinaryOperatorKind.Addition => (int)left + (int)right,
+                    BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
+                    BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
+                    BoundBinaryOperatorKind.Division => (int)left / (int)right,
 
-            BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
-            BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
+                    BoundBinaryOperatorKind.Equality => (int)left == (int)right,
+                    BoundBinaryOperatorKind.Inequality => (int)left != (int)right,
+                    BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
+                    BoundBinaryOperatorKind.LessThanOrEquals => (int)left <= (int)right,
+                    BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
+                    BoundBinaryOperatorKind.GreaterThanOrEquals => (int)left >= (int)right,
 
-            BoundBinaryOperatorKind.Equality => Equals(left, right),
-            BoundBinaryOperatorKind.Inequality => !Equals(left, right),
+                    BoundBinaryOperatorKind.BitwiseAnd => (int)left & (int)right,
+                    BoundBinaryOperatorKind.BitwiseOr => (int)left | (int)right,
+                    BoundBinaryOperatorKind.BitwiseXor => (int)left ^ (int)right,
+                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                };
+            }
+        }
 
-            BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
-            BoundBinaryOperatorKind.LessThanOrEquals => (int)left <= (int)right,
-            BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
-            BoundBinaryOperatorKind.GreaterThanOrEquals => (int)left >= (int)right,
-
-            BoundBinaryOperatorKind.BitwiseAnd =>
-                b.Left.Type switch
-                {  
-                    { Name: "int" } => (int)left & (int)right,
-                    { Name: "bool" } => (bool)left & (bool)right,
-                    _ => throw new($"Unexpected type {b.Left.Type}")
-                },
-            BoundBinaryOperatorKind.BitwiseOr =>
-                b.Left.Type switch
-                {  
+        if (b.Left.Type == TypeSymbol.String)
+        {
+            if (b.Right.Type == TypeSymbol.String)
+            {
+                return b.Op.Kind switch
+                {
+                    BoundBinaryOperatorKind.Addition => (string)left + (string)right,
                     
-                    { Name: "int" } => (int)left | (int)right,
-                    { Name: "bool" } => (bool)left | (bool)right,
-                    _ => throw new($"Unexpected type {b.Left.Type}")
-                },
-            BoundBinaryOperatorKind.BitwiseXor =>
-                b.Left.Type switch
-                {  
-                    { Name: "int" } => (int)left ^ (int)right,
-                    { Name: "bool" } => (bool)left ^ (bool)right,
-                    _ => throw new($"Unexpected type {b.Left.Type}")
-                },
-            _ => throw new($"Unknown binary operator {b.Op.Kind}")
-        };
+                    BoundBinaryOperatorKind.Equality => (string)left == (string)right,
+                    BoundBinaryOperatorKind.Inequality => (string)left != (string)right,
+                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                };
+            }
+        }
+
+        if (b.Left.Type == TypeSymbol.Bool)
+        {
+            if (b.Right.Type == TypeSymbol.Bool)
+            {
+                return b.Op.Kind switch
+                {
+                    BoundBinaryOperatorKind.Equality => (bool)left == (bool)right,
+                    BoundBinaryOperatorKind.Inequality => (bool)left != (bool)right,
+                    
+                    BoundBinaryOperatorKind.BitwiseAnd => (bool)left & (bool)right,
+                    BoundBinaryOperatorKind.BitwiseOr => (bool)left | (bool)right,
+                    BoundBinaryOperatorKind.BitwiseXor => (bool)left ^ (bool)right,
+                    
+                    BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
+                    BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
+                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                };
+            }
+        }
+        
+        throw new($"Unexpected binary operator {b.Op.Kind}");
     }
 
     private object EvaluateUnaryExpression(BoundUnaryExpression unary)

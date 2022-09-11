@@ -173,6 +173,7 @@ public class EvaluatorTests
             result;
         }
         """, 4950)]
+    [InlineData("{let hi = \"hellow\" + \" world\" + \" \"; hi;}", "hellow world ")]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);
