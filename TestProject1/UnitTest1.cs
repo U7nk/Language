@@ -20,9 +20,9 @@ public class UnitTest1
     public void Evaluate()
     {
         this.output.WriteLine("Result: " + this.Build($$"""
-            for (var i = 0; i < 10; i = i + 1)
+            for (while; 5 < 6; 1 + 1)
             {
-                i; 
+                1 + 2;
             }
             """));
     }

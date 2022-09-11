@@ -13,8 +13,14 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.LiteralExpression => RewriteLiteralExpression((BoundLiteralExpression)node),
             BoundNodeKind.BinaryExpression => RewriteBinaryExpression((BoundBinaryExpression)node),
             BoundNodeKind.UnaryExpression => RewriteUnaryExpression((BoundUnaryExpression)node),
+            BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
+    }
+
+    private BoundExpression RewriteErrorExpression(BoundErrorExpression node)
+    {
+        return node;
     }
 
     protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)

@@ -227,13 +227,13 @@ internal sealed class Binder
         {
             // this token was inserted by the parser to recover from an error
             // so error already reported and we can just return an error expression
-            return new BoundLiteralExpression("error", TypeSymbol.Error);
+            return new BoundErrorExpression();
         }
         
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
-            return new BoundLiteralExpression("error", TypeSymbol.Error);
+            return new BoundErrorExpression();
         }
 
         return new BoundVariableExpression(variable);
@@ -249,11 +249,15 @@ internal sealed class Binder
     {
         var operand = this.BindExpression(syntax.Operand);
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
+        
+        if (operand.Type == TypeSymbol.Error)
+            return new BoundErrorExpression();
+        
         if (unaryOperator is null)
         {
             this.diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text,
                 operand.Type);
-            return operand;
+            return new BoundErrorExpression();
         }
 
         return new BoundUnaryExpression(unaryOperator, operand);
@@ -263,12 +267,16 @@ internal sealed class Binder
     {
         var left = this.BindExpression(syntax.Left);
         var right = this.BindExpression(syntax.Right);
+        
+        if (left.Type == TypeSymbol.Error || right.Type == TypeSymbol.Error)
+            return new BoundErrorExpression();
+        
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
         if (binaryOperator is null)
         {
             this.diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text,
                 left.Type, right.Type);
-            return left;
+            return new BoundErrorExpression();
         }
 
         return new BoundBinaryExpression(left, binaryOperator, right);
