@@ -12,5 +12,5 @@ internal class BoundVariableExpression : BoundExpression
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.VariableExpression;
-    internal override Type Type => this.Variable.Type;
+    internal override TypeSymbol Type => this.Variable.Type;
 }

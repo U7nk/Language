@@ -39,13 +39,13 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         this.Report(span, message);
     }
 
-    public void ReportUndefinedUnaryOperator(TextSpan operatorTokenSpan, string text, Type operandType)
+    public void ReportUndefinedUnaryOperator(TextSpan operatorTokenSpan, string text, TypeSymbol operandType)
     {
         var message = $"Invalid unary operator '{text}' for type '{operandType}'.";
         this.Report(operatorTokenSpan, message);
     }
 
-    public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, Type leftType, Type rightType)
+    public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType, TypeSymbol rightType)
     {
         var message = $"Invalid binary operator '{operatorText}' for types '{leftType}' and '{rightType}'.";
         this.Report(span, message);
@@ -63,7 +63,7 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         this.Report(span, message);
     }
 
-    public void ReportCannotConvert(TextSpan expressionSpan, Type fromType, Type toType)
+    public void ReportCannotConvert(TextSpan expressionSpan, TypeSymbol fromType, TypeSymbol toType)
     {
         var message = $"Cannot convert '{fromType}' to '{toType}'.";
         this.Report(expressionSpan, message);

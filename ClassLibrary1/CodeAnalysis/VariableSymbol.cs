@@ -2,14 +2,12 @@ using System;
 
 namespace Wired.CodeAnalysis;
 
-public sealed class VariableSymbol
+public sealed class VariableSymbol : Symbol
 {
-    public string Name { get; }
-    public Type Type { get; }
+    public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
-    public VariableSymbol(string name, Type type, bool isReadonly)
+    public VariableSymbol(string name, TypeSymbol type, bool isReadonly) : base(name)
     {
-        this.Name = name;
         this.Type = type;
         this.IsReadonly = isReadonly;
     }

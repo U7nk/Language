@@ -8,10 +8,10 @@ internal class BoundUnaryOperator
 {
     public BoundUnaryOperatorKind Kind { get; }
     public SyntaxKind SyntaxKind { get; }
-    public Type OperandType { get; }
-    public Type ResultType { get; }
+    public TypeSymbol OperandType { get; }
+    public TypeSymbol ResultType { get; }
     
-    private BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, Type operandType, Type resultType)
+    private BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol operandType, TypeSymbol resultType)
     {
         this.Kind = kind;
         this.SyntaxKind = syntaxKind;
@@ -20,25 +20,26 @@ internal class BoundUnaryOperator
     }
     
     public BoundUnaryOperator(
-        BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, Type operandType) 
+        BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol operandType) 
         : this(kind, syntaxKind, operandType, operandType)
     {
     }
 
     private static readonly List<BoundUnaryOperator> Operators = new()
     {
-        new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, typeof(int)),
-        new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, typeof(int)),
+        new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, TypeSymbol.Int),
+        new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, TypeSymbol.Int),
 
-        new(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, typeof(bool)),
-        new(BoundUnaryOperatorKind.BitwiseNegation, SyntaxKind.TildeToken, typeof(int)),
+        new(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, TypeSymbol.Bool),
+        new(BoundUnaryOperatorKind.BitwiseNegation, SyntaxKind.TildeToken, TypeSymbol.Int),
     };
 
-    internal static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, Type operandType)
+    internal static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol operandType)
     {
         foreach (var unaryOperator in Operators)
         {
-            if (syntaxKind == unaryOperator.SyntaxKind && unaryOperator.OperandType == operandType)
+            if (syntaxKind == unaryOperator.SyntaxKind 
+                && unaryOperator.OperandType == operandType)
             {
                 return unaryOperator;
             }

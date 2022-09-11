@@ -117,22 +117,23 @@ internal class Evaluator
             BoundBinaryOperatorKind.BitwiseAnd =>
                 b.Left.Type switch
                 {  
-                    { Name: "Int32" } => (int)left & (int)right,
-                    { Name: "Boolean" } => (bool)left & (bool)right,
+                    { Name: "int" } => (int)left & (int)right,
+                    { Name: "bool" } => (bool)left & (bool)right,
                     _ => throw new($"Unexpected type {b.Left.Type}")
                 },
             BoundBinaryOperatorKind.BitwiseOr =>
                 b.Left.Type switch
                 {  
-                    { Name: "Int32" } => (int)left | (int)right,
-                    { Name: "Boolean" } => (bool)left | (bool)right,
+                    
+                    { Name: "int" } => (int)left | (int)right,
+                    { Name: "bool" } => (bool)left | (bool)right,
                     _ => throw new($"Unexpected type {b.Left.Type}")
                 },
             BoundBinaryOperatorKind.BitwiseXor =>
                 b.Left.Type switch
                 {  
-                    { Name: "Int32" } => (int)left ^ (int)right,
-                    { Name: "Boolean" } => (bool)left ^ (bool)right,
+                    { Name: "int" } => (int)left ^ (int)right,
+                    { Name: "bool" } => (bool)left ^ (bool)right,
                     _ => throw new($"Unexpected type {b.Left.Type}")
                 },
             _ => throw new($"Unknown binary operator {b.Op.Kind}")
@@ -142,7 +143,7 @@ internal class Evaluator
     private object EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
         var operand = this.EvaluateExpression(unary.Operand);
-        if (unary.Type == typeof(int))
+        if (unary.Type == TypeSymbol.Int)
         {
             var intOperand = (int)operand;
             return unary.Op.Kind switch
@@ -154,7 +155,7 @@ internal class Evaluator
             };
         }
 
-        if (unary.Type == typeof(bool))
+        if (unary.Type == TypeSymbol.Bool)
         {
             var boolOperand = (bool)operand;
             return unary.Op.Kind switch

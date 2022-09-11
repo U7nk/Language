@@ -14,5 +14,5 @@ internal class BoundAssignmentExpression : BoundExpression
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
-    internal override Type Type => this.Expression.Type;
+    internal override TypeSymbol Type => this.Expression.Type;
 }

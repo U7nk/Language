@@ -205,7 +205,7 @@ public class EvaluatorTests
                 } 
             """;
         var diagnostics = new[] {
-            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -223,7 +223,7 @@ public class EvaluatorTests
                 } 
             """;
         var diagnostics = new[] {
-            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -242,7 +242,7 @@ public class EvaluatorTests
                 } 
             """;
         var diagnostics = new[] {
-            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -261,7 +261,7 @@ public class EvaluatorTests
                 } 
             """;
         var diagnostics = new[] {
-            "Cannot convert 'System.Boolean' to 'System.Int32'.",
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -367,7 +367,7 @@ public class EvaluatorTests
             } 
             """;
         var diagnostics = new[] {
-            "Cannot convert 'System.Int32' to 'System.Boolean'.",
+            $"Cannot convert '{TypeSymbol.Bool}' to '{TypeSymbol.Int}'.",
         };
         AssertDiagnostics(text, diagnostics);
     }

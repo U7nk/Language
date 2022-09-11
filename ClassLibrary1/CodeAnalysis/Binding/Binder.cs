@@ -91,7 +91,7 @@ internal sealed class Binder
         else
             expression = this.BindExpression(syntax.Expression.ThrowIfNull());
         
-        var condition = this.BindExpression(syntax.Condition, typeof(bool));
+        var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
         var mutation = this.BindExpression(syntax.Mutation);
         var body = this.BindStatement(syntax.Body);
         
@@ -100,14 +100,14 @@ internal sealed class Binder
 
     private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
     {
-      var condition = this.BindExpression(syntax.Condition, typeof(bool));
+      var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
       var body = this.BindStatement(syntax.Body);
       return new BoundWhileStatement(condition, body);
     }
 
     private BoundStatement BindIfStatement(IfStatementSyntax syntax)
     {
-        var condition = this.BindExpression(syntax.Condition, typeof(bool));
+        var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
         var thenStatement = this.BindStatement(syntax.ThenStatement);
         var elseStatement = syntax.ElseClause is null
             ? null
@@ -159,7 +159,7 @@ internal sealed class Binder
         return new BoundBlockStatement(statements.ToImmutable());
     }
 
-    private BoundExpression BindExpression(ExpressionSyntax syntax, Type expectedType)
+    private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType)
     {
         var expression = this.BindExpression(syntax);
         if (expression.Type != expectedType)
@@ -212,7 +212,7 @@ internal sealed class Binder
 
         if (boundExpression.Type != variable.Type)
         {
-            this.diagnostics.ReportCannotConvert(syntax.Expression.Span, variable.Type, boundExpression.Type);
+            this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
             return boundExpression;
         }
 
@@ -227,13 +227,13 @@ internal sealed class Binder
         {
             // this token was inserted by the parser to recover from an error
             // so error already reported and we can just return an error expression
-            return new BoundLiteralExpression(new object());
+            return new BoundLiteralExpression("error", TypeSymbol.Error);
         }
         
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
-            return new BoundLiteralExpression(new object());
+            return new BoundLiteralExpression("error", TypeSymbol.Error);
         }
 
         return new BoundVariableExpression(variable);
@@ -277,6 +277,6 @@ internal sealed class Binder
     private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
     {
         var value = syntax.Value;
-        return new BoundLiteralExpression(value);
+        return new BoundLiteralExpression(value, TypeSymbol.FromLiteral(syntax.LiteralToken));
     }
 }
