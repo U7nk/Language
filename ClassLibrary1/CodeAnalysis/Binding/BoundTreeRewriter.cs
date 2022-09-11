@@ -18,7 +18,7 @@ internal abstract class BoundTreeRewriter
         };
     }
 
-    private BoundExpression RewriteErrorExpression(BoundErrorExpression node)
+    protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node)
     {
         return node;
     }

@@ -74,7 +74,7 @@ internal sealed class Binder
             case SyntaxKind.IfStatement:
                 return this.BindIfStatement((IfStatementSyntax)syntax);
             case SyntaxKind.WhileStatement:
-              return this.BindWhileStatement((WhileStatementSyntax)syntax);
+                return this.BindWhileStatement((WhileStatementSyntax)syntax);
             case SyntaxKind.ForStatement:
                 return this.BindForStatement((ForStatementSyntax)syntax);
             default:
@@ -90,19 +90,19 @@ internal sealed class Binder
             variableDeclaration = this.BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
         else
             expression = this.BindExpression(syntax.Expression.ThrowIfNull());
-        
+
         var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
         var mutation = this.BindExpression(syntax.Mutation);
         var body = this.BindStatement(syntax.Body);
-        
+
         return new BoundForStatement(variableDeclaration, expression, condition, mutation, body);
     }
 
     private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
     {
-      var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
-      var body = this.BindStatement(syntax.Body);
-      return new BoundWhileStatement(condition, body);
+        var condition = this.BindExpression(syntax.Condition, TypeSymbol.Bool);
+        var body = this.BindStatement(syntax.Body);
+        return new BoundWhileStatement(condition, body);
     }
 
     private BoundStatement BindIfStatement(IfStatementSyntax syntax)
@@ -126,14 +126,15 @@ internal sealed class Binder
         if (!this.scope.TryDeclareVariable(variable))
             this.diagnostics.ReportVariableAlreadyDeclared(
                 TextSpan.FromBounds(
-                    syntax.VariableDeclaration.KeywordToken.Span.Start, 
+                    syntax.VariableDeclaration.KeywordToken.Span.Start,
                     syntax.VariableDeclaration.IdentifierToken.Span.End),
                 name);
 
         return new BoundVariableDeclarationStatement(variable, initializer);
     }
-    
-    private BoundVariableDeclarationStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
+
+    private BoundVariableDeclarationStatement BindVariableDeclarationStatement(
+        VariableDeclarationStatementSyntax syntax)
     {
         return this.BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
     }
@@ -162,7 +163,9 @@ internal sealed class Binder
     private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType)
     {
         var expression = this.BindExpression(syntax);
-        if (expression.Type != expectedType)
+        if (expression.Type != TypeSymbol.Error
+            && expectedType != TypeSymbol.Error
+            && expression.Type != expectedType)
             this.diagnostics.ReportCannotConvert(
                 TextSpan.FromBounds(syntax.Span.Start, syntax.Span.End),
                 expression.Type,
@@ -210,7 +213,7 @@ internal sealed class Binder
                 name);
         }
 
-        if (boundExpression.Type != variable.Type)
+        if (boundExpression.Type != TypeSymbol.Error && boundExpression.Type != variable.Type)
         {
             this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
             return boundExpression;
@@ -229,7 +232,7 @@ internal sealed class Binder
             // so error already reported and we can just return an error expression
             return new BoundErrorExpression();
         }
-        
+
         if (!this.scope.TryLookupVariable(name, out var variable))
         {
             this.diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
@@ -249,10 +252,10 @@ internal sealed class Binder
     {
         var operand = this.BindExpression(syntax.Operand);
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
-        
+
         if (operand.Type == TypeSymbol.Error)
             return new BoundErrorExpression();
-        
+
         if (unaryOperator is null)
         {
             this.diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Span, syntax.OperatorToken.Text,
@@ -267,10 +270,10 @@ internal sealed class Binder
     {
         var left = this.BindExpression(syntax.Left);
         var right = this.BindExpression(syntax.Right);
-        
+
         if (left.Type == TypeSymbol.Error || right.Type == TypeSymbol.Error)
             return new BoundErrorExpression();
-        
+
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
         if (binaryOperator is null)
         {
