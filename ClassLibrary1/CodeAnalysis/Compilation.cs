@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis;

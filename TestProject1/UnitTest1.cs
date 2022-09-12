@@ -21,7 +21,10 @@ public class UnitTest1
     {
         
         this.output.WriteLine("Result: " + this.Build($$"""
-            print("Hello" + "World" + "!");
+            {
+                let f = print("Hello" + "World" + "!"); 
+                f;
+            }
             """));
     }
 

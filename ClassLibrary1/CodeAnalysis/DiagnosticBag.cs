@@ -98,4 +98,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"Function '{identifierText}' requires {parametersLength} arguments but was given {argumentsCount}.";
         this.Report(identifierSpan, message);
     }
+
+    public void ReportExpressionMustHaveValue(TextSpan initializerSpan)
+    {
+        var message = $"Expression must have a value.";
+        this.Report(initializerSpan, message);
+    }
 }

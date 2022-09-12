@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
@@ -115,6 +116,8 @@ internal sealed class Binder
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
 
+    
+    
     private BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
         VariableDeclarationAssignmentSyntax syntax)
     {
@@ -141,7 +144,7 @@ internal sealed class Binder
 
     private BoundExpressionStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
     {
-        var expression = this.BindExpression(syntax.Expression);
+        var expression = this.BindExpression(syntax.Expression, true);
         return new BoundExpressionStatement(expression);
     }
 
@@ -174,7 +177,18 @@ internal sealed class Binder
         return expression;
     }
 
-    public BoundExpression BindExpression(ExpressionSyntax syntax)
+    private BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
+    {
+        var result = this.BindExpressionInternal(syntax);
+        if (!canBeVoid && result.Type == TypeSymbol.Void)
+        {
+            this.diagnostics.ReportExpressionMustHaveValue(syntax.Span);
+            return new BoundErrorExpression();
+        }
+
+        return result;
+    }
+    public BoundExpression BindExpressionInternal(ExpressionSyntax syntax)
     {
         switch (syntax.Kind)
         {
@@ -241,7 +255,8 @@ internal sealed class Binder
                 name);
         }
 
-        if (boundExpression.Type != TypeSymbol.Error && boundExpression.Type != variable.Type)
+        if (boundExpression.Type != TypeSymbol.Error 
+            && boundExpression.Type != variable.Type)
         {
             this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
             return boundExpression;

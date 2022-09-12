@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Wired.CodeAnalysis.Binding;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Lowering;
 
 internal sealed class Lowerer : BoundTreeRewriter
 {
