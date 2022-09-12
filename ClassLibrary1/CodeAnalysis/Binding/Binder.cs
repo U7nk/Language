@@ -35,11 +35,6 @@ internal sealed class Binder
 
     private static BoundScope CreateParentScopes(BoundGlobalScope? previous)
     {
-        if (previous is null)
-        {
-            return new BoundScope(null);
-        }
-
         var stack = new Stack<BoundGlobalScope>();
         while (previous is not null)
         {
@@ -47,7 +42,7 @@ internal sealed class Binder
             previous = previous.Previous;
         }
 
-        BoundScope parent = null!;
+        var parent = CreateRootScope();
 
         while (stack.Count > 0)
         {
@@ -60,6 +55,15 @@ internal sealed class Binder
         }
 
         return parent;
+    }
+
+    private static BoundScope CreateRootScope()
+    {
+        var result = new BoundScope(null);
+        foreach (var functionSymbol in BuiltInFunctions.GetAll()) 
+            result.TryDeclareFunction(functionSymbol);
+
+        return result;
     }
 
     private BoundStatement BindStatement(StatementSyntax syntax)
@@ -213,28 +217,25 @@ internal sealed class Binder
 
     private BoundExpression BindCallExpression(CallExpressionSyntax syntax)
     {
-        var functions = BuiltInFunctions.GetAll();
-        
-        var functionSymbol = functions.FirstOrDefault(f => f.Name == syntax.Identifier.Text);
-        if (functionSymbol is null)
+        if (!this.scope.TryLookupFunction(syntax.Identifier.Text, out var function))
         {
             this.diagnostics.ReportUndefinedFunction(syntax.Identifier.Span, syntax.Identifier.Text);
             return new BoundErrorExpression();
         }
         
-        if (functionSymbol.Parameters.Length != syntax.Arguments.Count)
+        if (function.Parameters.Length != syntax.Arguments.Count)
         {
             this.diagnostics.ReportParameterCountMismatch(
                 syntax.Identifier.Span,
                 syntax.Identifier.Text,
-                functionSymbol.Parameters.Length,
+                function.Parameters.Length,
                 syntax.Arguments.Count);
         }
 
         var arguments = syntax.Arguments
-            .Select((x, i) => this.BindExpression(x, functionSymbol.Parameters[i].Type))
+            .Select((x, i) => this.BindExpression(x, function.Parameters[i].Type))
             .ToImmutableArray();
-        return new BoundCallExpression(functionSymbol, arguments);
+        return new BoundCallExpression(function, arguments);
     }
 
     private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)

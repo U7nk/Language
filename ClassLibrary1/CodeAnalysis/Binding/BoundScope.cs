@@ -8,6 +8,7 @@ internal class BoundScope
 {
     public BoundScope? Parent { get; }
     private readonly Dictionary<string, VariableSymbol> variables = new();
+    private readonly Dictionary<string, FunctionSymbol> functions = new();
 
     public BoundScope(BoundScope? parent)
     {
@@ -26,6 +27,18 @@ internal class BoundScope
         return true;
     }
     
+    public bool TryDeclareFunction(FunctionSymbol function)
+    {
+        if (this.functions.ContainsKey(function.Name))
+            return false;
+        
+        if (this.Parent?.TryLookupFunction(function.Name, out _) is true)
+            return false;
+        
+        this.functions.Add(function.Name, function);
+        return true;
+    }
+    
     public bool TryLookupVariable(string name, [NotNullWhen(true)] out VariableSymbol? variable)
     {
         if (this.variables.TryGetValue(name, out var result))
@@ -39,6 +52,22 @@ internal class BoundScope
             return this.Parent.TryLookupVariable(name, out variable);
 
         variable = null;
+        return false;
+    }
+    
+    public bool TryLookupFunction(string name, [NotNullWhen(true)] out FunctionSymbol? function)
+    {
+        if (this.functions.TryGetValue(name, out var result))
+        {
+            result.ThrowIfNull();
+            function = result;
+            return true;
+        }
+
+        if (this.Parent != null)
+            return this.Parent.TryLookupFunction(name, out function);
+
+        function = null;
         return false;
     }
     
