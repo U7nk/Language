@@ -152,7 +152,7 @@ internal sealed class Binder
     BoundBlockStatement BindBlockStatement(BlockStatementSyntax syntax)
     {
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        _scope = new BoundScope(_scope);
+        _scope = new(_scope);
         foreach (var statementSyntax in syntax.Statements)
         {
             var statement = BindStatement(statementSyntax);
@@ -161,22 +161,11 @@ internal sealed class Binder
 
         _scope = _scope.Parent ?? throw new InvalidOperationException();
 
-        return new BoundBlockStatement(statements.ToImmutable());
+        return new(statements.ToImmutable());
     }
 
-    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType)
-    {
-        var expression = BindExpression(syntax);
-        if (expression.Type != TypeSymbol.Error
-            && expectedType != TypeSymbol.Error
-            && expression.Type != expectedType)
-            _diagnostics.ReportCannotConvert(
-                TextSpan.FromBounds(syntax.Span.Start, syntax.Span.End),
-                expression.Type,
-                expectedType);
-
-        return expression;
-    }
+    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType) 
+        => BindConversion(syntax, expectedType);
 
     BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
     {
@@ -217,7 +206,7 @@ internal sealed class Binder
     {
         if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol { } type)
         {
-            return BindConversion(type, syntax.Arguments[0]);
+            return BindConversion(syntax.Arguments[0], type);
         }
         
         if (!_scope.TryLookupFunction(syntax.Identifier.Text, out var function))
@@ -241,19 +230,28 @@ internal sealed class Binder
         return new BoundCallExpression(function, arguments);
     }
 
-    BoundExpression BindConversion(TypeSymbol type, ExpressionSyntax syntaxArgument)
+    BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type)
     {
-        var expression = BindExpression(syntaxArgument);
-        if (expression.Type == type)
-            return expression;
-        
+        var expression = BindExpression(syntax);
+        var diagnosticSpan = syntax.Span;
+        return BoundConversion(expression, type, diagnosticSpan);
+    }
+
+    BoundExpression BoundConversion(BoundExpression expression, TypeSymbol type,  TextSpan diagnosticSpan)
+    {
         var conversion = Conversion.Classify(expression.Type, type);
+
+        if (conversion.IsIdentity)
+            return expression;
+
         if (!conversion.Exists)
         {
-            _diagnostics.ReportCannotConvert(syntaxArgument.Span, expression.Type, type);
+            if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
+                _diagnostics.ReportCannotConvert(diagnosticSpan, expression.Type, type);
+
             return new BoundErrorExpression();
         }
-        
+
         return new BoundConversionExpression(type, expression);
     }
 
@@ -275,13 +273,16 @@ internal sealed class Binder
                 name);
         }
 
-        if (boundExpression.Type != TypeSymbol.Error
-            && boundExpression.Type != variable.Type)
+        var conversion = Conversion.Classify(variable.Type, boundExpression.Type);
+        if (!conversion.IsIdentity && !conversion.IsImplicit || !conversion.Exists)
         {
             _diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
             return boundExpression;
         }
 
+        if (!conversion.IsIdentity) 
+            boundExpression = new BoundConversionExpression(variable.Type, boundExpression);
+        
         return new BoundAssignmentExpression(variable, boundExpression);
     }
 
