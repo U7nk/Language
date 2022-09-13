@@ -174,6 +174,7 @@ public class EvaluatorTests
         }
         """, 4950)]
     [InlineData("{let hi = \"hellow\" + \" world\" + \" \"; hi;}", "hellow world ")]
+    [InlineData("{let boo : string = \"hellow world \"; boo;}", "hellow world ")]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);
@@ -192,6 +193,22 @@ public class EvaluatorTests
         evaluation.Result.Should().Be(expectedValue);
     }
 
+    
+    [Fact]
+    public void Evaluator_TypeClause_Reports_NoImplicitConversion()
+    {
+        var text = 
+            $$"""
+            {
+                let a : string = [10 + 15];
+            } 
+            """;
+        var diagnostics = new[] {
+            $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
     [Fact]
     public void Evaluator_IfStatement_Reports_CannotConvert()
     {
@@ -210,6 +227,7 @@ public class EvaluatorTests
         };
         AssertDiagnostics(text, diagnostics);
     }
+    
     [Fact]
     public void Evaluator_WhileStatement_Reports_CannotConvert()
     {
@@ -249,7 +267,7 @@ public class EvaluatorTests
     }
     
     [Fact]
-    public void Evaluator_ForStatement_Reports_Mutation_CannotConvert()
+    public void Evaluator_ForStatement_Reports_Mutation_NoImplicitConversion()
     {
         var text = 
             $$"""
@@ -353,6 +371,21 @@ public class EvaluatorTests
              """;
          var diagnostics = new[] {
             "'a' is readonly and cannot be assigned to.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    
+    [Fact]
+    public void Evaluator_TypeClause_Reports_UndefinedType()
+    {
+        var text = 
+            $$"""
+            {
+                var a : [blab] = 10;
+            } 
+            """;
+        var diagnostics = new[] {
+            $"Type 'blab' is undefined.",
         };
         AssertDiagnostics(text, diagnostics);
     }

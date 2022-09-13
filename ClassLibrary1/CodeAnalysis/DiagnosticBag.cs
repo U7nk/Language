@@ -104,4 +104,16 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"Expression must have a value.";
         Report(initializerSpan, message);
     }
+
+    public void ReportUndefinedType(TextSpan identifierSpan, string identifierText)
+    {
+        var message = $"Type '{identifierText}' is undefined.";
+        Report(identifierSpan, message);
+    }
+
+    public void ReportNoImplicitConversion(TextSpan diagnosticSpan, TypeSymbol expressionType, TypeSymbol type)
+    {
+        var message = $"No implicit conversion from '{expressionType}' to '{type}'.";
+        Report(diagnosticSpan, message);
+    }
 }

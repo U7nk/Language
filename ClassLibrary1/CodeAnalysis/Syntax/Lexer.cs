@@ -109,6 +109,9 @@ public class Lexer
                 Next();
                 _kind = SyntaxKind.SemicolonToken;
                 break;
+            case ':':
+                _kind = Next(SyntaxKind.ColonToken);
+                break;
             case '&':
                 Next();
                 if (Current is '&')

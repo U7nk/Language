@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
+using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
@@ -205,7 +206,18 @@ public class Parser
                 : SyntaxKind.LetKeyword);
 
         var identifier = Match(SyntaxKind.IdentifierToken);
-        return new VariableDeclarationSyntax(keyword, identifier);
+        var typeClause = ParseTypeClause();
+        return new(keyword, identifier, typeClause);
+    }
+
+    TypeClauseSyntax? ParseTypeClause()
+    {
+        if (Current.Kind is not SyntaxKind.ColonToken)
+            return null;
+        
+        var colon = NextToken();
+        var type = Match(SyntaxKind.IdentifierToken);
+        return new(colon, type);
     }
 
     StatementSyntax ParseBlockStatement()

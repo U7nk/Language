@@ -106,6 +106,7 @@ internal static class SyntaxFacts
             SyntaxKind.OpenBraceToken => "{",
             SyntaxKind.CloseBraceToken => "}",
             SyntaxKind.SemicolonToken => ";",
+            SyntaxKind.ColonToken => ":",
             SyntaxKind.CommaToken => ",",
             SyntaxKind.BangToken => "!",
             SyntaxKind.AmpersandAmpersandToken => "&&",

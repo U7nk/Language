@@ -49,7 +49,8 @@ public enum SyntaxKind
     CompilationUnit,
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
-    
+    TypeClause,
+
     // expressions
     LiteralExpression,
     BinaryExpression,
@@ -67,4 +68,5 @@ public enum SyntaxKind
     IfStatement,
     ElseClause,   
     ForStatement,
+    ColonToken,
 }

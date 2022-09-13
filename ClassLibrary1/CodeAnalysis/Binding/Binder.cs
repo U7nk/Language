@@ -117,15 +117,20 @@ internal sealed class Binder
             : BindStatement(syntax.ElseClause.ElseStatement);
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
-
-
+    
+    
     BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
         VariableDeclarationAssignmentSyntax syntax)
     {
         var isReadonly = syntax.VariableDeclaration.KeywordToken.Kind == SyntaxKind.LetKeyword;
+        var type = BindTypeClause(syntax.VariableDeclaration.TypeClause);
         var initializer = BindExpression(syntax.Initializer);
+         
+        if (type is not null) 
+            initializer = BindConversion(initializer, type, syntax.Initializer.Span);
+
         var name = syntax.VariableDeclaration.IdentifierToken.Text;
-        var variable = new VariableSymbol(name, initializer.Type, isReadonly);
+        var variable = new VariableSymbol(name, type ?? initializer.Type, isReadonly);
 
         if (!_scope.TryDeclareVariable(variable))
             _diagnostics.ReportVariableAlreadyDeclared(
@@ -135,6 +140,19 @@ internal sealed class Binder
                 name);
 
         return new BoundVariableDeclarationStatement(variable, initializer);
+    }
+
+    TypeSymbol? BindTypeClause(TypeClauseSyntax? typeClause)
+    {
+        if (typeClause is null)
+            return null;
+
+        var type = LookupType(typeClause.Identifier.Text);
+        if (type != null)
+            return type;
+
+        _diagnostics.ReportUndefinedType(typeClause.Identifier.Span, typeClause.Identifier.Text);
+        return type;
     }
 
     BoundVariableDeclarationStatement BindVariableDeclarationStatement(
@@ -164,8 +182,8 @@ internal sealed class Binder
         return new(statements.ToImmutable());
     }
 
-    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType) 
-        => BindConversion(syntax, expectedType);
+    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType, bool allowExplicitConversion = false) 
+        => BindConversion(syntax, expectedType, allowExplicitConversion);
 
     BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
     {
@@ -204,7 +222,8 @@ internal sealed class Binder
 
     BoundExpression BindCallExpression(CallExpressionSyntax syntax)
     {
-        if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol { } type)
+        if (syntax.Arguments.Count == 1 
+            && LookupType(syntax.Identifier.Text) is { } type)
         {
             return BindConversion(syntax.Arguments[0], type);
         }
@@ -230,24 +249,29 @@ internal sealed class Binder
         return new BoundCallExpression(function, arguments);
     }
 
-    BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type)
+    BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicitConversion = false)
     {
         var expression = BindExpression(syntax);
         var diagnosticSpan = syntax.Span;
-        return BoundConversion(expression, type, diagnosticSpan);
+        return BindConversion(expression, type, diagnosticSpan, allowExplicitConversion);
     }
 
-    BoundExpression BoundConversion(BoundExpression expression, TypeSymbol type,  TextSpan diagnosticSpan)
+    BoundExpression BindConversion(BoundExpression expression, TypeSymbol type,  TextSpan diagnosticSpan, bool allowExplicit = false)
     {
         var conversion = Conversion.Classify(expression.Type, type);
 
         if (conversion.IsIdentity)
             return expression;
 
-        if (!conversion.Exists)
+        if ((!conversion.IsImplicit && !allowExplicit)  || !conversion.Exists)
         {
             if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
-                _diagnostics.ReportCannotConvert(diagnosticSpan, expression.Type, type);
+            {
+                if (!allowExplicit && !conversion.IsImplicit && conversion.Exists)
+                    _diagnostics.ReportNoImplicitConversion(diagnosticSpan, expression.Type, type);
+                else 
+                    _diagnostics.ReportCannotConvert(diagnosticSpan, expression.Type, type);
+            }
 
             return new BoundErrorExpression();
         }
@@ -273,15 +297,7 @@ internal sealed class Binder
                 name);
         }
 
-        var conversion = Conversion.Classify(variable.Type, boundExpression.Type);
-        if (!conversion.IsIdentity && !conversion.IsImplicit || !conversion.Exists)
-        {
-            _diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
-            return boundExpression;
-        }
-
-        if (!conversion.IsIdentity) 
-            boundExpression = new BoundConversionExpression(variable.Type, boundExpression);
+        boundExpression = BindConversion(boundExpression, variable.Type, syntax.Expression.Span);
         
         return new BoundAssignmentExpression(variable, boundExpression);
     }
@@ -355,7 +371,7 @@ internal sealed class Binder
         return new BoundLiteralExpression(value, TypeSymbol.FromLiteral(syntax.LiteralToken));
     }
 
-    TypeSymbol LookupType(string name)
+    TypeSymbol? LookupType(string name)
     {
         if (name == TypeSymbol.Bool.Name)
             return TypeSymbol.Bool;
