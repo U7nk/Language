@@ -90,9 +90,27 @@ internal class Evaluator
                 this.EvaluateBinaryExpression((BoundBinaryExpression)node),
             BoundNodeKind.CallExpression =>
                 this.EvaluateCallExpression((BoundCallExpression)node),
+            BoundNodeKind.ConversionExpression =>
+                this.EvaluateConversionExpression((BoundConversionExpression)node),
             _ =>
                 throw new($"Unexpected node  {node.Kind}")
         };
+    }
+
+    private object? EvaluateConversionExpression(BoundConversionExpression node)
+    {
+        var value = this.EvaluateExpression(node.Expression);
+        if (node.Type == TypeSymbol.Bool) 
+            return Convert.ToBoolean(value);
+
+        if (node.Type == TypeSymbol.Int)
+            return Convert.ToInt32(value);
+
+        if (node.Type == TypeSymbol.String)
+            return Convert.ToString(value);
+        
+        throw new Exception($"Unexpected type {node.Type}");
+        
     }
 
     private object? EvaluateCallExpression(BoundCallExpression node)
@@ -109,6 +127,8 @@ internal class Evaluator
             Console.WriteLine(value);
             return null;
         }
+        
+        
         throw new($"Unexpected function {node.FunctionSymbol.Name}");
     }
 

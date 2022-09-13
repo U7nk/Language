@@ -2,17 +2,55 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Binding;
 
+internal sealed class Conversion
+{
+    public bool Exists { get; }
+    public bool IsIdentity { get; }
+    public bool IsImplicit { get; }
+
+    public Conversion(bool exists, bool isIdentity, bool isImplicit)
+    {
+        this.Exists = exists;
+        this.IsIdentity = isIdentity;
+        this.IsImplicit = isImplicit;
+    }
+
+    public static Conversion Classify(TypeSymbol from, TypeSymbol to)
+    {
+        if (from == to)
+            return Conversion.Identity;
+
+        if (from == TypeSymbol.Bool ||
+            from == TypeSymbol.Int)
+        {
+            if (to == TypeSymbol.String)
+                return Conversion.Explicit;
+        }
+        
+        if (from == TypeSymbol.String)
+        {
+            if (to == TypeSymbol.Bool || to == TypeSymbol.Int)
+                return Conversion.Explicit;
+        }
+
+        return Conversion.None;
+    }
+
+    public static Conversion Explicit { get; } = new(exists: true, isIdentity: false, isImplicit: false);
+    public static Conversion Implicit { get; } = new(exists: true, isIdentity: false, isImplicit: true);
+    public static Conversion None { get; } = new(exists: false, isIdentity: false, isImplicit: false);
+    public static Conversion Identity { get; } = new(exists: true, isIdentity: true, isImplicit: true);
+}
+
 internal sealed class Binder
 {
     private readonly DiagnosticBag diagnostics = new();
-    private BoundScope scope;
+    BoundScope scope;
     public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
 
     public Binder(BoundScope parent)
@@ -60,7 +98,7 @@ internal sealed class Binder
     private static BoundScope CreateRootScope()
     {
         var result = new BoundScope(null);
-        foreach (var functionSymbol in BuiltInFunctions.GetAll()) 
+        foreach (var functionSymbol in BuiltInFunctions.GetAll())
             result.TryDeclareFunction(functionSymbol);
 
         return result;
@@ -120,8 +158,7 @@ internal sealed class Binder
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
 
-    
-    
+
     private BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
         VariableDeclarationAssignmentSyntax syntax)
     {
@@ -192,6 +229,7 @@ internal sealed class Binder
 
         return result;
     }
+
     public BoundExpression BindExpressionInternal(ExpressionSyntax syntax)
     {
         switch (syntax.Kind)
@@ -217,12 +255,17 @@ internal sealed class Binder
 
     private BoundExpression BindCallExpression(CallExpressionSyntax syntax)
     {
+        if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol { } type)
+        {
+            return BindConversion(type, syntax.Arguments[0]);
+        }
+        
         if (!this.scope.TryLookupFunction(syntax.Identifier.Text, out var function))
         {
             this.diagnostics.ReportUndefinedFunction(syntax.Identifier.Span, syntax.Identifier.Text);
             return new BoundErrorExpression();
         }
-        
+
         if (function.Parameters.Length != syntax.Arguments.Count)
         {
             this.diagnostics.ReportParameterCountMismatch(
@@ -236,6 +279,22 @@ internal sealed class Binder
             .Select((x, i) => this.BindExpression(x, function.Parameters[i].Type))
             .ToImmutableArray();
         return new BoundCallExpression(function, arguments);
+    }
+
+    private BoundExpression BindConversion(TypeSymbol type, ExpressionSyntax syntaxArgument)
+    {
+        var expression = BindExpression(syntaxArgument);
+        if (expression.Type == type)
+            return expression;
+        
+        var conversion = Conversion.Classify(expression.Type, type);
+        if (!conversion.Exists)
+        {
+            this.diagnostics.ReportCannotConvert(syntaxArgument.Span, expression.Type, type);
+            return new BoundErrorExpression();
+        }
+        
+        return new BoundConversionExpression(type, expression);
     }
 
     private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
@@ -256,7 +315,7 @@ internal sealed class Binder
                 name);
         }
 
-        if (boundExpression.Type != TypeSymbol.Error 
+        if (boundExpression.Type != TypeSymbol.Error
             && boundExpression.Type != variable.Type)
         {
             this.diagnostics.ReportCannotConvert(syntax.Expression.Span, boundExpression.Type, variable.Type);
@@ -334,19 +393,17 @@ internal sealed class Binder
         var value = syntax.Value;
         return new BoundLiteralExpression(value, TypeSymbol.FromLiteral(syntax.LiteralToken));
     }
-}
-
-internal class BoundCallExpression : BoundExpression
-{
-    public FunctionSymbol FunctionSymbol { get; }
-    public ImmutableArray<BoundExpression> Arguments { get; }
-
-    public BoundCallExpression(FunctionSymbol functionSymbol, ImmutableArray<BoundExpression> arguments)
+    
+    private TypeSymbol LookupType(string name)
     {
-        this.FunctionSymbol = functionSymbol;
-        this.Arguments = arguments;
-    }
+        if (name == TypeSymbol.Bool.Name)
+            return TypeSymbol.Bool;
+        if (name == TypeSymbol.Int.Name)
+            return TypeSymbol.Int;
+        if (name == TypeSymbol.String.Name)
+            return TypeSymbol.String;
 
-    internal override BoundNodeKind Kind => BoundNodeKind.CallExpression;
-    internal override TypeSymbol Type => this.FunctionSymbol.ReturnType;
+        
+        return null;
+    }
 }

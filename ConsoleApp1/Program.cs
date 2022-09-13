@@ -5,9 +5,9 @@ using Wired.CodeAnalysis.Syntax;
 
 var st = SyntaxTree.Parse($$"""
 {
-    print("Enter your name: ");
-    var name = input();
-    print("Hello: " + name);
+print("Hello" + "World" + "!"); 
+                let f = 50;
+                print(string(f));
 }
 """);
 
