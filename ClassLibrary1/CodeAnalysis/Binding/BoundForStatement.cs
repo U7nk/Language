@@ -11,10 +11,10 @@ internal sealed class BoundForStatement : BoundStatement
 
     public BoundForStatement(BoundVariableDeclarationStatement? variableDeclaration, BoundExpression? expression, BoundExpression condition, BoundExpression mutation, BoundStatement body)
     {
-        this.Condition = condition;
-        this.Mutation = mutation;
-        this.Body = body;
-        this.VariableDeclaration = variableDeclaration;
-        this.Expression = expression;
+        Condition = condition;
+        Mutation = mutation;
+        Body = body;
+        VariableDeclaration = variableDeclaration;
+        Expression = expression;
     }
 }

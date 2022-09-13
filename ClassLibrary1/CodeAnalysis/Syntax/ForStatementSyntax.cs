@@ -22,15 +22,15 @@ public sealed class ForStatementSyntax : StatementSyntax
         SyntaxToken middleSemiColonToken, ExpressionSyntax mutation,
         SyntaxToken closeParenthesis, StatementSyntax body)
     {
-        this.ForKeyword = forKeyword;
-        this.OpenParenthesis = openParenthesis;
-        this.VariableDeclaration = variableDeclaration;
-        this.Expression = expression;
-        this.Condition = condition;
-        this.MiddleSemiColonToken = middleSemiColonToken;
-        this.Mutation = mutation;
-        this.CloseParenthesis = closeParenthesis;
-        this.Body = body;
-        this.Semicolon = semicolon;
+        ForKeyword = forKeyword;
+        OpenParenthesis = openParenthesis;
+        VariableDeclaration = variableDeclaration;
+        Expression = expression;
+        Condition = condition;
+        MiddleSemiColonToken = middleSemiColonToken;
+        Mutation = mutation;
+        CloseParenthesis = closeParenthesis;
+        Body = body;
+        Semicolon = semicolon;
     }
 }

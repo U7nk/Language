@@ -8,10 +8,10 @@ public sealed class IfStatementSyntax : StatementSyntax
         SyntaxToken ifKeyword, ExpressionSyntax condition,
         StatementSyntax thenStatement, ElseClauseSyntax? elseClause)
     {
-        this.IfKeyword = ifKeyword;
-        this.Condition = condition;
-        this.ThenStatement = thenStatement;
-        this.ElseClause = elseClause;
+        IfKeyword = ifKeyword;
+        Condition = condition;
+        ThenStatement = thenStatement;
+        ElseClause = elseClause;
     }
 
     public SyntaxToken IfKeyword { get; }

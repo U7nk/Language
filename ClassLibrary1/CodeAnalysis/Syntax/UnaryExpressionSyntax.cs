@@ -6,8 +6,8 @@ public sealed class UnaryExpressionSyntax : ExpressionSyntax
 {
     public UnaryExpressionSyntax(SyntaxToken operatorToken, ExpressionSyntax operand)
     {
-        this.OperatorToken = operatorToken;
-        this.Operand = operand;
+        OperatorToken = operatorToken;
+        Operand = operand;
     }
 
     public SyntaxToken OperatorToken { get; }

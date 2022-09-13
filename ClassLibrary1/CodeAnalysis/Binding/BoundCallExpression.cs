@@ -9,10 +9,10 @@ internal class BoundCallExpression : BoundExpression
 
     public BoundCallExpression(FunctionSymbol functionSymbol, ImmutableArray<BoundExpression> arguments)
     {
-        this.FunctionSymbol = functionSymbol;
-        this.Arguments = arguments;
+        FunctionSymbol = functionSymbol;
+        Arguments = arguments;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.CallExpression;
-    internal override TypeSymbol Type => this.FunctionSymbol.ReturnType;
+    internal override TypeSymbol Type => FunctionSymbol.ReturnType;
 }

@@ -5,21 +5,21 @@ namespace TestProject1.CodeAnalysis;
 
 internal sealed class AssertingEnumerator : IDisposable
 {
-    private readonly IEnumerator<SyntaxNode> enumerator;
-    private bool hasErrors;
+    readonly IEnumerator<SyntaxNode> _enumerator;
+    bool _hasErrors;
 
     public AssertingEnumerator(SyntaxNode node)
     {
-        this.enumerator = Flatten(node).GetEnumerator();
+        _enumerator = Flatten(node).GetEnumerator();
     }
 
-    private static IEnumerable<SyntaxNode> Flatten(SyntaxNode node)
+    static IEnumerable<SyntaxNode> Flatten(SyntaxNode node)
     {
         var results = FlattenChildren(node).ToList();
         return results;
     }
 
-    private static IEnumerable<SyntaxNode> FlattenChildren(SyntaxNode node)
+    static IEnumerable<SyntaxNode> FlattenChildren(SyntaxNode node)
     {   //                             op2 op1 v c a b d  
         //         op2                  op2x op1 v c
         //     /    |  \               
@@ -43,15 +43,15 @@ internal sealed class AssertingEnumerator : IDisposable
     {
         try
         {
-            this.enumerator.MoveNext().Should().BeTrue();
-            this.enumerator.Current.Kind.Should().Be(kind);
-            this.enumerator.Current.Should().BeOfType<SyntaxToken>();
-            var token = (SyntaxToken)this.enumerator.Current;
+            _enumerator.MoveNext().Should().BeTrue();
+            _enumerator.Current.Kind.Should().Be(kind);
+            _enumerator.Current.Should().BeOfType<SyntaxToken>();
+            var token = (SyntaxToken)_enumerator.Current;
             token.Text.Should().Be(text);
         }
         catch (Exception)
         {
-            this.hasErrors = true;
+            _hasErrors = true;
             throw;
         }
     }
@@ -60,23 +60,23 @@ internal sealed class AssertingEnumerator : IDisposable
     {
         try
         {
-            this.enumerator.MoveNext().Should().BeTrue();
-            this.enumerator.Current.Kind.Should().Be(kind);
-            this.enumerator.Current.Should().NotBeOfType<SyntaxToken>();
+            _enumerator.MoveNext().Should().BeTrue();
+            _enumerator.Current.Kind.Should().Be(kind);
+            _enumerator.Current.Should().NotBeOfType<SyntaxToken>();
         }
         catch (Exception)
         {
-            this.hasErrors = true;
+            _hasErrors = true;
             throw;
         }
     }
 
     public void Dispose()
     {
-        if (!this.hasErrors)
+        if (!_hasErrors)
         {
-            this.enumerator.MoveNext().Should().BeFalse();   
+            _enumerator.MoveNext().Should().BeFalse();   
         }
-        this.enumerator.Dispose();
+        _enumerator.Dispose();
     }
 }

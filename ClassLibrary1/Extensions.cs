@@ -201,33 +201,33 @@ internal class ConditionalAdd<T>
     public bool IfState { get; set; }
     public bool Condition { get; set; }
     public List<Action> TrueActions { get; set; }
-    public T obj;
+    public T Obj;
     public ConditionalAdd(T obj)
     {
-        this.obj = obj;
-        this.TrueActions = new List<Action>();
+        this.Obj = obj;
+        TrueActions = new List<Action>();
     }
     public ConditionalAdd<T> If(bool condition)
     {
-        this.Condition = condition;
-        this.IfState = true;
+        Condition = condition;
+        IfState = true;
         return this;
     }
     public ConditionalAdd<T> AddTo(IList list)
     {
-        if (this.IfState)
+        if (IfState)
         {
-            if (this.Condition == true)
+            if (Condition == true)
             {
-                list.Add(this.obj);
+                list.Add(Obj);
                 return this;
             }
         }
-        if (this.IfState == false)
+        if (IfState == false)
         {
-            if (this.Condition == true)
+            if (Condition == true)
             {
-                list.Add(this.obj);
+                list.Add(Obj);
                 return this;
             }
         }
@@ -238,33 +238,33 @@ internal class ConditionalAdd<T>
     {
         get
         {
-            this.IfState = false;
+            IfState = false;
             return this;
         }
     }
 }
 internal class MoveNexter
 {
-    private readonly bool checkResult;
-    private readonly Action moveNextAction;
+    readonly bool _checkResult;
+    readonly Action _moveNextAction;
     public MoveNexter()
     {
-        this.checkResult = false;
+        _checkResult = false;
     }
 
     public MoveNexter(Action moveNextAction)
     {
-        this.checkResult = true;
-        this.moveNextAction = moveNextAction;
+        _checkResult = true;
+        this._moveNextAction = moveNextAction;
     }
     public static implicit operator bool(MoveNexter moveNexter)
     { 
-        return moveNexter.checkResult; 
+        return moveNexter._checkResult; 
     }
 
     public MoveNexter OnTrue(Action action, int times = 1)
     {
-        if (this.checkResult)
+        if (_checkResult)
         {
             for (int i = 0; i < times; i++)
             {
@@ -278,7 +278,7 @@ internal class MoveNexter
 
     public bool OnFalse(Action action, int times = 1)
     {
-        if (this.checkResult)
+        if (_checkResult)
         {
             return true;
         }

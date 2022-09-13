@@ -18,25 +18,25 @@ public sealed class Compilation
         : this(null, syntaxTree)
     { }
 
-    private BoundGlobalScope? globalScope;
+    BoundGlobalScope? _globalScope;
 
-    private Compilation(Compilation? previous, SyntaxTree syntaxTree)
+    Compilation(Compilation? previous, SyntaxTree syntaxTree)
     {
-        this.SyntaxTree = syntaxTree;
-        this.Previous = previous;
+        SyntaxTree = syntaxTree;
+        Previous = previous;
     }
 
     internal BoundGlobalScope GlobalScope
     {
         get
         {
-            if (this.globalScope is null)
+            if (_globalScope is null)
             {
-                var boundGlobalScope = Binder.BindGlobalScope(this.Previous?.GlobalScope, this.SyntaxTree.Root);
-                Interlocked.CompareExchange(ref this.globalScope, boundGlobalScope, null);
+                var boundGlobalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTree.Root);
+                Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
             }
 
-            return this.globalScope;
+            return _globalScope;
         }
     }
     
@@ -47,12 +47,12 @@ public sealed class Compilation
     
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
     {
-        var diagnostics = this.SyntaxTree.Diagnostics.Concat(this.GlobalScope.Diagnostics)
+        var diagnostics = SyntaxTree.Diagnostics.Concat(GlobalScope.Diagnostics)
             .ToImmutableArray();
         if (diagnostics.Any())
             return new(diagnostics, null);
 
-        var statement = this.GetStatement();
+        var statement = GetStatement();
         var evaluator = new Evaluator(statement, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);
@@ -60,13 +60,13 @@ public sealed class Compilation
 
     public void EmitTree(TextWriter writer)
     {
-        var statement = this.GetStatement();
+        var statement = GetStatement();
         statement.WriteTo(writer);
     }
 
-    private BoundBlockStatement GetStatement()
+    BoundBlockStatement GetStatement()
     {
-        var result = this.GlobalScope.Statement;
+        var result = GlobalScope.Statement;
         return Lowerer.Lower(result);
     }
 }

@@ -4,8 +4,8 @@ internal class BoundConversionExpression : BoundExpression
 {
     public BoundConversionExpression(TypeSymbol type, BoundExpression expression)
     {
-        this.Type = type;
-        this.Expression = expression;
+        Type = type;
+        Expression = expression;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.ConversionExpression;

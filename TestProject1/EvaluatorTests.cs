@@ -10,11 +10,11 @@ using Wired.CodeAnalysis.Syntax;
 
 public class EvaluatorTests
 {
-    private readonly ITestOutputHelper testOutputHelper;
+    readonly ITestOutputHelper _testOutputHelper;
 
     public EvaluatorTests(ITestOutputHelper testOutputHelper)
     {
-        this.testOutputHelper = testOutputHelper;
+        this._testOutputHelper = testOutputHelper;
     }
 
     [Theory]
@@ -179,7 +179,7 @@ public class EvaluatorTests
         AssertValue(expression, expectedValue);
     }
 
-    private static void AssertValue(string expression, object expectedValue)
+    static void AssertValue(string expression, object expectedValue)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
@@ -372,8 +372,8 @@ public class EvaluatorTests
         };
         AssertDiagnostics(text, diagnostics);
     }
-    
-    private static void AssertDiagnostics(string text, string[] diagnosticsText)
+
+    static void AssertDiagnostics(string text, string[] diagnosticsText)
     {
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);

@@ -11,9 +11,9 @@ public class CallExpressionSyntax : ExpressionSyntax
     public CallExpressionSyntax(SyntaxToken identifier, SyntaxToken openParenthesis,
         SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesis)
     {
-        this.Identifier = identifier;
-        this.OpenParenthesis = openParenthesis;
-        this.Arguments = arguments;
-        this.CloseParenthesis = closeParenthesis;
+        Identifier = identifier;
+        OpenParenthesis = openParenthesis;
+        Arguments = arguments;
+        CloseParenthesis = closeParenthesis;
     }
 }

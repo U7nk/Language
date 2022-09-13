@@ -8,11 +8,11 @@ public class XUnitTextWriter : TextWriter
     public ITestOutputHelper Output { get; }
     public XUnitTextWriter(ITestOutputHelper output)
     {
-        this.Output = output;
+        Output = output;
     }
 
     public override void WriteLine(string? text) 
-        => this.Output.WriteLine(text);
+        => Output.WriteLine(text);
 
     public override Encoding Encoding => Encoding.Unicode;
 }

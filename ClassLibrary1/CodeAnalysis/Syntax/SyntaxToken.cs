@@ -11,13 +11,13 @@ public class SyntaxToken : SyntaxNode
     public int Position { get; }
     public string Text { get; }
     public object? Value { get; }
-    public override TextSpan Span => new(this.Position, this.Text.Length);
+    public override TextSpan Span => new(Position, Text.Length);
     
     public SyntaxToken(SyntaxKind kind,int position, string text, object? value)
     {
-        this.Kind = kind;
-        this.Position = position;
-        this.Text = text;
-        this.Value = value;
+        Kind = kind;
+        Position = position;
+        Text = text;
+        Value = value;
     }
 }

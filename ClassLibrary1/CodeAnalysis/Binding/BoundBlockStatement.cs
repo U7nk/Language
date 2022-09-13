@@ -9,6 +9,6 @@ internal sealed class BoundBlockStatement : BoundStatement
 
     public BoundBlockStatement(ImmutableArray<BoundStatement> statements)
     {
-        this.Statements = statements;
+        Statements = statements;
     }
 }

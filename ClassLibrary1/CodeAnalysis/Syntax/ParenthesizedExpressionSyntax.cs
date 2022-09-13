@@ -11,9 +11,9 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
         ExpressionSyntax expression,
         SyntaxToken closeParenthesisToken)
     {
-        this.OpenParenthesisToken = openParenthesisToken;
-        this.Expression = expression;
-        this.CloseParenthesisToken = closeParenthesisToken;
+        OpenParenthesisToken = openParenthesisToken;
+        Expression = expression;
+        CloseParenthesisToken = closeParenthesisToken;
     }
 
     public SyntaxToken CloseParenthesisToken { get; }

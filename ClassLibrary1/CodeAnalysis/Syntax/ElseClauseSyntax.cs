@@ -6,8 +6,8 @@ public sealed class ElseClauseSyntax : SyntaxNode
 
     public ElseClauseSyntax(SyntaxToken elseKeyword, StatementSyntax elseStatement)
     {
-        this.ElseKeyword = elseKeyword;
-        this.ElseStatement = elseStatement;
+        ElseKeyword = elseKeyword;
+        ElseStatement = elseStatement;
     }
 
     public SyntaxToken ElseKeyword { get; }

@@ -10,10 +10,10 @@ internal class BoundAssignmentExpression : BoundExpression
 
     public BoundAssignmentExpression(VariableSymbol variable, BoundExpression expression)
     {
-        this.Variable = variable;
-        this.Expression = expression;
+        Variable = variable;
+        Expression = expression;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
-    internal override TypeSymbol Type => this.Expression.Type;
+    internal override TypeSymbol Type => Expression.Type;
 }

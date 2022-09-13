@@ -13,7 +13,7 @@ public class FunctionSymbol : Symbol
         TypeSymbol returnType)
         : base(name)
     {
-        this.Parameters = parameters;
-        this.ReturnType = returnType;
+        Parameters = parameters;
+        ReturnType = returnType;
     }
 }

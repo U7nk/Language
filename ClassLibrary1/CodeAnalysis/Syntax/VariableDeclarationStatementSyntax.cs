@@ -9,7 +9,7 @@ public class VariableDeclarationStatementSyntax : StatementSyntax
     public VariableDeclarationStatementSyntax(
         VariableDeclarationAssignmentSyntax variableDeclaration, SyntaxToken semicolonToken)
     {
-        this.VariableDeclaration = variableDeclaration;
-        this.SemicolonToken = semicolonToken;
+        VariableDeclaration = variableDeclaration;
+        SemicolonToken = semicolonToken;
     }
 }

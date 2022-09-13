@@ -7,9 +7,9 @@ public class BlockStatementSyntax : StatementSyntax
     public BlockStatementSyntax(SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements,
         SyntaxToken closeBraceToken)
     {
-        this.OpenBraceToken = openBraceToken;
-        this.Statements = statements;
-        this.CloseBraceToken = closeBraceToken;
+        OpenBraceToken = openBraceToken;
+        Statements = statements;
+        CloseBraceToken = closeBraceToken;
     }
 
     public SyntaxToken OpenBraceToken { get; }

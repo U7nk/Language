@@ -9,9 +9,9 @@ public sealed class Diagnostic
 
     public Diagnostic(TextSpan span, string message)
     {
-        this.Span = span;
-        this.Message = message;
+        Span = span;
+        Message = message;
     }
 
-    public override string ToString() => this.Message;
+    public override string ToString() => Message;
 }

@@ -6,9 +6,9 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
 {
     public AssignmentExpressionSyntax(SyntaxToken identifierToken, SyntaxToken equalsToken, ExpressionSyntax expression)
     {
-        this.IdentifierToken = identifierToken;
-        this.EqualsToken = equalsToken;
-        this.Expression = expression;
+        IdentifierToken = identifierToken;
+        EqualsToken = equalsToken;
+        Expression = expression;
     }
 
     public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;

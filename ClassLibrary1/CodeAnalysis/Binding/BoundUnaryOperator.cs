@@ -10,13 +10,13 @@ internal class BoundUnaryOperator
     public SyntaxKind SyntaxKind { get; }
     public TypeSymbol OperandType { get; }
     public TypeSymbol ResultType { get; }
-    
-    private BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol operandType, TypeSymbol resultType)
+
+    BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol operandType, TypeSymbol resultType)
     {
-        this.Kind = kind;
-        this.SyntaxKind = syntaxKind;
-        this.OperandType = operandType;
-        this.ResultType = resultType;
+        Kind = kind;
+        SyntaxKind = syntaxKind;
+        OperandType = operandType;
+        ResultType = resultType;
     }
     
     public BoundUnaryOperator(
@@ -25,7 +25,7 @@ internal class BoundUnaryOperator
     {
     }
 
-    private static readonly List<BoundUnaryOperator> Operators = new()
+    static readonly List<BoundUnaryOperator> _operators = new()
     {
         new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, TypeSymbol.Int),
         new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, TypeSymbol.Int),
@@ -36,7 +36,7 @@ internal class BoundUnaryOperator
 
     internal static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol operandType)
     {
-        foreach (var unaryOperator in Operators)
+        foreach (var unaryOperator in _operators)
         {
             if (syntaxKind == unaryOperator.SyntaxKind 
                 && unaryOperator.OperandType == operandType)

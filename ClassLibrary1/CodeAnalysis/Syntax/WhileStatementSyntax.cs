@@ -6,9 +6,9 @@ internal sealed class WhileStatementSyntax : StatementSyntax
   
     public WhileStatementSyntax(SyntaxToken whileKeyword, ExpressionSyntax condition, StatementSyntax body)
     {
-        this.WhileKeyword = whileKeyword;
-        this.Condition = condition;
-        this.Body = body;
+        WhileKeyword = whileKeyword;
+        Condition = condition;
+        Body = body;
     }
 
     public StatementSyntax Body { get; }

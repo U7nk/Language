@@ -4,8 +4,8 @@ public class ExpressionStatementSyntax : StatementSyntax
 {
     public ExpressionStatementSyntax(ExpressionSyntax expression, SyntaxToken semicolonToken)
     {
-        this.Expression = expression;
-        this.SemicolonToken = semicolonToken;
+        Expression = expression;
+        SemicolonToken = semicolonToken;
     }
     public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
     public ExpressionSyntax Expression { get; }

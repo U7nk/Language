@@ -7,6 +7,6 @@ internal sealed class BoundExpressionStatement : BoundStatement
 
     public BoundExpressionStatement(BoundExpression expression)
     {
-        this.Expression = expression;
+        Expression = expression;
     }
 }

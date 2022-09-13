@@ -8,100 +8,100 @@ namespace Wired.CodeAnalysis;
 
 public class DiagnosticBag : IEnumerable<Diagnostic>
 {
-    private readonly List<Diagnostic> diagnostics = new();
+    readonly List<Diagnostic> _diagnostics = new();
 
 
     public void Report(TextSpan textSpan, string message) 
-        => this.diagnostics.Add(new Diagnostic(textSpan, message));
+        => _diagnostics.Add(new Diagnostic(textSpan, message));
     
-    public IEnumerator<Diagnostic> GetEnumerator() => this.diagnostics.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+    public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void AddRange(IEnumerable<Diagnostic> diagnosticsEnumerable) 
-        => this.diagnostics.AddRange(diagnosticsEnumerable);
+        => _diagnostics.AddRange(diagnosticsEnumerable);
     
     
     public void ReportInvalidNumber(int start, int length, string text, Type type)
     {
         var message = $"Number '{text}' is not a valid '{type}'.";
-        this.Report(new TextSpan(start, length), message);
+        Report(new TextSpan(start, length), message);
     }
 
     public void ReportBadCharacter(int position, char character)
     {
         var message = $"error: bad character '{character}'.";
-        this.Report(new TextSpan(position, 1), message);
+        Report(new TextSpan(position, 1), message);
     }
 
     public void ReportUnexpectedToken(TextSpan span, SyntaxKind token, SyntaxKind expected)
     {
         var message = $"error: Unexpected token <{token}> expected <{expected}>.";
-        this.Report(span, message);
+        Report(span, message);
     }
 
     public void ReportUndefinedUnaryOperator(TextSpan operatorTokenSpan, string text, TypeSymbol operandType)
     {
         var message = $"Invalid unary operator '{text}' for type '{operandType}'.";
-        this.Report(operatorTokenSpan, message);
+        Report(operatorTokenSpan, message);
     }
 
     public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType, TypeSymbol rightType)
     {
         var message = $"Invalid binary operator '{operatorText}' for types '{leftType}' and '{rightType}'.";
-        this.Report(span, message);
+        Report(span, message);
     }
 
     public void ReportUndefinedName(TextSpan identifierTokenSpan, string name)
     {
         var message = $"'{name}' is undefined.";
-        this.Report(identifierTokenSpan, message);
+        Report(identifierTokenSpan, message);
     }
 
     public void ReportVariableAlreadyDeclared(TextSpan span, string name)
     { 
         var message = $"Variable '{name}' is already declared.";
-        this.Report(span, message);
+        Report(span, message);
     }
 
     public void ReportCannotConvert(TextSpan expressionSpan, TypeSymbol fromType, TypeSymbol toType)
     {
         var message = $"Cannot convert '{fromType}' to '{toType}'.";
-        this.Report(expressionSpan, message);
+        Report(expressionSpan, message);
     }
 
     public void ReportCannotAssignToReadonly(TextSpan span, string name)
     {
         var message = $"'{name}' is readonly and cannot be assigned to.";
-        this.Report(span, message);
+        Report(span, message);
     }
 
     public void VariableDoesntExistsInCurrentScope(TextSpan identifierTokenSpan, string name)
     {
         var message = $"'{name}' doesn't exists in current scope.";
-        this.Report(identifierTokenSpan, message);
+        Report(identifierTokenSpan, message);
     }
 
     public void ReportUnterminatedString(TextSpan span)
     {
         var message = "Unterminated string literal.";
-        this.Report(span, message);
+        Report(span, message);
     }
 
     public void ReportUndefinedFunction(TextSpan identifierSpan, string identifierText)
     {
         var message = $"Function '{identifierText}' is undefined.";
-        this.Report(identifierSpan, message);
+        Report(identifierSpan, message);
     }
 
     public void ReportParameterCountMismatch(TextSpan identifierSpan, string identifierText, int parametersLength, int argumentsCount)
     {
         var message = $"Function '{identifierText}' requires {parametersLength} arguments but was given {argumentsCount}.";
-        this.Report(identifierSpan, message);
+        Report(identifierSpan, message);
     }
 
     public void ReportExpressionMustHaveValue(TextSpan initializerSpan)
     {
         var message = $"Expression must have a value.";
-        this.Report(initializerSpan, message);
+        Report(initializerSpan, message);
     }
 }

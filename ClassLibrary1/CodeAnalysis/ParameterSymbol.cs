@@ -8,6 +8,6 @@ public class ParameterSymbol : VariableSymbol
     internal ParameterSymbol(string name, TypeSymbol type)
         : base(name, type, isReadonly: true)
     {
-        this.Type = type;
+        Type = type;
     }
 }

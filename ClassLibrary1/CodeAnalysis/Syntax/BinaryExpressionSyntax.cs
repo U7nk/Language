@@ -6,9 +6,9 @@ public sealed class BinaryExpressionSyntax : ExpressionSyntax
 {
     public BinaryExpressionSyntax(ExpressionSyntax left, SyntaxToken operatorToken, ExpressionSyntax right)
     {
-        this.Left = left;
-        this.OperatorToken = operatorToken;
-        this.Right = right;
+        Left = left;
+        OperatorToken = operatorToken;
+        Right = right;
     }
 
     public ExpressionSyntax Left { get; }

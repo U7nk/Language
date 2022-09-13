@@ -7,8 +7,8 @@ internal class BoundVariableDeclarationStatement : BoundStatement
 
     public BoundVariableDeclarationStatement(VariableSymbol variable, BoundExpression initializer)
     {
-        this.Variable = variable;
-        this.Initializer = initializer;
+        Variable = variable;
+        Initializer = initializer;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;

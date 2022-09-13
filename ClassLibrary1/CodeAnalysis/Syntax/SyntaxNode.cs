@@ -15,15 +15,15 @@ public abstract class SyntaxNode
     {
         get
         {
-            var first = this.GetChildren().First().Span;
-            var last = this.GetChildren().Last().Span;
+            var first = GetChildren().First().Span;
+            var last = GetChildren().Last().Span;
             return TextSpan.FromBounds(first.Start, last.End);
         }
     }
 
     public IEnumerable<SyntaxNode> GetChildren()
     {
-        var properties = this.GetType()
+        var properties = GetType()
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
         foreach (var property in properties)
         {
@@ -59,23 +59,23 @@ public abstract class SyntaxNode
             return syntaxToken;
         
         // fact: syntax node always have at least one token
-        return this.GetChildren().Last().GetLastToken();
+        return GetChildren().Last().GetLastToken();
     }
 
     public override string ToString()
     {
         using var sw = new StringWriter();
-        this.WriteTo(sw);
+        WriteTo(sw);
         return sw.ToString();
     }
 
     public void WriteTo(TextWriter writer)
     {
-        this.PrettyPrint(writer, this);
+        PrettyPrint(writer, this);
     }
-    
-    
-    private void PrettyPrint(TextWriter writer, SyntaxNode node, bool isLast = true, string indent = "")
+
+
+    void PrettyPrint(TextWriter writer, SyntaxNode node, bool isLast = true, string indent = "")
     {
 
         var marker = isLast ? "└──" : "├──";
@@ -94,7 +94,7 @@ public abstract class SyntaxNode
         var last = node.GetChildren().LastOrDefault();
         foreach (var child in node.GetChildren())
         {
-            this.PrettyPrint(writer, child, child == last, indent);
+            PrettyPrint(writer, child, child == last, indent);
         }
     }
 }

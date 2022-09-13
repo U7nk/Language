@@ -16,24 +16,24 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
 
     public SeparatedSyntaxList(ImmutableArray<SyntaxNode> separatorsAndNodes)
     {
-        this.SeparatorsAndNodes = separatorsAndNodes;
+        SeparatorsAndNodes = separatorsAndNodes;
     }
 
-    public int Count => (this.SeparatorsAndNodes.Length + 1) / 2;
-    public T this[int index] => (T)this.SeparatorsAndNodes[index * 2];
+    public int Count => (SeparatorsAndNodes.Length + 1) / 2;
+    public T this[int index] => (T)SeparatorsAndNodes[index * 2];
 
     public SyntaxToken? GetSeparator(int index)
     {
-        if (index == this.Count - 1)
+        if (index == Count - 1)
             return null;
 
-        return this.SeparatorsAndNodes[index * 2 + 1] as SyntaxToken
+        return SeparatorsAndNodes[index * 2 + 1] as SyntaxToken
                ?? throw new InvalidOperationException();
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (var i = 0; i < this.Count; i++)
+        for (var i = 0; i < Count; i++)
         {
             yield return this[i];
         }
@@ -41,9 +41,9 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return this.GetEnumerator();
+        return GetEnumerator();
     }
 
     public override ImmutableArray<SyntaxNode> GetWithSeparators() 
-        => this.SeparatorsAndNodes;
+        => SeparatorsAndNodes;
 }

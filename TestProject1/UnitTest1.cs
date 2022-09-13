@@ -8,19 +8,18 @@ namespace TestProject1;
 
 public class UnitTest1
 {
-
-    private readonly XUnitTextWriter output;
+    readonly XUnitTextWriter _output;
 
     public UnitTest1(ITestOutputHelper output)
     {
-        this.output = new XUnitTextWriter(output);
+        this._output = new XUnitTextWriter(output);
     }
     
     [Fact]
     public void Evaluate()
     {
         
-        this.output.WriteLine("Result: " + this.Build($$"""
+        _output.WriteLine("Result: " + Build($$"""
             {
                 print("Hello" + "World" + "!"); 
                 let f = 50;
@@ -29,17 +28,17 @@ public class UnitTest1
             """));
     }
 
-    private object Build(string input)
+    object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
         var compilation = new Compilation(syntaxTree);
         
-        this.output.WriteLine("Syntax Tree:");
-        compilation.SyntaxTree.Root.WriteTo(this.output);
-        this.output.WriteLine();
-        this.output.WriteLine();
-        this.output.WriteLine("Bound Tree:");
-        compilation.EmitTree(this.output);
+        _output.WriteLine("Syntax Tree:");
+        compilation.SyntaxTree.Root.WriteTo(_output);
+        _output.WriteLine();
+        _output.WriteLine();
+        _output.WriteLine("Bound Tree:");
+        compilation.EmitTree(_output);
         
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);
@@ -54,8 +53,8 @@ public class UnitTest1
                 var error = input.Substring(diagnostic.Span.Start, diagnostic.Span.Length);
                 var suffix = input.Substring(diagnostic.Span.End);
                 var line = $"({lineNumber},{diagnostic.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}> {error} <{suffix}\"";
-                this.output.WriteLine(line);
-                this.output.WriteLine(diagnostic.Message);
+                _output.WriteLine(line);
+                _output.WriteLine(diagnostic.Message);
             }
         }
         else

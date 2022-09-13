@@ -6,11 +6,11 @@ namespace TestProject1.CodeAnalysis;
 
 public class SyntaxFactTests
 {
-    private readonly ITestOutputHelper testOutputHelper;
+    readonly ITestOutputHelper _testOutputHelper;
 
     public SyntaxFactTests(ITestOutputHelper testOutputHelper)
     {
-        this.testOutputHelper = testOutputHelper;
+        this._testOutputHelper = testOutputHelper;
     }
 
     [Theory]
@@ -32,7 +32,7 @@ public class SyntaxFactTests
         var text = SyntaxFacts.GetText(kind);
         text.Should().NotBeNull();
         var actualKind = SyntaxFacts.GetKeywordKind(text!);
-        this.testOutputHelper.WriteLine($"{nameof(SyntaxFacts.GetText)}-\'{text}\'");
+        _testOutputHelper.WriteLine($"{nameof(SyntaxFacts.GetText)}-\'{text}\'");
         actualKind.Should().Be(kind);
 
     }

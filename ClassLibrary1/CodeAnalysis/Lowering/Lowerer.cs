@@ -7,9 +7,9 @@ namespace Wired.CodeAnalysis.Lowering;
 
 internal sealed class Lowerer : BoundTreeRewriter
 {
-    private int labelCount;
+    int _labelCount;
 
-    private Lowerer()
+    Lowerer()
     {
     }
 
@@ -20,7 +20,7 @@ internal sealed class Lowerer : BoundTreeRewriter
         return Flatten(result);
     }
 
-    private static BoundBlockStatement Flatten(BoundStatement statement)
+    static BoundBlockStatement Flatten(BoundStatement statement)
     {
         var builder = ImmutableArray.CreateBuilder<BoundStatement>();
         var stack = new Stack<BoundStatement>();
@@ -39,9 +39,9 @@ internal sealed class Lowerer : BoundTreeRewriter
 
         return new BoundBlockStatement(builder.ToImmutable());
     }
-    
-    private LabelSymbol GenerateLabel() 
-        => new("Label" + this.labelCount++);
+
+    LabelSymbol GenerateLabel() 
+        => new("Label" + _labelCount++);
 
     protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
     {
@@ -54,12 +54,12 @@ internal sealed class Lowerer : BoundTreeRewriter
             // gotoIfFalse <condition> end
             // <then>
             // end:
-            var label = this.GenerateLabel();
+            var label = GenerateLabel();
             var conditionalGoto = new BoundConditionalGotoStatement(label, node.Condition, false);
             var endLabelStatement = new BoundLabelStatement(label);
             var block = new BoundBlockStatement(
                 ImmutableArray.Create(conditionalGoto, node.ThenStatement, endLabelStatement));
-            return this.RewriteStatement(block);
+            return RewriteStatement(block);
         }
         else
         {
@@ -75,8 +75,8 @@ internal sealed class Lowerer : BoundTreeRewriter
             // else:
             // <else>
             // end:
-            var elseLabel = this.GenerateLabel();
-            var endLabel = this.GenerateLabel();
+            var elseLabel = GenerateLabel();
+            var endLabel = GenerateLabel();
             var conditionalGoto = new BoundConditionalGotoStatement(elseLabel, node.Condition, false);
             var gotoEnd = new BoundGotoStatement(endLabel);
             var elseLabelStatement = new BoundLabelStatement(elseLabel);
@@ -86,7 +86,7 @@ internal sealed class Lowerer : BoundTreeRewriter
                     conditionalGoto, node.ThenStatement,
                     gotoEnd, elseLabelStatement,
                     node.ElseStatement, endLabelStatement));
-            return this.RewriteStatement(block);
+            return RewriteStatement(block);
         }
     }
 
@@ -102,9 +102,9 @@ internal sealed class Lowerer : BoundTreeRewriter
         // start:
         // gotoIfTrue <condition> continue
         
-        var startLabel = this.GenerateLabel();
+        var startLabel = GenerateLabel();
         var gotoStart = new BoundGotoStatement(startLabel);
-        var continueLabel = this.GenerateLabel();
+        var continueLabel = GenerateLabel();
         var continueLabelStatement = new BoundLabelStatement(continueLabel);
         
         var startLabelStatement = new BoundLabelStatement(startLabel);
@@ -115,7 +115,7 @@ internal sealed class Lowerer : BoundTreeRewriter
                 node.Body, startLabelStatement,
                 conditionalGoto));
         
-        return this.RewriteStatement(block);
+        return RewriteStatement(block);
     }
 
     protected override BoundStatement RewriteForStatement(BoundForStatement node)
@@ -150,6 +150,6 @@ internal sealed class Lowerer : BoundTreeRewriter
             body);
 
         var result = new BoundBlockStatement(ImmutableArray.Create(statement, whileStatement));
-        return this.RewriteStatement(result);
+        return RewriteStatement(result);
     }
 }

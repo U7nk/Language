@@ -6,9 +6,9 @@ public class VariableDeclarationAssignmentSyntax : SyntaxNode
 
     public VariableDeclarationAssignmentSyntax(VariableDeclarationSyntax variableDeclaration, SyntaxToken equalsToken, ExpressionSyntax expression)
     {
-        this.VariableDeclaration = variableDeclaration;
-        this.EqualsToken = equalsToken;
-        this.Initializer = expression;
+        VariableDeclaration = variableDeclaration;
+        EqualsToken = equalsToken;
+        Initializer = expression;
     }
     public VariableDeclarationSyntax VariableDeclaration { get; }
     public SyntaxToken EqualsToken { get; }

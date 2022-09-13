@@ -4,8 +4,8 @@ public sealed class CompilationUnitSyntax : SyntaxNode
 {
     public CompilationUnitSyntax(StatementSyntax statement, SyntaxToken endOfFileToken)
     {
-        this.Statement = statement;
-        this.EndOfFileToken = endOfFileToken;
+        Statement = statement;
+        EndOfFileToken = endOfFileToken;
     }
 
     public StatementSyntax Statement { get; }

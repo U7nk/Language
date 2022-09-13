@@ -6,7 +6,7 @@ public sealed class NameExpressionSyntax : ExpressionSyntax
 {
     public NameExpressionSyntax(SyntaxToken identifierToken)
     {
-        this.IdentifierToken = identifierToken;
+        IdentifierToken = identifierToken;
     }
 
     public override SyntaxKind Kind => SyntaxKind.NameExpression;

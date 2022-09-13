@@ -11,13 +11,13 @@ public class SyntaxTree
     public CompilationUnitSyntax Root { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
 
-    private SyntaxTree(SourceText sourceText)
+    SyntaxTree(SourceText sourceText)
     {
-        this.SourceText = sourceText;
+        SourceText = sourceText;
         var parser = new Parser(sourceText);
-        this.Root = parser.ParseCompilationUnit();
+        Root = parser.ParseCompilationUnit();
         var diagnostics = parser.Diagnostic.ToImmutableArray();
-        this.Diagnostics = diagnostics;
+        Diagnostics = diagnostics;
     }
     
     public static SyntaxTree Parse(string source)

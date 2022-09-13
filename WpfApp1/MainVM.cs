@@ -6,57 +6,57 @@ namespace WpfApp1
 {
     public class UpdateStringValueCommand : ICommand
     {
-        public UpdateStringValueCommand(MainVM mainVM)
+        public UpdateStringValueCommand(MainVm mainVm)
         {
-            this.mainVM = mainVM;
+            this._mainVm = mainVm;
         }
         public bool CanExecute(object parameter)
         {
-            this.mainVM.BoolVal = !this.mainVM.BoolVal;
+            _mainVm.BoolVal = !_mainVm.BoolVal;
             return true;
         }
 
         public event EventHandler CanExecuteChanged;
-        private MainVM mainVM;
+        MainVm _mainVm;
 
         public void Execute(object parameter)
         {
-            this.mainVM.StringValue = "NewValue";
+            _mainVm.StringValue = "NewValue";
         }
     }
-    public class MainVM : INotifyPropertyChanged
+    public class MainVm : INotifyPropertyChanged
     {
-        private string stringValue = "s";
+        string _stringValue = "s";
         public string StringValue
         {
             get
             {
-                return this.stringValue;
+                return _stringValue;
             }
             set
             {
-                this.stringValue = value;
-                this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StringValue"));
+                _stringValue = value;
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs("StringValue"));
             }
         }
 
-        private bool boolVal = false;
+        bool _boolVal = false;
         public bool BoolVal
         {
             get
             {
-                return this.boolVal;
+                return _boolVal;
             }
             set
             {
-                this.boolVal = value;
-                this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BoolVal"));
+                _boolVal = value;
+                PropertyChanged.Invoke(this, new PropertyChangedEventArgs("BoolVal"));
             }
         }
 
-        public MainVM()
+        public MainVm()
         {
-            this.UpdateStringValue = new UpdateStringValueCommand(this);
+            UpdateStringValue = new UpdateStringValueCommand(this);
         }
         public ICommand UpdateStringValue { get; set; }
 

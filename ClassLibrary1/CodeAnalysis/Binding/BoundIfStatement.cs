@@ -8,9 +8,9 @@ internal class BoundIfStatement : BoundStatement
 
     public BoundIfStatement(BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement)
     {
-        this.Condition = condition;
-        this.ThenStatement = thenStatement;
-        this.ElseStatement = elseStatement;
+        Condition = condition;
+        ThenStatement = thenStatement;
+        ElseStatement = elseStatement;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.IfStatement;

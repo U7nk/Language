@@ -12,21 +12,21 @@ internal class BoundBinaryOperator
     public TypeSymbol RightType { get; }
     public TypeSymbol ResultType { get; }
 
-    private BoundBinaryOperator(BoundBinaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol left) :
+    BoundBinaryOperator(BoundBinaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol left) :
         this(kind, syntaxKind, left, left, left)
     {
     }
 
-    private BoundBinaryOperator(BoundBinaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol resultType)
+    BoundBinaryOperator(BoundBinaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol leftType, TypeSymbol rightType, TypeSymbol resultType)
     {
-        this.Kind = kind;
-        this.SyntaxKind = syntaxKind;
-        this.LeftType = leftType;
-        this.RightType = rightType;
-        this.ResultType = resultType;
+        Kind = kind;
+        SyntaxKind = syntaxKind;
+        LeftType = leftType;
+        RightType = rightType;
+        ResultType = resultType;
     }
 
-    private static readonly List<BoundBinaryOperator> Operators = new()
+    static readonly List<BoundBinaryOperator> _operators = new()
     {
         new(BoundBinaryOperatorKind.Addition, SyntaxKind.PlusToken, TypeSymbol.Int),
         new(BoundBinaryOperatorKind.Addition, SyntaxKind.PlusToken, TypeSymbol.String),
@@ -60,7 +60,7 @@ internal class BoundBinaryOperator
 
     internal static BoundBinaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol leftType, TypeSymbol rightType)
     {
-        foreach (var unaryOperator in Operators)
+        foreach (var unaryOperator in _operators)
         {
             if (syntaxKind == unaryOperator.SyntaxKind && unaryOperator.LeftType == leftType && unaryOperator.RightType == rightType)
             {

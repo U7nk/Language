@@ -9,7 +9,7 @@ public class EvaluationResult
 
     public EvaluationResult(ImmutableArray<Diagnostic> diagnostics, object? result)
     {
-        this.Diagnostics = diagnostics;
-        this.Result = result;
+        Diagnostics = diagnostics;
+        Result = result;
     }
 }

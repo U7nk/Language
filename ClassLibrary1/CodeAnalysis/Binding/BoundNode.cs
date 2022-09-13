@@ -14,7 +14,7 @@ internal abstract class BoundNode
     
     public IEnumerable<BoundNode> GetChildren()
     {
-        var properties = this.GetType()
+        var properties = GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
@@ -56,12 +56,12 @@ internal abstract class BoundNode
     
     public IEnumerable<(string Name, object Value)> GetProperties()
     {
-        var properties = this.GetType()
+        var properties = GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
         foreach (var property in properties)
         {
             if (property.Name is 
-                nameof(BoundNode.Kind)
+                nameof(Kind)
                 or nameof(BoundBinaryExpression.Op)) 
                 continue;
             
@@ -75,8 +75,8 @@ internal abstract class BoundNode
 
         }
     }
-    
-    private void PrettyPrint(TextWriter writer, BoundNode node, bool isLast = true, string indent = "")
+
+    void PrettyPrint(TextWriter writer, BoundNode node, bool isLast = true, string indent = "")
     {
         var marker = isLast ? "└──" : "├──";
         var str = indent + marker;
@@ -88,11 +88,11 @@ internal abstract class BoundNode
         var last = node.GetChildren().LastOrDefault();
         foreach (var child in node.GetChildren())
         {
-            this.PrettyPrint(writer, child, child == last, indent);
+            PrettyPrint(writer, child, child == last, indent);
         }
     }
 
-    private static string GetText(BoundNode node)
+    static string GetText(BoundNode node)
     {
         if (node is BoundBinaryExpression b)
             return b.Op.Kind + "Expression";
@@ -104,5 +104,5 @@ internal abstract class BoundNode
     }
 
     public void WriteTo(TextWriter writer) 
-        => this.PrettyPrint(writer, this);
+        => PrettyPrint(writer, this);
 }

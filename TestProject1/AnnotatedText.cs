@@ -11,8 +11,8 @@ internal class AnnotatedText
 
     public AnnotatedText(string text, ImmutableArray<TextSpan> spans)
     {
-        this.Text = text;
-        this.Spans = spans;
+        Text = text;
+        Spans = spans;
     }
 
     public static AnnotatedText Parse(string text)

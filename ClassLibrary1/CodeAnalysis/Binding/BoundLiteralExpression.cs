@@ -9,7 +9,7 @@ internal class BoundLiteralExpression : BoundExpression
     internal object? Value { get; }
     internal BoundLiteralExpression(object? value, TypeSymbol type)
     {
-        this.Value = value;
-        this.Type = type;
+        Value = value;
+        Type = type;
     }
 }

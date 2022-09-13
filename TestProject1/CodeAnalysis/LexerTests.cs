@@ -91,7 +91,7 @@ public sealed class LexerTests
         }
     }
 
-    private static IEnumerable<(SyntaxKind kind, string text)> GetTokens()
+    static IEnumerable<(SyntaxKind kind, string text)> GetTokens()
     {
         var fixedTokens = Enum.GetValues<SyntaxKind>()
             .Select(k => (kind: k, text: SyntaxFacts.GetText(k)))
@@ -113,7 +113,7 @@ public sealed class LexerTests
         return fixedTokens.Concat(dynamicTokens);
     }
 
-    private static IEnumerable<(SyntaxKind t1Kind, string t1Text, SyntaxKind t2Kind, string t2Text)> GetTokenPairs()
+    static IEnumerable<(SyntaxKind t1Kind, string t1Text, SyntaxKind t2Kind, string t2Text)> GetTokenPairs()
     {
         foreach (var token in GetTokens())
         {
@@ -127,7 +127,7 @@ public sealed class LexerTests
         }
     }
 
-    private static IEnumerable<(
+    static IEnumerable<(
         SyntaxKind t1Kind, string t1Text,
         SyntaxKind separatorKind, string separatorText,
         SyntaxKind t2Kind, string t2Text)> GetTokenPairsWithSeparator()
@@ -150,7 +150,7 @@ public sealed class LexerTests
         }
     }
 
-    private static bool RequiresSeparator(SyntaxKind t1Kind, SyntaxKind t2Kind)
+    static bool RequiresSeparator(SyntaxKind t1Kind, SyntaxKind t2Kind)
     {
         var t1IsKeyword = t1Kind.ToString().EndsWith("Keyword");
         var t2IsKeyword = t2Kind.ToString().EndsWith("Keyword");
@@ -228,7 +228,7 @@ public sealed class LexerTests
         }
     }
 
-    private static IEnumerable<(SyntaxKind kind, string text)> GetSeparators()
+    static IEnumerable<(SyntaxKind kind, string text)> GetSeparators()
     {
         return new[]
         {

@@ -8,9 +8,9 @@ internal class BoundVariableExpression : BoundExpression
 
     public BoundVariableExpression(VariableSymbol variable)
     {
-        this.Variable = variable;
+        Variable = variable;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.VariableExpression;
-    internal override TypeSymbol Type => this.Variable.Type;
+    internal override TypeSymbol Type => Variable.Type;
 }

@@ -10,8 +10,8 @@ public sealed class LiteralExpressionSyntax : ExpressionSyntax
 
     public LiteralExpressionSyntax(SyntaxToken literalToken, object? value)
     {
-        this.LiteralToken = literalToken;
-        this.Value = value;
+        LiteralToken = literalToken;
+        Value = value;
     }
 
     public SyntaxToken LiteralToken { get; }

@@ -8,45 +8,45 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
-    private readonly BoundBlockStatement root;
-    private readonly Dictionary<VariableSymbol, object> variables;
-    private object? lastValue;
+    readonly BoundBlockStatement _root;
+    readonly Dictionary<VariableSymbol, object> _variables;
+    object? _lastValue;
 
     public Evaluator(BoundBlockStatement root, Dictionary<VariableSymbol, object> variables)
     {
-        this.root = root;
-        this.variables = variables;
+        this._root = root;
+        this._variables = variables;
     }
 
     public object Evaluate()
     {
         var labelToIndex = new Dictionary<LabelSymbol, int>();
 
-        for (var index = 0; index < this.root.Statements.Length; index++)
+        for (var index = 0; index < _root.Statements.Length; index++)
         {
-            var statement = this.root.Statements[index];
+            var statement = _root.Statements[index];
             if (statement is BoundLabelStatement l) 
                 labelToIndex.Add(l.Label, index);
         }
 
         var i = 0;
-        while (i < this.root.Statements.Length)
+        while (i < _root.Statements.Length)
         {
-            var statement = this.root.Statements[i];
+            var statement = _root.Statements[i];
             switch (statement.Kind)
             {
                 case BoundNodeKind.ExpressionStatement:
-                    this.EvaluateExpressionStatement((BoundExpressionStatement)statement);
+                    EvaluateExpressionStatement((BoundExpressionStatement)statement);
                     i++;
                     break;
                 case BoundNodeKind.VariableDeclarationStatement:
                     var gs = (BoundVariableDeclarationStatement)statement;
-                    this.EvaluateVariableDeclarationStatement(gs);
+                    EvaluateVariableDeclarationStatement(gs);
                     i++;
                     break;
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
-                    var condition = (bool)this.EvaluateExpression(cgs.Condition);
+                    var condition = (bool)EvaluateExpression(cgs.Condition);
                     if (condition == cgs.JumpIfTrue)
                         i = labelToIndex[cgs.Label];
                     else
@@ -63,15 +63,15 @@ internal class Evaluator
             }
         }
         
-        return this.lastValue;
+        return _lastValue;
     }
 
-    private void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
-        => this.variables[statement.Variable] = this.EvaluateExpression(statement.Initializer);
+    void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
+        => _variables[statement.Variable] = EvaluateExpression(statement.Initializer);
 
-    private void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
+    void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {
-        this.lastValue = this.EvaluateExpression(expressionStatement.Expression);
+        _lastValue = EvaluateExpression(expressionStatement.Expression);
     }
 
     public object? EvaluateExpression(BoundExpression node)
@@ -79,27 +79,27 @@ internal class Evaluator
         return node.Kind switch
         {
             BoundNodeKind.LiteralExpression =>
-                this.EvaluateLiteralExpression((BoundLiteralExpression)node),
+                EvaluateLiteralExpression((BoundLiteralExpression)node),
             BoundNodeKind.AssignmentExpression =>
-                this.EvaluateAssignmentExpression((BoundAssignmentExpression)node),
+                EvaluateAssignmentExpression((BoundAssignmentExpression)node),
             BoundNodeKind.VariableExpression =>
-                this.EvaluateVariableExpression((BoundVariableExpression)node),
+                EvaluateVariableExpression((BoundVariableExpression)node),
             BoundNodeKind.UnaryExpression =>
-                this.EvaluateUnaryExpression((BoundUnaryExpression)node),
+                EvaluateUnaryExpression((BoundUnaryExpression)node),
             BoundNodeKind.BinaryExpression =>
-                this.EvaluateBinaryExpression((BoundBinaryExpression)node),
+                EvaluateBinaryExpression((BoundBinaryExpression)node),
             BoundNodeKind.CallExpression =>
-                this.EvaluateCallExpression((BoundCallExpression)node),
+                EvaluateCallExpression((BoundCallExpression)node),
             BoundNodeKind.ConversionExpression =>
-                this.EvaluateConversionExpression((BoundConversionExpression)node),
+                EvaluateConversionExpression((BoundConversionExpression)node),
             _ =>
                 throw new($"Unexpected node  {node.Kind}")
         };
     }
 
-    private object? EvaluateConversionExpression(BoundConversionExpression node)
+    object? EvaluateConversionExpression(BoundConversionExpression node)
     {
-        var value = this.EvaluateExpression(node.Expression);
+        var value = EvaluateExpression(node.Expression);
         if (node.Type == TypeSymbol.Bool) 
             return Convert.ToBoolean(value);
 
@@ -113,9 +113,9 @@ internal class Evaluator
         
     }
 
-    private object? EvaluateCallExpression(BoundCallExpression node)
+    object? EvaluateCallExpression(BoundCallExpression node)
     {
-        var arguments = node.Arguments.Select(this.EvaluateExpression).ToList();
+        var arguments = node.Arguments.Select(EvaluateExpression).ToList();
         if (node.FunctionSymbol == BuiltInFunctions.Input)
         {
             return Console.ReadLine();
@@ -132,10 +132,10 @@ internal class Evaluator
         throw new($"Unexpected function {node.FunctionSymbol.Name}");
     }
 
-    private object EvaluateBinaryExpression(BoundBinaryExpression b)
+    object EvaluateBinaryExpression(BoundBinaryExpression b)
     {
-        var left = this.EvaluateExpression(b.Left);
-        var right = this.EvaluateExpression(b.Right);
+        var left = EvaluateExpression(b.Left);
+        var right = EvaluateExpression(b.Right);
         if (b.Left.Type == TypeSymbol.Int)
         {
             if (b.Right.Type == TypeSymbol.Int)
@@ -200,9 +200,9 @@ internal class Evaluator
         throw new($"Unexpected binary operator {b.Op.Kind}");
     }
 
-    private object EvaluateUnaryExpression(BoundUnaryExpression unary)
+    object EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
-        var operand = this.EvaluateExpression(unary.Operand);
+        var operand = EvaluateExpression(unary.Operand);
         if (unary.Type == TypeSymbol.Int)
         {
             var intOperand = (int)operand;
@@ -228,19 +228,19 @@ internal class Evaluator
         throw new Exception($"Unexpected unary operator {unary.Op}");
     }
 
-    private object EvaluateAssignmentExpression(BoundAssignmentExpression a)
+    object EvaluateAssignmentExpression(BoundAssignmentExpression a)
     {
-        var value = this.EvaluateExpression(a.Expression);
-        this.variables[a.Variable] = value;
+        var value = EvaluateExpression(a.Expression);
+        _variables[a.Variable] = value;
         return value;
     }
 
-    private object EvaluateVariableExpression(BoundVariableExpression v)
+    object EvaluateVariableExpression(BoundVariableExpression v)
     {
-        return this.variables[v.Variable];
+        return _variables[v.Variable];
     }
 
-    private object EvaluateLiteralExpression(BoundLiteralExpression l)
+    object EvaluateLiteralExpression(BoundLiteralExpression l)
     {
         return l.Value;
     }

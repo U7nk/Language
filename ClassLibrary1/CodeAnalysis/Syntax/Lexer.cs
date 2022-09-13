@@ -6,51 +6,51 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class Lexer
 {
-    private readonly SourceText sourceText;
-    private int position;
-    private readonly DiagnosticBag diagnostics = new();
-    private int start;
-    private SyntaxKind kind;
-    private object? value;
-    public IEnumerable<Diagnostic> Diagnostics => this.diagnostics;
+    readonly SourceText _sourceText;
+    int _position;
+    readonly DiagnosticBag _diagnostics = new();
+    int _start;
+    SyntaxKind _kind;
+    object? _value;
+    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
     public Lexer(SourceText sourceText)
     {
-        this.sourceText = sourceText;
+        this._sourceText = sourceText;
     }
 
 
-    private char Current => this.Peek(0);
-    private char Lookahead => this.Peek(1);
+    char Current => Peek(0);
+    char Lookahead => Peek(1);
 
-    private void Next(int offset = 1) 
-        => this.position += offset;
+    void Next(int offset = 1) 
+        => _position += offset;
 
-    private SyntaxKind Next(SyntaxKind syntaxKind, int offset = 1)
+    SyntaxKind Next(SyntaxKind syntaxKind, int offset = 1)
     {
-        this.Next(offset);
+        Next(offset);
         return syntaxKind;
     }
 
-    private char Peek(int offset)
+    char Peek(int offset)
     {
-        var index = this.position + offset;
-        if (index >= this.sourceText.Length)
+        var index = _position + offset;
+        if (index >= _sourceText.Length)
         {
             return '\0';
         }
 
-        return this.sourceText[index];
+        return _sourceText[index];
     }
 
     public ICollection<SyntaxToken> Parse()
     {
-        var token = this.NextToken();
+        var token = NextToken();
         var result = new List<SyntaxToken>();
         while (token.Kind != SyntaxKind.EndOfFileToken)
         {
             result.Add(token);
-            token = this.NextToken();
+            token = NextToken();
         }
 
         return result;
@@ -58,222 +58,222 @@ public class Lexer
 
     public SyntaxToken NextToken()
     {
-        this.start = this.position;
-        this.kind = SyntaxKind.BadToken;
-        this.value = null;
+        _start = _position;
+        _kind = SyntaxKind.BadToken;
+        _value = null;
 
 
-        switch (this.Current)
+        switch (Current)
         {
             case '\0':
-                this.kind = SyntaxKind.EndOfFileToken;
+                _kind = SyntaxKind.EndOfFileToken;
                 break;
             case '+':
-                this.Next();
-                this.kind = SyntaxKind.PlusToken;
-                this.kind = (SyntaxKind.PlusToken);
+                Next();
+                _kind = SyntaxKind.PlusToken;
+                _kind = (SyntaxKind.PlusToken);
                 break;
             case '-':
-                this.Next();
-                this.kind = SyntaxKind.MinusToken;
+                Next();
+                _kind = SyntaxKind.MinusToken;
                 break;
             case '*':
-                this.Next();
-                this.kind = SyntaxKind.StarToken;
+                Next();
+                _kind = SyntaxKind.StarToken;
                 break;
             case '/':
-                this.Next();
-                this.kind = SyntaxKind.SlashToken;
+                Next();
+                _kind = SyntaxKind.SlashToken;
                 break;
       
             case '(':
-                this.Next();
-                this.kind = SyntaxKind.OpenParenthesisToken;
+                Next();
+                _kind = SyntaxKind.OpenParenthesisToken;
                 break;
             case ')':
-                this.Next();
-                this.kind = SyntaxKind.CloseParenthesisToken;
+                Next();
+                _kind = SyntaxKind.CloseParenthesisToken;
                 break;
             case '{':
-                this.Next();
-                this.kind = SyntaxKind.OpenBraceToken;
+                Next();
+                _kind = SyntaxKind.OpenBraceToken;
                 break;
             case '}':
-                this.Next();
-                this.kind = SyntaxKind.CloseBraceToken;
+                Next();
+                _kind = SyntaxKind.CloseBraceToken;
                 break;
             case ',':
-                this.kind = this.Next(SyntaxKind.CommaToken);
+                _kind = Next(SyntaxKind.CommaToken);
                 break;
             case ';':
-                this.Next();
-                this.kind = SyntaxKind.SemicolonToken;
+                Next();
+                _kind = SyntaxKind.SemicolonToken;
                 break;
             case '&':
-                this.Next();
-                if (this.Current is '&')
-                    this.kind = this.Next(SyntaxKind.AmpersandAmpersandToken);
+                Next();
+                if (Current is '&')
+                    _kind = Next(SyntaxKind.AmpersandAmpersandToken);
                 else
-                    this.kind = SyntaxKind.AmpersandToken;
+                    _kind = SyntaxKind.AmpersandToken;
                 break;
             case '|':
-                if (this.Lookahead is '|')
-                    this.kind = this.Next(SyntaxKind.PipePipeToken, 2);
+                if (Lookahead is '|')
+                    _kind = Next(SyntaxKind.PipePipeToken, 2);
                 else
-                    this.kind = this.Next(SyntaxKind.PipeToken);
+                    _kind = Next(SyntaxKind.PipeToken);
                 break;
             case '^':
-                this.kind = this.Next(SyntaxKind.HatToken);
+                _kind = Next(SyntaxKind.HatToken);
                 break;
             case '~':
-                this.kind = this.Next(SyntaxKind.TildeToken);
+                _kind = Next(SyntaxKind.TildeToken);
                 break;
             case '<':
-                if (this.Lookahead is '=')
-                    this.kind = this.Next(SyntaxKind.LessOrEqualsToken, 2);
+                if (Lookahead is '=')
+                    _kind = Next(SyntaxKind.LessOrEqualsToken, 2);
                 else
-                    this.kind = this.Next(SyntaxKind.LessToken);
+                    _kind = Next(SyntaxKind.LessToken);
                 break;
             case '>':
-                this.Next();
-                if (this.Current is '=')
+                Next();
+                if (Current is '=')
                 {
-                    this.Next();
-                    this.kind = SyntaxKind.GreaterOrEqualsToken;
+                    Next();
+                    _kind = SyntaxKind.GreaterOrEqualsToken;
                 }
                 else
                 {
-                    this.kind = SyntaxKind.GreaterToken;
+                    _kind = SyntaxKind.GreaterToken;
                 }
                 break;
             case '=':
-                this.Next();
-                if (this.Current is '=')
+                Next();
+                if (Current is '=')
                 {
-                    this.Next();
-                    this.kind = SyntaxKind.EqualsEqualsToken;
+                    Next();
+                    _kind = SyntaxKind.EqualsEqualsToken;
                 }
                 else
                 {
-                    this.kind = SyntaxKind.EqualsToken;
+                    _kind = SyntaxKind.EqualsToken;
                 }
                 break;
             case '!':
-                this.Next();
-                if (this.Current is '=')
+                Next();
+                if (Current is '=')
                 {
-                    this.Next();
-                    this.kind = SyntaxKind.BangEqualsToken;
+                    Next();
+                    _kind = SyntaxKind.BangEqualsToken;
                 }
                 else
                 {
-                    this.kind = SyntaxKind.BangToken;
+                    _kind = SyntaxKind.BangToken;
                 }
                 break;
             case '"':
-                this.ReadString();
+                ReadString();
                 break;
             case '0' or '1' or '2' or '3' or '4':
             case '5' or '6' or '7' or '8' or '9':
-                this.ReadNumberToken();
+                ReadNumberToken();
                 break;
             case ' ' or '\t' or '\r' or '\n':
-                this.ReadWhitespace();
+                ReadWhitespace();
                 break;
             default:
-                if (char.IsWhiteSpace(this.Current))
+                if (char.IsWhiteSpace(Current))
                 {
-                    this.ReadWhitespace();
+                    ReadWhitespace();
                 }
-                else if (char.IsLetter(this.Current))
+                else if (char.IsLetter(Current))
                 {
-                    this.ReadKeywordOrIdentifier();
+                    ReadKeywordOrIdentifier();
                 }
                 else
                 {
-                    this.diagnostics.ReportBadCharacter(this.position, this.Current);
-                    this.Next();
+                    _diagnostics.ReportBadCharacter(_position, Current);
+                    Next();
                 }
                 break;
         }
 
 
-        var length = this.position - this.start;
-        var text = SyntaxFacts.GetText(this.kind);
+        var length = _position - _start;
+        var text = SyntaxFacts.GetText(_kind);
         if (text is null)
         {
-            text = this.sourceText.ToString(this.start, length);
+            text = _sourceText.ToString(_start, length);
         }
 
-        return new SyntaxToken(this.kind, this.start, text, this.value);
+        return new SyntaxToken(_kind, _start, text, _value);
     }
 
-    private void ReadString()
+    void ReadString()
     {
         var sb = new StringBuilder();
         
         LOOP_START:
-        this.Next();
-        switch (this.Current)
+        Next();
+        switch (Current)
         {
             case '\0':
             case '\r':
             case '\n':
-                var span = new TextSpan(this.start, 1);
-                this.diagnostics.ReportUnterminatedString(span);
+                var span = new TextSpan(_start, 1);
+                _diagnostics.ReportUnterminatedString(span);
                 break;
             case '"':
-                this.Next();
-                if (this.Current is '"')
+                Next();
+                if (Current is '"')
                 {
-                    sb.Append(this.Current);
+                    sb.Append(Current);
                     goto LOOP_START;
                 }
                 break;
             default:
-                sb.Append(this.Current);
+                sb.Append(Current);
                 goto LOOP_START;
         }
 
 
-        this.value = sb.ToString();
-        this.kind = SyntaxKind.StringToken;
+        _value = sb.ToString();
+        _kind = SyntaxKind.StringToken;
     }
 
-    private void ReadKeywordOrIdentifier()
+    void ReadKeywordOrIdentifier()
     {
-        while (char.IsLetter(this.Current)) 
-            this.Next();
+        while (char.IsLetter(Current)) 
+            Next();
 
-        var text = this.sourceText.ToString(this.start, this.position - this.start);
-        this.kind = SyntaxFacts.GetKeywordKind(text);
+        var text = _sourceText.ToString(_start, _position - _start);
+        _kind = SyntaxFacts.GetKeywordKind(text);
     }
 
-    private void ReadWhitespace()
+    void ReadWhitespace()
     {
-        while (char.IsWhiteSpace(this.Current))
+        while (char.IsWhiteSpace(Current))
         {
-            this.Next();
+            Next();
         }
 
-        this.kind = SyntaxKind.WhitespaceToken;
+        _kind = SyntaxKind.WhitespaceToken;
     }
 
-    private void ReadNumberToken()
+    void ReadNumberToken()
     {
-        while (char.IsDigit(this.Current))
+        while (char.IsDigit(Current))
         {
-            this.Next();
+            Next();
         }
 
-        var length = this.position - this.start;
-        var text = this.sourceText.ToString(this.start, length);
+        var length = _position - _start;
+        var text = _sourceText.ToString(_start, length);
         if (!int.TryParse(text, out var number))
         {
-            this.diagnostics.ReportInvalidNumber(this.start, length, text, typeof(int));
+            _diagnostics.ReportInvalidNumber(_start, length, text, typeof(int));
         }
 
-        this.value = number;
-        this.kind = SyntaxKind.NumberToken;
+        _value = number;
+        _kind = SyntaxKind.NumberToken;
     }
 }

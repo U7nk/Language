@@ -4,7 +4,7 @@ internal sealed class BoundGotoStatement : BoundStatement
 {
     public BoundGotoStatement(LabelSymbol label)
     {
-        this.Label = label;
+        Label = label;
     }
 
     public LabelSymbol Label { get; }

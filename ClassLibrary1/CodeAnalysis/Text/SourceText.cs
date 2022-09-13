@@ -5,24 +5,24 @@ namespace Wired.CodeAnalysis.Text;
 
 public class SourceText
 {
-    private readonly string text;
+    readonly string _text;
     public  ImmutableArray<TextLine> Lines { get; set; }
 
-    private SourceText(string text)
+    SourceText(string text)
     {
-        this.text = text;
-        this.Lines = ParseLines(this, text);
+        this._text = text;
+        Lines = ParseLines(this, text);
     }
 
-    public int Length => this.text.Length;
+    public int Length => _text.Length;
     public char this[int index]
-        => this.text[index];
+        => _text[index];
 
     public int GetLineIndex(int position)
     {
-        for (var i = 0; i < this.Lines.Length; i++)
+        for (var i = 0; i < Lines.Length; i++)
         {
-            var line = this.Lines[i];
+            var line = Lines[i];
             if (position.InRange(line.Start, line.End))
             {
                 return i;
@@ -33,18 +33,19 @@ public class SourceText
     }
 
     public override string ToString() 
-        => this.text;
+        => _text;
 
     public string ToString(int start, int length) 
-        => this.text.Substring(start, length);
+        => _text.Substring(start, length);
     public string ToString(TextSpan span) 
-        => this.text.Substring(span.Start, span.Length);
+        => _text.Substring(span.Start, span.Length);
 
     public static SourceText From(string text)
     {
         return new SourceText(text);
     }
-    private static ImmutableArray<TextLine> ParseLines(SourceText sourceText, string text)
+
+    static ImmutableArray<TextLine> ParseLines(SourceText sourceText, string text)
     {
         var result = ImmutableArray.CreateBuilder<TextLine>();
         var lineStart = 0;
@@ -71,7 +72,7 @@ public class SourceText
         return result.ToImmutable();
     }
 
-    private static void AddLine(ImmutableArray<TextLine>.Builder result,SourceText text, int lineStart, int position,
+    static void AddLine(ImmutableArray<TextLine>.Builder result,SourceText text, int lineStart, int position,
         int lineBreakLength)
     {
         var lineLength = position - lineStart;
@@ -97,17 +98,17 @@ public sealed class TextLine
 {
     public TextLine(SourceText sourceText, int start, int length, int lengthWithLineBreak)
     {
-        this.SourceText = sourceText;
-        this.Start = start;
-        this.Length = length;
-        this.LengthWithLineBreak = lengthWithLineBreak;
+        SourceText = sourceText;
+        Start = start;
+        Length = length;
+        LengthWithLineBreak = lengthWithLineBreak;
     }
 
     public SourceText SourceText { get; }
-    public TextSpan Span => new TextSpan(this.Start, this.Length);
-    public TextSpan SpanWithLineBreak => new TextSpan(this.Start, this.LengthWithLineBreak);
+    public TextSpan Span => new TextSpan(Start, Length);
+    public TextSpan SpanWithLineBreak => new TextSpan(Start, LengthWithLineBreak);
     public int Start { get; }
-    public int End => this.Start + this.Length;
+    public int End => Start + Length;
 
     public int Length { get; }
 

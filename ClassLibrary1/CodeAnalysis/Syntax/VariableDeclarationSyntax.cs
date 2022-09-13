@@ -4,8 +4,8 @@ public class VariableDeclarationSyntax : SyntaxNode
 {
     public VariableDeclarationSyntax(SyntaxToken keywordToken, SyntaxToken identifierToken)
     {
-        this.KeywordToken = keywordToken;
-        this.IdentifierToken = identifierToken;
+        KeywordToken = keywordToken;
+        IdentifierToken = identifierToken;
     }
 
     public override SyntaxKind Kind => SyntaxKind.VariableDeclarationSyntax;
