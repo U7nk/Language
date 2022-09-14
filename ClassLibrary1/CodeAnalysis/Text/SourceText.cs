@@ -6,7 +6,7 @@ namespace Wired.CodeAnalysis.Text;
 public class SourceText
 {
     readonly string _text;
-    public  ImmutableArray<TextLine> Lines { get; set; }
+    public  ImmutableArray<TextLine> Lines { get; }
 
     SourceText(string text)
     {

@@ -200,7 +200,7 @@ internal class ConditionalAdd<T>
 {
     public bool IfState { get; set; }
     public bool Condition { get; set; }
-    public List<Action> TrueActions { get; set; }
+    public List<Action> TrueActions { get; }
     public T Obj;
     public ConditionalAdd(T obj)
     {

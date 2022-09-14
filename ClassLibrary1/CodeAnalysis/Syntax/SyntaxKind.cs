@@ -43,14 +43,18 @@ public enum SyntaxKind
     IfKeyword,
     ElseKeyword,
     ForKeyword,
-    
-    
+    FunctionKeyword,
+
+
     // nodes
     CompilationUnit,
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
     TypeClause,
-
+    FunctionDeclaration,
+    GlobalStatement,
+    Parameter,
+    
     // expressions
     LiteralExpression,
     BinaryExpression,
@@ -69,4 +73,5 @@ public enum SyntaxKind
     ElseClause,   
     ForStatement,
     ColonToken,
+
 }

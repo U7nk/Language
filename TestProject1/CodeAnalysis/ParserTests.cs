@@ -120,9 +120,9 @@ public class ParserTests
     {
         var expression = SyntaxTree.Parse(text);
         var root =  expression.Root;
-        var statement = root.Statement;
-        root.Statement.Should().BeOfType<ExpressionStatementSyntax>();
-        return ((ExpressionStatementSyntax)statement).Expression;
+        var statement = root.Members.Single();
+        root.Members.Single().Should().BeOfType<GlobalStatementSyntax>();
+        return ((ExpressionStatementSyntax)((GlobalStatementSyntax)statement).Statement).Expression;
     }
     
     public static IEnumerable<object[]> GetUnaryBinaryOperatorPairsData()

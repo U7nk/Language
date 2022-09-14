@@ -20,6 +20,7 @@ public class UnitTest1
     {
         
         _output.WriteLine("Result: " + Build($$"""
+            function main()
             {
                 print("Hello" + "World" + "!"); 
                 let f = 50;

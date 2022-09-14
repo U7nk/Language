@@ -8,10 +8,10 @@ namespace Wired.CodeAnalysis;
 internal static class BuiltInFunctions
 {
     public static readonly FunctionSymbol Print = new("print",
-        ImmutableArray.Create(new ParameterSymbol("text", TypeSymbol.String)), TypeSymbol.Void);
+        ImmutableArray.Create(new ParameterSymbol("text", TypeSymbol.String)), TypeSymbol.Void, null);
 
     public static readonly FunctionSymbol
-        Input = new("input", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.String);
+        Input = new("input", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.String, null);
 
     public static IEnumerable<FunctionSymbol> GetAll() =>
         typeof(BuiltInFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)

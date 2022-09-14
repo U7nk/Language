@@ -1,14 +1,16 @@
+using System.Collections.Immutable;
+
 namespace Wired.CodeAnalysis.Syntax;
 
 public sealed class CompilationUnitSyntax : SyntaxNode
 {
-    public CompilationUnitSyntax(StatementSyntax statement, SyntaxToken endOfFileToken)
+    public CompilationUnitSyntax(ImmutableArray<MemberSyntax> members, SyntaxToken endOfFileToken)
     {
-        Statement = statement;
+        Members = members;
         EndOfFileToken = endOfFileToken;
     }
 
-    public StatementSyntax Statement { get; }
+    public ImmutableArray<MemberSyntax> Members { get; }
     public SyntaxToken EndOfFileToken { get; }
 
     public override SyntaxKind Kind => SyntaxKind.CompilationUnit;

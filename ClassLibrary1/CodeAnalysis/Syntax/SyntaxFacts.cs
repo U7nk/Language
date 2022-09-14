@@ -66,6 +66,7 @@ internal static class SyntaxFacts
             "else" => SyntaxKind.ElseKeyword,
             "while" => SyntaxKind.WhileKeyword,
             "for" => SyntaxKind.ForKeyword,
+            "function" => SyntaxKind.FunctionKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -131,6 +132,7 @@ internal static class SyntaxFacts
             SyntaxKind.ElseKeyword => "else",
             SyntaxKind.WhileKeyword => "while",
             SyntaxKind.ForKeyword => "for",
+            SyntaxKind.FunctionKeyword => "function",
             _ => null
         };
     }

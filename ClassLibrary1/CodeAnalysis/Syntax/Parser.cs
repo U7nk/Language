@@ -101,9 +101,83 @@ public class Parser
 
     public CompilationUnitSyntax ParseCompilationUnit()
     {
-        var statement = ParseStatement();
+        var members = ParseMembers();
         var endOfFileToken = Match(SyntaxKind.EndOfFileToken);
-        return new CompilationUnitSyntax(statement, endOfFileToken);
+        return new CompilationUnitSyntax(members, endOfFileToken);
+    }
+
+    ImmutableArray<MemberSyntax> ParseMembers()
+    {
+        var members = ImmutableArray.CreateBuilder<MemberSyntax>();
+        while (Current.Kind is not SyntaxKind.EndOfFileToken)
+        {
+            var startToken = Current;
+            var member = ParseMember();
+            members.Add(member);
+
+            // if ParseStatement() did not consume any tokens, we're in an infinite loop
+            // so we need to consume at least one token to prevent looping
+            //
+            // no need for error reporting, because ParseStatement() already reported it
+            if (ReferenceEquals(Current, startToken)) 
+                NextToken();
+        }
+
+        return members.ToImmutable();
+    }
+
+    MemberSyntax ParseMember()
+    {
+        if (Current.Kind == SyntaxKind.FunctionKeyword)
+            return ParseFunctionDeclaration();
+
+        return ParseGlobalStatement();
+    }
+
+    GlobalStatementSyntax ParseGlobalStatement()
+    {
+        var statement = ParseStatement();
+        return new GlobalStatementSyntax(statement);
+    }
+
+    MemberSyntax ParseFunctionDeclaration()
+    {
+        var functionKeyword = Match(SyntaxKind.FunctionKeyword);
+        var identifier = Match(SyntaxKind.IdentifierToken);
+        var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
+        var parameters = ParseParameterList();
+        var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
+        var type = ParseOptionalTypeClause();
+        var body = ParseBlockStatement();
+        return new FunctionDeclarationSyntax(functionKeyword, identifier, openParenthesisToken, parameters, closeParenthesisToken, type, body);
+    }
+
+    SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
+    {
+        if (Current.Kind is SyntaxKind.CloseParenthesisToken)
+            return new SeparatedSyntaxList<ParameterSyntax>(ImmutableArray<SyntaxNode>.Empty);
+        
+        var parameters = ImmutableArray.CreateBuilder<SyntaxNode>();
+        while (true)
+        {
+            var parameter = ParseParameter();
+            parameters.Add(parameter);
+            
+            if (Current.Kind is not SyntaxKind.CommaToken)
+                break;
+
+            var comma = Match(SyntaxKind.CommaToken);
+            parameters.Add(comma);
+        }
+
+        return new SeparatedSyntaxList<ParameterSyntax>(parameters.ToImmutable());
+    }
+    
+    ParameterSyntax ParseParameter()
+    {
+        var identifier = Match(SyntaxKind.IdentifierToken);
+        var type = ParseTypeClause();
+        return new ParameterSyntax(identifier, type);
     }
 
     StatementSyntax ParseStatement()
@@ -206,11 +280,11 @@ public class Parser
                 : SyntaxKind.LetKeyword);
 
         var identifier = Match(SyntaxKind.IdentifierToken);
-        var typeClause = ParseTypeClause();
+        var typeClause = ParseOptionalTypeClause();
         return new(keyword, identifier, typeClause);
     }
 
-    TypeClauseSyntax? ParseTypeClause()
+    TypeClauseSyntax? ParseOptionalTypeClause()
     {
         if (Current.Kind is not SyntaxKind.ColonToken)
             return null;
@@ -219,8 +293,14 @@ public class Parser
         var type = Match(SyntaxKind.IdentifierToken);
         return new(colon, type);
     }
+    TypeClauseSyntax ParseTypeClause()
+    {
+        var colon = Match(SyntaxKind.ColonToken);
+        var type = Match(SyntaxKind.IdentifierToken);
+        return new(colon, type);
+    }
 
-    StatementSyntax ParseBlockStatement()
+    BlockStatementSyntax ParseBlockStatement()
     {
         var openBraceToken = Match(SyntaxKind.OpenBraceToken);
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();

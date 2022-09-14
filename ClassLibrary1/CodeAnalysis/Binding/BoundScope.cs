@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis.Binding;
 
@@ -74,5 +75,10 @@ internal class BoundScope
     public ImmutableArray<VariableSymbol> GetDeclaredVariables()
     {
         return _variables.Values.ToImmutableArray();
+    }
+
+    public ImmutableArray<FunctionSymbol> GetDeclaredFunctions()
+    {
+        return _functions.Values.ToImmutableArray();
     }
 }

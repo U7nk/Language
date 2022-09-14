@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
 
@@ -11,27 +12,73 @@ internal sealed class Binder
 {
     readonly DiagnosticBag _diagnostics = new();
     BoundScope _scope;
+    readonly FunctionSymbol? _function;
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
-
-    public Binder(BoundScope parent)
+    
+    Binder(BoundScope parent, FunctionSymbol? function)
     {
-        _scope = parent;
+        _scope = new BoundScope(parent);
+        _function = function;
+        if (_function is not null)
+        {
+            foreach (var p in _function.Parameters)
+                _scope.TryDeclareVariable(p);
+        }
     }
 
     public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, CompilationUnitSyntax syntax)
     {
-        var parentScope = CreateParentScopes(previous);
-        var binder = new Binder(parentScope);
-        var expression = binder.BindStatement(syntax.Statement);
+        var parentScope = CreateParentScope(previous);
+        var binder = new Binder(parentScope, function: null);
+
+        foreach (var function in syntax.Members.OfType<FunctionDeclarationSyntax>())
+            binder.BindFunctionDeclaration(function);
+
+
+        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+        foreach (var globalStatement in syntax.Members.OfType<GlobalStatementSyntax>())
+        {
+            var s = binder.BindStatement(globalStatement.Statement);
+            statements.Add(s);
+        }
+        
+        var statement = new BoundBlockStatement(statements.ToImmutable());
+
+        var functions = binder._scope.GetDeclaredFunctions();
         var variables = binder._scope.GetDeclaredVariables();
         var diagnostics = binder.Diagnostics.ToImmutableArray();
         if (previous is not null)
             diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
 
-        return new BoundGlobalScope(previous, diagnostics, variables, expression);
+        return new BoundGlobalScope(previous, diagnostics, functions, variables, statement);
     }
 
-    static BoundScope CreateParentScopes(BoundGlobalScope? previous)
+    void BindFunctionDeclaration(FunctionDeclarationSyntax function)
+    {
+        var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+        var seenParameters = new HashSet<string>();
+        foreach (var parameter in function.Parameters)
+        {
+            var parameterName = parameter.Identifier.Text;
+            if (!seenParameters.Add(parameterName)){
+                _diagnostics.ReportParameterAlreadyDeclared(parameter.Span, parameterName);
+                continue;
+            }
+            var parameterType = BindTypeClause(parameter.Type);
+            parameters.Add(new ParameterSymbol(parameterName, parameterType));
+        }
+
+        var returnType = BindTypeClause(function.Type) ?? TypeSymbol.Void;
+
+        if (returnType != TypeSymbol.Void) 
+            _diagnostics.XXX_ReportFunctionsAreNotSupported(function.Identifier.Span);
+
+        var functionSymbol = new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
+        if (!_scope.TryDeclareFunction(functionSymbol))
+            _diagnostics.ReportFunctionAlreadyDeclared(function.Identifier.Span, function.Identifier.Text);
+    }
+
+    static BoundScope CreateParentScope(BoundGlobalScope? previous)
     {
         var stack = new Stack<BoundGlobalScope>();
         while (previous is not null)
@@ -48,6 +95,9 @@ internal sealed class Binder
             var scope = new BoundScope(parent);
             foreach (var variable in previous.Variables)
                 scope.TryDeclareVariable(variable);
+            
+            foreach (var function in previous.Functions)
+                scope.TryDeclareFunction(function);
 
             parent = scope;
         }
@@ -62,6 +112,35 @@ internal sealed class Binder
             result.TryDeclareFunction(functionSymbol);
 
         return result;
+    }
+
+
+    public static BoundProgram BindProgram(BoundGlobalScope globalScope)
+    {
+        var parentScope = CreateParentScope(globalScope);
+        
+        var functionBodies 
+            = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
+        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+
+        var scope = globalScope;
+        while (scope is not null)
+        {
+            foreach (var function in scope.Functions)
+            {
+                var binder = new Binder(parentScope, function);
+                var body = binder.BindStatement(function.Declaration.Body);
+                var loweredBody = Lowerer.Lower(body);
+                functionBodies.Add(function, loweredBody);
+            
+                diagnostics.AddRange(binder.Diagnostics);
+            }
+            scope = scope.Previous;
+        }
+        
+
+        var boundProgram = new BoundProgram(globalScope, diagnostics.ToImmutable(), functionBodies.ToImmutable());
+        return boundProgram;
     }
 
     BoundStatement BindStatement(StatementSyntax syntax)
@@ -225,7 +304,7 @@ internal sealed class Binder
         if (syntax.Arguments.Count == 1 
             && LookupType(syntax.Identifier.Text) is { } type)
         {
-            return BindConversion(syntax.Arguments[0], type);
+            return BindConversion(syntax.Arguments[0], type, allowExplicitConversion: true);
         }
         
         if (!_scope.TryLookupFunction(syntax.Identifier.Text, out var function))

@@ -116,4 +116,28 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"No implicit conversion from '{expressionType}' to '{type}'.";
         Report(diagnosticSpan, message);
     }
+
+    public void ReportTypeClauseExpected(TextSpan identifierSpan)
+    {
+        var message = $"Type clause expected.";
+        Report(identifierSpan, message);
+    }
+
+    public void ReportParameterAlreadyDeclared(TextSpan span, string name)
+    {
+        var message = $"Parameter '{name}' is already declared.";
+        Report(span, message);
+    }
+
+    public void ReportFunctionAlreadyDeclared(TextSpan identifierSpan, string identifierText)
+    {
+        var message = $"Function '{identifierText}' is already declared.";
+        Report(identifierSpan, message);
+    }
+
+    public void XXX_ReportFunctionsAreNotSupported(TextSpan span)
+    {
+        var message = $"Functions are not supported yet.";
+        Report(span, message);
+    }
 }

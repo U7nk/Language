@@ -175,6 +175,19 @@ public class EvaluatorTests
         """, 4950)]
     [InlineData("{let hi = \"hellow\" + \" world\" + \" \"; hi;}", "hellow world ")]
     [InlineData("{let boo : string = \"hellow world \"; boo;}", "hellow world ")]
+    [InlineData(
+        $$"""
+        function main()
+        {
+            var result = 0;
+            for (var i = 0; i < 100; i = i + 1)
+            {
+                result = result + i;
+            }
+            result;
+        }
+        main();
+        """, 4950)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);
@@ -320,11 +333,8 @@ public class EvaluatorTests
     [Fact]
     public void Evaluator_Reports_NoError_For_Inserted_Token()
     {
-        var text = "[[]]";
-        var diagnostics = new String[] {
-            "error: Unexpected token <EndOfFileToken> expected <IdentifierToken>.",
-            "error: Unexpected token <EndOfFileToken> expected <SemicolonToken>.",
-        };
+        var text = "";
+        var diagnostics = Array.Empty<string>();
         AssertDiagnostics(text, diagnostics);
     }
     
@@ -411,7 +421,7 @@ public class EvaluatorTests
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
         var compilation = new Compilation(syntaxTree);
-        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
 
         diagnostics.Length.Should().Be(diagnosticsText.Length);

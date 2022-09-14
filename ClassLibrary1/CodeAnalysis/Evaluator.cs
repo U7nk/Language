@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Wired.CodeAnalysis.Binding;
 using Wired.CodeAnalysis.Syntax;
@@ -8,31 +9,39 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
+    readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> _functionBodies;
     readonly BoundBlockStatement _root;
-    readonly Dictionary<VariableSymbol, object> _variables;
+    readonly Stack<Dictionary<VariableSymbol, object?>> _stacks;
     object? _lastValue;
 
-    public Evaluator(BoundBlockStatement root, Dictionary<VariableSymbol, object> variables)
+    public Evaluator(
+        ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functionBodies,
+        BoundBlockStatement root, Dictionary<VariableSymbol, object?> globals)
     {
-        this._root = root;
-        this._variables = variables;
+        _functionBodies = functionBodies;
+        _root = root;
+        _stacks = new Stack<Dictionary<VariableSymbol, object?>>();
+        _stacks.Push(globals);
     }
 
-    public object Evaluate()
+    public object Evaluate() 
+        => EvaluateStatement(_root);
+
+    object EvaluateStatement(BoundBlockStatement body)
     {
         var labelToIndex = new Dictionary<LabelSymbol, int>();
 
-        for (var index = 0; index < _root.Statements.Length; index++)
+        for (var index = 0; index < body.Statements.Length; index++)
         {
-            var statement = _root.Statements[index];
-            if (statement is BoundLabelStatement l) 
+            var statement = body.Statements[index];
+            if (statement is BoundLabelStatement l)
                 labelToIndex.Add(l.Label, index);
         }
 
         var i = 0;
-        while (i < _root.Statements.Length)
+        while (i < body.Statements.Length)
         {
-            var statement = _root.Statements[i];
+            var statement = body.Statements[i];
             switch (statement.Kind)
             {
                 case BoundNodeKind.ExpressionStatement:
@@ -62,12 +71,15 @@ internal class Evaluator
                     throw new Exception($"Unexpected node  {statement.Kind}");
             }
         }
-        
+
         return _lastValue;
     }
 
     void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
-        => _variables[statement.Variable] = EvaluateExpression(statement.Initializer);
+    {
+        var value = EvaluateExpression(statement.Initializer);
+        Assign(statement.Variable, value);
+    }
 
     void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {
@@ -116,6 +128,7 @@ internal class Evaluator
     object? EvaluateCallExpression(BoundCallExpression node)
     {
         var arguments = node.Arguments.Select(EvaluateExpression).ToList();
+        
         if (node.FunctionSymbol == BuiltInFunctions.Input)
         {
             return Console.ReadLine();
@@ -127,9 +140,18 @@ internal class Evaluator
             Console.WriteLine(value);
             return null;
         }
-        
-        
-        throw new($"Unexpected function {node.FunctionSymbol.Name}");
+
+        _stacks.Push(new Dictionary<VariableSymbol, object?>());
+        for (int i = 0; i < node.Arguments.Length; i++)
+        {
+            var parameter = node.FunctionSymbol.Parameters[i];
+            var value = arguments[i];
+            Assign(parameter, value);
+        }
+
+        var result =  EvaluateStatement(_functionBodies[node.FunctionSymbol]);
+        _stacks.Pop();
+        return result;
     }
 
     object EvaluateBinaryExpression(BoundBinaryExpression b)
@@ -228,20 +250,26 @@ internal class Evaluator
         throw new Exception($"Unexpected unary operator {unary.Op}");
     }
 
-    object EvaluateAssignmentExpression(BoundAssignmentExpression a)
+    object? EvaluateAssignmentExpression(BoundAssignmentExpression a)
     {
         var value = EvaluateExpression(a.Expression);
-        _variables[a.Variable] = value;
+        Assign(a.Variable, value);
         return value;
     }
-
-    object EvaluateVariableExpression(BoundVariableExpression v)
+    
+    object? EvaluateVariableExpression(BoundVariableExpression v)
     {
-        return _variables[v.Variable];
+        return _stacks.Peek()[v.Variable];
     }
 
-    object EvaluateLiteralExpression(BoundLiteralExpression l)
+    object? EvaluateLiteralExpression(BoundLiteralExpression l)
     {
         return l.Value;
+    }
+    
+    void Assign(VariableSymbol variableSymbol, object? value)
+    {
+        var currentStack = _stacks.Peek();
+        currentStack[variableSymbol] = value;
     }
 }

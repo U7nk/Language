@@ -45,15 +45,19 @@ public sealed class Compilation
         return new Compilation(this, syntaxTree);
     }
     
-    public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
+    public EvaluationResult Evaluate(Dictionary<VariableSymbol, object?> variables)
     {
         var diagnostics = SyntaxTree.Diagnostics.Concat(GlobalScope.Diagnostics)
             .ToImmutableArray();
         if (diagnostics.Any())
             return new(diagnostics, null);
 
+        var program = Binder.BindProgram(GlobalScope);
+        if (program.Diagnostics.Any())
+            return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
+
         var statement = GetStatement();
-        var evaluator = new Evaluator(statement, variables);
+        var evaluator = new Evaluator(program.FunctionBodies, statement, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);
     }
