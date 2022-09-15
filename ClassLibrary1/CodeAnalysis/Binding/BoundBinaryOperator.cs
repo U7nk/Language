@@ -52,9 +52,11 @@ internal class BoundBinaryOperator
         new(BoundBinaryOperatorKind.GreaterThanOrEquals, SyntaxKind.GreaterOrEqualsToken, TypeSymbol.Int, TypeSymbol.Int, TypeSymbol.Bool),
         
         new(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, TypeSymbol.Bool),
+        new(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, TypeSymbol.String),
         new(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, TypeSymbol.Int, TypeSymbol.Int, TypeSymbol.Bool),
         
         new(BoundBinaryOperatorKind.Inequality, SyntaxKind.BangEqualsToken, TypeSymbol.Bool),
+        new(BoundBinaryOperatorKind.Inequality, SyntaxKind.BangEqualsToken, TypeSymbol.String),
         new(BoundBinaryOperatorKind.Inequality, SyntaxKind.BangEqualsToken, TypeSymbol.Int, TypeSymbol.Int, TypeSymbol.Bool),
     };
 
