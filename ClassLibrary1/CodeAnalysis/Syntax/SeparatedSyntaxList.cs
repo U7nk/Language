@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
@@ -13,6 +15,9 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
     where T : SyntaxNode
 {
     public ImmutableArray<SyntaxNode> SeparatorsAndNodes { get; }
+    public TextSpan Span => TextSpan.FromBounds(
+        SeparatorsAndNodes.MinBy(x=> x.Span.Start)?.Span.Start ?? throw new InvalidOperationException(),
+        SeparatorsAndNodes.MaxBy(x=> x.Span.End)?.Span.End ?? throw new InvalidOperationException());
 
     public SeparatedSyntaxList(ImmutableArray<SyntaxNode> separatorsAndNodes)
     {

@@ -14,7 +14,7 @@ internal sealed class Binder
     BoundScope _scope;
     readonly FunctionSymbol? _function;
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
-    
+
     Binder(BoundScope parent, FunctionSymbol? function)
     {
         _scope = new BoundScope(parent);
@@ -41,7 +41,7 @@ internal sealed class Binder
             var s = binder.BindStatement(globalStatement.Statement);
             statements.Add(s);
         }
-        
+
         var statement = new BoundBlockStatement(statements.ToImmutable());
 
         var functions = binder._scope.GetDeclaredFunctions();
@@ -60,20 +60,23 @@ internal sealed class Binder
         foreach (var parameter in function.Parameters)
         {
             var parameterName = parameter.Identifier.Text;
-            if (!seenParameters.Add(parameterName)){
+            if (!seenParameters.Add(parameterName))
+            {
                 _diagnostics.ReportParameterAlreadyDeclared(parameter.Span, parameterName);
                 continue;
             }
+
             var parameterType = BindTypeClause(parameter.Type);
             parameters.Add(new ParameterSymbol(parameterName, parameterType));
         }
 
         var returnType = BindTypeClause(function.Type) ?? TypeSymbol.Void;
 
-        if (returnType != TypeSymbol.Void) 
+        if (returnType != TypeSymbol.Void)
             _diagnostics.XXX_ReportFunctionsAreNotSupported(function.Identifier.Span);
 
-        var functionSymbol = new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
+        var functionSymbol =
+            new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
         if (!_scope.TryDeclareFunction(functionSymbol))
             _diagnostics.ReportFunctionAlreadyDeclared(function.Identifier.Span, function.Identifier.Text);
     }
@@ -95,7 +98,7 @@ internal sealed class Binder
             var scope = new BoundScope(parent);
             foreach (var variable in previous.Variables)
                 scope.TryDeclareVariable(variable);
-            
+
             foreach (var function in previous.Functions)
                 scope.TryDeclareFunction(function);
 
@@ -118,8 +121,8 @@ internal sealed class Binder
     public static BoundProgram BindProgram(BoundGlobalScope globalScope)
     {
         var parentScope = CreateParentScope(globalScope);
-        
-        var functionBodies 
+
+        var functionBodies
             = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
@@ -132,12 +135,13 @@ internal sealed class Binder
                 var body = binder.BindStatement(function.Declaration.Body);
                 var loweredBody = Lowerer.Lower(body);
                 functionBodies.Add(function, loweredBody);
-            
+
                 diagnostics.AddRange(binder.Diagnostics);
             }
+
             scope = scope.Previous;
         }
-        
+
 
         var boundProgram = new BoundProgram(globalScope, diagnostics.ToImmutable(), functionBodies.ToImmutable());
         return boundProgram;
@@ -196,16 +200,16 @@ internal sealed class Binder
             : BindStatement(syntax.ElseClause.ElseStatement);
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
-    
-    
+
+
     BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
         VariableDeclarationAssignmentSyntax syntax)
     {
         var isReadonly = syntax.VariableDeclaration.KeywordToken.Kind == SyntaxKind.LetKeyword;
         var type = BindTypeClause(syntax.VariableDeclaration.TypeClause);
         var initializer = BindExpression(syntax.Initializer);
-         
-        if (type is not null) 
+
+        if (type is not null)
             initializer = BindConversion(initializer, type, syntax.Initializer.Span);
 
         var name = syntax.VariableDeclaration.IdentifierToken.Text;
@@ -261,7 +265,8 @@ internal sealed class Binder
         return new(statements.ToImmutable());
     }
 
-    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType, bool allowExplicitConversion = false) 
+    BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol expectedType,
+        bool allowExplicitConversion = false)
         => BindConversion(syntax, expectedType, allowExplicitConversion);
 
     BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
@@ -301,12 +306,12 @@ internal sealed class Binder
 
     BoundExpression BindCallExpression(CallExpressionSyntax syntax)
     {
-        if (syntax.Arguments.Count == 1 
+        if (syntax.Arguments.Count == 1
             && LookupType(syntax.Identifier.Text) is { } type)
         {
             return BindConversion(syntax.Arguments[0], type, allowExplicitConversion: true);
         }
-        
+
         if (!_scope.TryLookupFunction(syntax.Identifier.Text, out var function))
         {
             _diagnostics.ReportUndefinedFunction(syntax.Identifier.Span, syntax.Identifier.Text);
@@ -320,6 +325,7 @@ internal sealed class Binder
                 syntax.Identifier.Text,
                 function.Parameters.Length,
                 syntax.Arguments.Count);
+            return new BoundErrorExpression();
         }
 
         var arguments = syntax.Arguments
@@ -335,20 +341,21 @@ internal sealed class Binder
         return BindConversion(expression, type, diagnosticSpan, allowExplicitConversion);
     }
 
-    BoundExpression BindConversion(BoundExpression expression, TypeSymbol type,  TextSpan diagnosticSpan, bool allowExplicit = false)
+    BoundExpression BindConversion(BoundExpression expression, TypeSymbol type, TextSpan diagnosticSpan,
+        bool allowExplicit = false)
     {
         var conversion = Conversion.Classify(expression.Type, type);
 
         if (conversion.IsIdentity)
             return expression;
 
-        if ((!conversion.IsImplicit && !allowExplicit)  || !conversion.Exists)
+        if ((!conversion.IsImplicit && !allowExplicit) || !conversion.Exists)
         {
             if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
             {
                 if (!allowExplicit && !conversion.IsImplicit && conversion.Exists)
                     _diagnostics.ReportNoImplicitConversion(diagnosticSpan, expression.Type, type);
-                else 
+                else
                     _diagnostics.ReportCannotConvert(diagnosticSpan, expression.Type, type);
             }
 
@@ -377,7 +384,7 @@ internal sealed class Binder
         }
 
         boundExpression = BindConversion(boundExpression, variable.Type, syntax.Expression.Span);
-        
+
         return new BoundAssignmentExpression(variable, boundExpression);
     }
 
@@ -459,7 +466,7 @@ internal sealed class Binder
         if (name == TypeSymbol.String.Name)
             return TypeSymbol.String;
 
-        
+
         return null;
     }
 }

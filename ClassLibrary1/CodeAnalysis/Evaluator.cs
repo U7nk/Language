@@ -268,7 +268,7 @@ internal class Evaluator
     }
     
     void Assign(VariableSymbol variableSymbol, object? value)
-    {
+    { 
         var currentStack = _stacks.Peek();
         currentStack[variableSymbol] = value;
     }
