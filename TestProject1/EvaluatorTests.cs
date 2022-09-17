@@ -202,6 +202,15 @@ public class EvaluatorTests
         }
         i;
         """, 5)]
+    [InlineData(
+        $$"""
+        var i = 0;
+        while false 
+        {
+            i = i + 1; 
+        }
+        i;
+        """, 0)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);

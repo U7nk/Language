@@ -40,8 +40,10 @@ internal sealed class Lowerer : BoundTreeRewriter
         return new BoundBlockStatement(builder.ToImmutable());
     }
 
-    LabelSymbol GenerateLabel() 
-        => new("Label" + _labelCount++);
+    LabelSymbol GenerateLabel(string? name = null)
+    {
+        return new(name ?? "Label" + "_" + _labelCount++);
+    }
 
     protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
     {
@@ -54,7 +56,7 @@ internal sealed class Lowerer : BoundTreeRewriter
             // gotoIfFalse <condition> end
             // <then>
             // end:
-            var label = GenerateLabel();
+            var label = GenerateLabel("end");
             var conditionalGoto = new BoundConditionalGotoStatement(label, node.Condition, false);
             var endLabelStatement = new BoundLabelStatement(label);
             var block = new BoundBlockStatement(
@@ -75,8 +77,8 @@ internal sealed class Lowerer : BoundTreeRewriter
             // else:
             // <else>
             // end:
-            var elseLabel = GenerateLabel();
-            var endLabel = GenerateLabel();
+            var elseLabel = GenerateLabel("else");
+            var endLabel = GenerateLabel("end");
             var conditionalGoto = new BoundConditionalGotoStatement(elseLabel, node.Condition, false);
             var gotoEnd = new BoundGotoStatement(endLabel);
             var elseLabelStatement = new BoundLabelStatement(elseLabel);
@@ -105,18 +107,19 @@ internal sealed class Lowerer : BoundTreeRewriter
         //      gotoIfTrue <condition> continue
         // break:
         
-        var startLabel = GenerateLabel();
+        var startLabel = GenerateLabel("loop_start");
         var startLabelStatement = new BoundLabelStatement(startLabel);
-        var gotoStart = new BoundGotoStatement(startLabel);
+        
         
         var continueLabel = node.ContinueLabel;
         var continueLabelStatement = new BoundLabelStatement(continueLabel);
+        var gotoContinue = new BoundGotoStatement(continueLabel);
         var gotoStartOnTrue = new BoundConditionalGotoStatement(startLabel, node.Condition, true);
         var breakLabelStatement = new BoundLabelStatement(node.BreakLabel);
 
         var block = new BoundBlockStatement(
             ImmutableArray.Create(
-                gotoStart,
+                gotoContinue,
                 startLabelStatement,
                 node.Body,
                 continueLabelStatement,
