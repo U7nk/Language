@@ -67,6 +67,8 @@ internal static class SyntaxFacts
             "while" => SyntaxKind.WhileKeyword,
             "for" => SyntaxKind.ForKeyword,
             "function" => SyntaxKind.FunctionKeyword,
+            "break" => SyntaxKind.BreakKeyword,
+            "continue" => SyntaxKind.ContinueKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -133,6 +135,8 @@ internal static class SyntaxFacts
             SyntaxKind.WhileKeyword => "while",
             SyntaxKind.ForKeyword => "for",
             SyntaxKind.FunctionKeyword => "function",
+            SyntaxKind.ContinueKeyword => "continue",
+            SyntaxKind.BreakKeyword => "break",
             _ => null
         };
     }

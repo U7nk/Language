@@ -1,6 +1,6 @@
 namespace Wired.CodeAnalysis.Binding;
 
-internal sealed class BoundForStatement : BoundStatement
+internal sealed class BoundForStatement : BoundLoopStatement
 {
     internal override BoundNodeKind Kind => BoundNodeKind.ForStatement;
     public BoundVariableDeclarationStatement? VariableDeclaration { get; }
@@ -9,7 +9,10 @@ internal sealed class BoundForStatement : BoundStatement
     public BoundExpression Mutation { get; }
     public BoundStatement Body { get; }
 
-    public BoundForStatement(BoundVariableDeclarationStatement? variableDeclaration, BoundExpression? expression, BoundExpression condition, BoundExpression mutation, BoundStatement body)
+    public BoundForStatement(BoundVariableDeclarationStatement? variableDeclaration, BoundExpression? expression,
+        BoundExpression condition, BoundExpression mutation, BoundStatement body,
+        LabelSymbol breakLabel, LabelSymbol continueLabel)
+        : base(breakLabel, continueLabel)
     {
         Condition = condition;
         Mutation = mutation;

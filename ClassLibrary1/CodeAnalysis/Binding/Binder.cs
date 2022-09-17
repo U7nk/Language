@@ -10,18 +10,18 @@ namespace Wired.CodeAnalysis.Binding;
 
 internal sealed class Binder
 {
+    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
+
     readonly DiagnosticBag _diagnostics = new();
     BoundScope _scope;
-    readonly FunctionSymbol? _function;
-    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
+    readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     Binder(BoundScope parent, FunctionSymbol? function)
     {
         _scope = new BoundScope(parent);
-        _function = function;
-        if (_function is not null)
+        if (function is not null)
         {
-            foreach (var p in _function.Parameters)
+            foreach (var p in function.Parameters)
                 _scope.TryDeclareVariable(p);
         }
     }
@@ -147,6 +147,9 @@ internal sealed class Binder
         return boundProgram;
     }
 
+    BoundStatement BindErrorStatement() 
+        => new BoundExpressionStatement(new BoundErrorExpression());
+    
     BoundStatement BindStatement(StatementSyntax syntax)
     {
         switch (syntax.Kind)
@@ -163,9 +166,35 @@ internal sealed class Binder
                 return BindWhileStatement((WhileStatementSyntax)syntax);
             case SyntaxKind.ForStatement:
                 return BindForStatement((ForStatementSyntax)syntax);
+            case SyntaxKind.ContinueStatement:
+                return BindContinueStatement((ContinueStatementSyntax)syntax);
+            case SyntaxKind.BreakStatement:
+                return BindBreakStatement((BreakStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
+    {
+        if (_loopStack.Count == 0)
+        {
+            _diagnostics.ReportInvalidBreakOrContinue(syntax.BreakKeyword);
+            return BindErrorStatement();
+        }
+        
+        return new BoundGotoStatement(_loopStack.Peek().BreakLabel);
+    }
+
+    BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
+    {
+        if (_loopStack.Count == 0)
+        {
+            _diagnostics.ReportInvalidBreakOrContinue(syntax.ContinueKeyword);
+            return BindErrorStatement();
+        }
+        
+        return new BoundGotoStatement(_loopStack.Peek().ContinueLabel);
     }
 
     BoundStatement BindForStatement(ForStatementSyntax syntax)
@@ -179,16 +208,27 @@ internal sealed class Binder
 
         var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
         var mutation = BindExpression(syntax.Mutation);
-        var body = BindStatement(syntax.Body);
+        
+        var body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
 
-        return new BoundForStatement(variableDeclaration, expression, condition, mutation, body);
+        return new BoundForStatement(variableDeclaration, expression, condition, mutation, body, breakLabel, continueLabel);
     }
 
     BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
     {
         var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
-        var body = BindStatement(syntax.Body);
-        return new BoundWhileStatement(condition, body);
+        var body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
+        return new BoundWhileStatement(condition, body, breakLabel, continueLabel);
+    }
+
+    BoundStatement BindLoopBody(StatementSyntax body, out LabelSymbol breakLabel, out LabelSymbol continueLabel)
+    {
+        breakLabel = new LabelSymbol("break");
+        continueLabel = new LabelSymbol("continue");
+        _loopStack.Push((breakLabel, continueLabel));
+        
+        var boundBody = BindStatement(body);
+        return boundBody;
     }
 
     BoundStatement BindIfStatement(IfStatementSyntax syntax)

@@ -95,25 +95,32 @@ internal sealed class Lowerer : BoundTreeRewriter
         // rewrite structure
         // while <condition>
         //     <body>
-        // -->
-        // goto start
+        // 
+        // lowers to:
+        //
+        //      goto start
         // continue:
-        // <body>
+        //      <body>
         // start:
-        // gotoIfTrue <condition> continue
+        //      gotoIfTrue <condition> continue
+        // break:
         
         var startLabel = GenerateLabel();
         var gotoStart = new BoundGotoStatement(startLabel);
-        var continueLabel = GenerateLabel();
+        var continueLabel = node.ContinueLabel;
         var continueLabelStatement = new BoundLabelStatement(continueLabel);
-        
         var startLabelStatement = new BoundLabelStatement(startLabel);
-        var conditionalGoto = new BoundConditionalGotoStatement(continueLabel, node.Condition, true);
+        var gotoTrue = new BoundConditionalGotoStatement(continueLabel, node.Condition, true);
+        var breakLabelStatement = new BoundLabelStatement(node.BreakLabel);
+
         var block = new BoundBlockStatement(
             ImmutableArray.Create(
-                gotoStart, continueLabelStatement,
-                node.Body, startLabelStatement,
-                conditionalGoto));
+                gotoStart,
+                continueLabelStatement,
+                node.Body,
+                startLabelStatement,
+                gotoTrue,
+                breakLabelStatement));
         
         return RewriteStatement(block);
     }
@@ -143,11 +150,17 @@ internal sealed class Lowerer : BoundTreeRewriter
             statement = new BoundExpressionStatement(node.Expression.ThrowIfNull());
 
         var condition = node.Condition.ThrowIfNull();
+        var continueLabelStatement = new BoundLabelStatement(node.ContinueLabel); 
         var mutation = new BoundExpressionStatement(node.Mutation.ThrowIfNull());
-        var body = new BoundBlockStatement(ImmutableArray.Create(node.Body, mutation));
+        var body = new BoundBlockStatement(ImmutableArray.Create(
+            node.Body,
+            continueLabelStatement,
+            mutation));
         var whileStatement = new BoundWhileStatement(
             condition,
-            body);
+            body,
+            node.BreakLabel,
+            new LabelSymbol("unused_need_to_refactor_for_loop_lowering"));
 
         var result = new BoundBlockStatement(ImmutableArray.Create(statement, whileStatement));
         return RewriteStatement(result);

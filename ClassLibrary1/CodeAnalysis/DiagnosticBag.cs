@@ -140,4 +140,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"Functions are not supported yet.";
         Report(span, message);
     }
+
+    public void ReportInvalidBreakOrContinue(SyntaxToken breakKeyword)
+    {
+        var message = $"Invalid use of '{breakKeyword.Text}'. Must be inside a loop.";
+        Report(breakKeyword.Span, message);
+    }
 }

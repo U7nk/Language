@@ -170,7 +170,7 @@ internal abstract class BoundTreeRewriter
         if (condition == node.Condition && body == node.Body)
             return node;
         
-        return new BoundWhileStatement(condition, body);
+        return new BoundWhileStatement(condition, body, node.BreakLabel, node.ContinueLabel);
     }
 
     protected virtual BoundVariableDeclarationStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node)
@@ -201,7 +201,7 @@ internal abstract class BoundTreeRewriter
             && body == node.Body)
             return node;
 
-        return new BoundForStatement(declaration, expression, condition, mutation, body);
+        return new BoundForStatement(declaration, expression, condition, mutation, body, node.BreakLabel, node.ContinueLabel);
     }
 
     protected virtual BoundExpressionStatement RewriteExpressionStatement(BoundExpressionStatement node)

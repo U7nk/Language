@@ -44,7 +44,8 @@ public enum SyntaxKind
     ElseKeyword,
     ForKeyword,
     FunctionKeyword,
-
+    BreakKeyword,
+    ContinueKeyword,
 
     // nodes
     CompilationUnit,
@@ -73,5 +74,6 @@ public enum SyntaxKind
     ElseClause,   
     ForStatement,
     ColonToken,
-
+    ContinueStatement,
+    BreakStatement,
 }

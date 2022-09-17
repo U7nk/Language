@@ -4,22 +4,23 @@ using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Syntax;
 
 var st = SyntaxTree.Parse($$"""
-
-function fibonacci(count : int)
-{ 
-    var x = count; 
-    if x == 0
-    {
-        print("Done"); 
-    }
-    else
-    {  
-        fibonacci(x - 1); 
-        print(string(x));
-        x = 42;
-     }
-}
-fibonacci(3);
+var result = 0; 
+        
+        for (var i = 0; i < 15; i = i + 1) 
+        { 
+            if (i == 10){
+                print(" break " + string(i));                                  
+                break;  
+            }
+            if (i / 2 * 2 == i){
+                print(" continue " + string(i));                 
+                continue; 
+            }
+            
+            print(" end " + string(i));
+        }
+        
+        result;
 """);
 
 var result = new Compilation(st)

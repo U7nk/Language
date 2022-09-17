@@ -20,12 +20,23 @@ public class UnitTest1
     {
         
         _output.WriteLine("Result: " + Build($$"""
-            function main()
-            {
-                print("Hello" + "World" + "!"); 
-                let f = 50;
-                print(string(f));
+            var result = 0; 
+            
+            for (var i = 0; i < 10; i = i + 1) 
+            { 
+                if (i == 10){
+                    print(" break " + string(i));                                  
+                    break;  
+                }
+                if (i / 2 * 2 == i){
+                    print(" continue " + string(i));                 
+                    continue; 
+                }
+                
+                print(" end " + string(i));
             }
+            
+            result;
             """));
     }
 
@@ -39,7 +50,11 @@ public class UnitTest1
         _output.WriteLine();
         _output.WriteLine();
         _output.WriteLine("Bound Tree:");
-        compilation.EmitTree(_output);
+        var output = new StringWriter();
+        compilation.EmitTree(output);
+        output.ToString().Split(Environment.NewLine)
+            .ToList()
+            .ForEach(x => _output.WriteLine(x));
         
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);

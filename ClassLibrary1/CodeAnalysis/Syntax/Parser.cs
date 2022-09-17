@@ -119,7 +119,7 @@ public class Parser
             // so we need to consume at least one token to prevent looping
             //
             // no need for error reporting, because ParseStatement() already reported it
-            if (ReferenceEquals(Current, startToken)) 
+            if (ReferenceEquals(Current, startToken))
                 NextToken();
         }
 
@@ -149,20 +149,21 @@ public class Parser
         var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
         var type = ParseOptionalTypeClause();
         var body = ParseBlockStatement();
-        return new FunctionDeclarationSyntax(functionKeyword, identifier, openParenthesisToken, parameters, closeParenthesisToken, type, body);
+        return new FunctionDeclarationSyntax(functionKeyword, identifier, openParenthesisToken, parameters,
+            closeParenthesisToken, type, body);
     }
 
     SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
     {
         if (Current.Kind is SyntaxKind.CloseParenthesisToken)
             return new SeparatedSyntaxList<ParameterSyntax>(ImmutableArray<SyntaxNode>.Empty);
-        
+
         var parameters = ImmutableArray.CreateBuilder<SyntaxNode>();
         while (true)
         {
             var parameter = ParseParameter();
             parameters.Add(parameter);
-            
+
             if (Current.Kind is not SyntaxKind.CommaToken)
                 break;
 
@@ -172,7 +173,7 @@ public class Parser
 
         return new SeparatedSyntaxList<ParameterSyntax>(parameters.ToImmutable());
     }
-    
+
     ParameterSyntax ParseParameter()
     {
         var identifier = Match(SyntaxKind.IdentifierToken);
@@ -193,11 +194,31 @@ public class Parser
 
         if (Current.Kind is SyntaxKind.WhileKeyword)
             return ParseWhileStatement();
-        
+
         if (Current.Kind is SyntaxKind.ForKeyword)
             return ParseForStatement();
 
+        if (Current.Kind is SyntaxKind.BreakKeyword)
+            return ParseBreakStatement();
+
+        if (Current.Kind is SyntaxKind.ContinueKeyword)
+            return ParseContinueStatement();
+
         return ParseExpressionStatement();
+    }
+
+    StatementSyntax ParseContinueStatement()
+    {
+        var continueKeyword = Match(SyntaxKind.ContinueKeyword);
+        var semicolonToken = Match(SyntaxKind.SemicolonToken);
+        return new ContinueStatementSyntax(continueKeyword, semicolonToken);
+    }
+
+    StatementSyntax ParseBreakStatement()
+    {
+        var breakKeyword = Match(SyntaxKind.BreakKeyword);
+        var semicolonToken = Match(SyntaxKind.SemicolonToken);
+        return new BreakStatementSyntax(breakKeyword, semicolonToken);
     }
 
     StatementSyntax ParseWhileStatement()
@@ -221,14 +242,14 @@ public class Parser
     {
         var forKeyword = Match(SyntaxKind.ForKeyword);
         var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
-        
+
         VariableDeclarationAssignmentSyntax? variableDeclaration = null;
         ExpressionSyntax? expression = null;
         if (Current.Kind is SyntaxKind.VarKeyword)
             variableDeclaration = ParseVariableDeclarationAssignmentSyntax();
         else
             expression = ParseExpression();
-        
+
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
         var condition = ParseExpression();
         var middleSemicolonToken = Match(SyntaxKind.SemicolonToken);
@@ -237,7 +258,7 @@ public class Parser
         var body = ParseStatement();
 
         return new ForStatementSyntax(
-            forKeyword, openParenthesis, 
+            forKeyword, openParenthesis,
             variableDeclaration, expression,
             semicolonToken, condition,
             middleSemicolonToken, mutation,
@@ -259,7 +280,7 @@ public class Parser
     {
         var variableDeclarationAssignment = ParseVariableDeclarationAssignmentSyntax();
         var semicolon = Match(SyntaxKind.SemicolonToken);
-        
+
         return new VariableDeclarationStatementSyntax(variableDeclarationAssignment, semicolon);
     }
 
@@ -288,11 +309,12 @@ public class Parser
     {
         if (Current.Kind is not SyntaxKind.ColonToken)
             return null;
-        
+
         var colon = NextToken();
         var type = Match(SyntaxKind.IdentifierToken);
         return new(colon, type);
     }
+
     TypeClauseSyntax ParseTypeClause()
     {
         var colon = Match(SyntaxKind.ColonToken);
@@ -316,7 +338,7 @@ public class Parser
             // so we need to consume at least one token to prevent looping
             //
             // no need for error reporting, because ParseStatement() already reported it
-            if (ReferenceEquals(Current, startToken)) 
+            if (ReferenceEquals(Current, startToken))
                 NextToken();
         }
 
@@ -411,7 +433,7 @@ public class Parser
     {
         if (Current.Kind is SyntaxKind.CloseParenthesisToken)
             return new(ImmutableArray<SyntaxNode>.Empty);
-        
+
         var arguments = ImmutableArray.CreateBuilder<SyntaxNode>();
         arguments.Add(ParseExpression());
         while (Current.Kind is SyntaxKind.CommaToken)
@@ -420,7 +442,7 @@ public class Parser
             arguments.Add(comma);
             arguments.Add(ParseExpression());
         }
-        
+
         return new(arguments.ToImmutable());
     }
 
