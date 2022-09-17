@@ -112,9 +112,22 @@ internal abstract class BoundTreeRewriter
                 return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
             case BoundNodeKind.GotoStatement:
                 return RewriteGotoStatement((BoundGotoStatement)node);
+            case BoundNodeKind.ReturnStatement:
+                return RewriteReturnStatement((BoundReturnStatement)node);
             default:
                 throw new("Unexpected node " + node.Kind);
         }
+    }
+
+    BoundStatement RewriteReturnStatement(BoundReturnStatement node)
+    {
+        var expression = node.Expression is null 
+            ? null 
+            : RewriteExpression(node.Expression);
+        if (expression == node.Expression && expression is not null)
+            return node;
+
+        return new BoundReturnStatement(expression);
     }
 
     BoundStatement RewriteGotoStatement(BoundGotoStatement node) 

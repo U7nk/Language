@@ -24,10 +24,10 @@ internal class Evaluator
         _stacks.Push(globals);
     }
 
-    public object Evaluate() 
+    public object? Evaluate() 
         => EvaluateStatement(_root);
 
-    object EvaluateStatement(BoundBlockStatement body)
+    object? EvaluateStatement(BoundBlockStatement body)
     {
         var labelToIndex = new Dictionary<LabelSymbol, int>();
 
@@ -67,6 +67,13 @@ internal class Evaluator
                 case BoundNodeKind.LabelStatement:
                     i++;
                     break;
+                case BoundNodeKind.ReturnStatement:
+                    var rs = (BoundReturnStatement)statement;
+                    var value = rs.Expression == null 
+                        ? null 
+                        : EvaluateExpression(rs.Expression);
+                    _lastValue = value;
+                    return _lastValue;
                 default:
                     throw new Exception($"Unexpected node  {statement.Kind}");
             }

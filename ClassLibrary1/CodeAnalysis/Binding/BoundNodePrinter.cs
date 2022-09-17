@@ -44,6 +44,9 @@ static class BoundNodePrinter
             case BoundNodeKind.LabelStatement:
                 WriteLabelStatement((BoundLabelStatement)node, writer);
                 break;
+            case BoundNodeKind.ReturnStatement:
+                WriteReturnStatement((BoundReturnStatement)node, writer);
+                break;
             case BoundNodeKind.ConditionalGotoStatement:
                 WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
                 break;
@@ -74,6 +77,12 @@ static class BoundNodePrinter
             default:
                 throw new Exception("Unexpected node " + node.Kind);
         }
+    }
+
+    static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)
+    {
+        writer.Write("return ");
+        node.Expression?.WriteTo(writer);
     }
 
     static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)

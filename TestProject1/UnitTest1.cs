@@ -18,17 +18,16 @@ public class UnitTest1
     [Fact]
     public void Evaluate()
     {
-        
         _output.WriteLine("Result: " + Build($$"""
-            {  
-                var b = 1; 
-                var i = 5; 
-                for (i = 1; i < 4; i = i + 1)
-                {
-                   b = i;
-                } 
-                b;
+            function sum(x : int, y : int) : int
+            {
+                return x + y;
             }
+            var x = 10;
+            var y = 20;
+            x = sum(x, y);
+            x; 
+            
             """));
     }
 

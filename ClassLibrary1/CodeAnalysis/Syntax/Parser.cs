@@ -203,8 +203,22 @@ public class Parser
 
         if (Current.Kind is SyntaxKind.ContinueKeyword)
             return ParseContinueStatement();
+        
+        if (Current.Kind is SyntaxKind.ReturnKeyword)
+            return ParseReturnStatement();
 
         return ParseExpressionStatement();
+    }
+
+    StatementSyntax ParseReturnStatement()
+    {
+        var keyword = Match(SyntaxKind.ReturnKeyword);
+        var expression = Current.Kind is SyntaxKind.SemicolonToken 
+            ? null
+            : ParseExpression();
+        
+        var semicolon = Match(SyntaxKind.SemicolonToken);
+        return new ReturnStatementSyntax(keyword, expression, semicolon);
     }
 
     StatementSyntax ParseContinueStatement()

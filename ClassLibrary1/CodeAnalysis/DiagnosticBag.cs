@@ -135,15 +135,28 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         Report(identifierSpan, message);
     }
 
-    public void XXX_ReportFunctionsAreNotSupported(TextSpan span)
-    {
-        var message = $"Functions are not supported yet.";
-        Report(span, message);
-    }
-
     public void ReportInvalidBreakOrContinue(SyntaxToken breakKeyword)
     {
         var message = $"Invalid use of '{breakKeyword.Text}'. Must be inside a loop.";
         Report(breakKeyword.Span, message);
+    }
+
+    public void ReportReturnStatementIsInvalidForVoidFunction(TextSpan syntaxSpan)
+    {
+        var message = $"Return statement is invalid for {TypeSymbol.Void} function.";
+        Report(syntaxSpan, message);
+    }
+
+    public void ReportReturnStatementIsInvalidForNonVoidFunction(TextSpan syntaxSpan)
+    {
+        var message = $"return should have value for {TypeSymbol.Void} function.";
+        Report(syntaxSpan, message);
+    }
+
+    public void ReportInvalidReturn(TextSpan returnKeywordSpan)
+    {
+        var message = $"Return statement should be inside a function.";
+        Report(returnKeywordSpan, message);
+        
     }
 }

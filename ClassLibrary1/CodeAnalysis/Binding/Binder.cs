@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Syntax;
@@ -15,13 +16,15 @@ internal sealed class Binder
     readonly DiagnosticBag _diagnostics = new();
     BoundScope _scope;
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
+    readonly FunctionSymbol? _function;
 
     Binder(BoundScope parent, FunctionSymbol? function)
     {
         _scope = new BoundScope(parent);
-        if (function is not null)
+        _function = function;
+        if (_function is not null)
         {
-            foreach (var p in function.Parameters)
+            foreach (var p in _function.Parameters)
                 _scope.TryDeclareVariable(p);
         }
     }
@@ -71,9 +74,6 @@ internal sealed class Binder
         }
 
         var returnType = BindTypeClause(function.Type) ?? TypeSymbol.Void;
-
-        if (returnType != TypeSymbol.Void)
-            _diagnostics.XXX_ReportFunctionsAreNotSupported(function.Identifier.Span);
 
         var functionSymbol =
             new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
@@ -131,7 +131,7 @@ internal sealed class Binder
         {
             foreach (var function in scope.Functions)
             {
-                var binder = new Binder(parentScope, function);
+                var binder = new Binder(new BoundScope(null), function);
                 var body = binder.BindStatement(function.Declaration.Body);
                 var loweredBody = Lowerer.Lower(body);
                 functionBodies.Add(function, loweredBody);
@@ -170,9 +170,41 @@ internal sealed class Binder
                 return BindContinueStatement((ContinueStatementSyntax)syntax);
             case SyntaxKind.BreakStatement:
                 return BindBreakStatement((BreakStatementSyntax)syntax);
+            case SyntaxKind.ReturnStatement:
+                return BindReturnStatement((ReturnStatementSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
+    {
+        var expression = syntax.Expression is null
+            ? null
+            : BindExpression(syntax.Expression);
+        
+        if (_function is null)
+            _diagnostics.ReportInvalidReturn(syntax.ReturnKeyword.Span);
+        else
+        {
+            if (_function.ReturnType == TypeSymbol.Void)
+            {
+                if (expression is not null) 
+                    _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Span);
+            }
+            else
+            {
+                if (expression is null)
+                    _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Span);
+                else
+                {
+                    Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
+                    expression = BindConversion(expression, _function.ReturnType, syntax.Expression.Span);
+                }
+            }
+        }
+
+        return new BoundReturnStatement(expression);
     }
 
     BoundStatement BindBreakStatement(BreakStatementSyntax syntax)

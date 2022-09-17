@@ -46,7 +46,8 @@ public enum SyntaxKind
     FunctionKeyword,
     BreakKeyword,
     ContinueKeyword,
-
+    ReturnKeyword,
+    
     // nodes
     CompilationUnit,
     VariableDeclarationSyntax,
@@ -76,4 +77,5 @@ public enum SyntaxKind
     ColonToken,
     ContinueStatement,
     BreakStatement,
+    ReturnStatement
 }

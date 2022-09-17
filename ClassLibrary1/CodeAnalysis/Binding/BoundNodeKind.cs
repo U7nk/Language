@@ -12,6 +12,8 @@ internal enum BoundNodeKind
     GotoStatement,
     LabelStatement,
     ConditionalGotoStatement,
+    ReturnStatement,
+
     
     // expressions
     UnaryExpression,
@@ -21,5 +23,5 @@ internal enum BoundNodeKind
     AssignmentExpression,
     ErrorExpression,
     CallExpression,
-    ConversionExpression
+    ConversionExpression,
 }

@@ -53,6 +53,30 @@ internal static class SyntaxFacts
                 return 0;
         }
     }
+    
+    public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds()
+    {
+        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
+        foreach (var kind in kinds)
+        {
+            if (GetUnaryOperatorPrecedence(kind) > 0)
+            {
+                yield return kind;
+            }
+        }
+    }
+    
+    public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds()
+    {
+        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
+        foreach (var kind in kinds)
+        {
+            if (GetBinaryOperatorPrecedence(kind) > 0)
+            {
+                yield return kind;
+            }
+        }
+    }
 
     public static SyntaxKind GetKeywordKind(string text)
     {
@@ -69,31 +93,9 @@ internal static class SyntaxFacts
             "function" => SyntaxKind.FunctionKeyword,
             "break" => SyntaxKind.BreakKeyword,
             "continue" => SyntaxKind.ContinueKeyword,
+            "return" => SyntaxKind.ReturnKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
-    }
-
-    public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds()
-    {
-        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
-        foreach (var kind in kinds)
-        {
-            if (GetUnaryOperatorPrecedence(kind) > 0)
-            {
-                yield return kind;
-            }
-        }
-    }
-    public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds()
-    {
-        var kinds = (SyntaxKind[])Enum.GetValues(typeof(SyntaxKind));
-        foreach (var kind in kinds)
-        {
-            if (GetBinaryOperatorPrecedence(kind) > 0)
-            {
-                yield return kind;
-            }
-        }
     }
 
     public static string? GetText(SyntaxKind kind)
@@ -137,6 +139,7 @@ internal static class SyntaxFacts
             SyntaxKind.FunctionKeyword => "function",
             SyntaxKind.ContinueKeyword => "continue",
             SyntaxKind.BreakKeyword => "break",
+            SyntaxKind.ReturnKeyword => "return",
             _ => null
         };
     }
