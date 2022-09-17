@@ -106,20 +106,21 @@ internal sealed class Lowerer : BoundTreeRewriter
         // break:
         
         var startLabel = GenerateLabel();
+        var startLabelStatement = new BoundLabelStatement(startLabel);
         var gotoStart = new BoundGotoStatement(startLabel);
+        
         var continueLabel = node.ContinueLabel;
         var continueLabelStatement = new BoundLabelStatement(continueLabel);
-        var startLabelStatement = new BoundLabelStatement(startLabel);
-        var gotoTrue = new BoundConditionalGotoStatement(continueLabel, node.Condition, true);
+        var gotoStartOnTrue = new BoundConditionalGotoStatement(startLabel, node.Condition, true);
         var breakLabelStatement = new BoundLabelStatement(node.BreakLabel);
 
         var block = new BoundBlockStatement(
             ImmutableArray.Create(
                 gotoStart,
-                continueLabelStatement,
-                node.Body,
                 startLabelStatement,
-                gotoTrue,
+                node.Body,
+                continueLabelStatement,
+                gotoStartOnTrue,
                 breakLabelStatement));
         
         return RewriteStatement(block);
@@ -150,17 +151,16 @@ internal sealed class Lowerer : BoundTreeRewriter
             statement = new BoundExpressionStatement(node.Expression.ThrowIfNull());
 
         var condition = node.Condition.ThrowIfNull();
-        var continueLabelStatement = new BoundLabelStatement(node.ContinueLabel); 
+         
         var mutation = new BoundExpressionStatement(node.Mutation.ThrowIfNull());
         var body = new BoundBlockStatement(ImmutableArray.Create(
             node.Body,
-            continueLabelStatement,
             mutation));
         var whileStatement = new BoundWhileStatement(
             condition,
             body,
             node.BreakLabel,
-            new LabelSymbol("unused_need_to_refactor_for_loop_lowering"));
+            node.ContinueLabel);
 
         var result = new BoundBlockStatement(ImmutableArray.Create(statement, whileStatement));
         return RewriteStatement(result);

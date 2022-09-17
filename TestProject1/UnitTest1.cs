@@ -20,23 +20,15 @@ public class UnitTest1
     {
         
         _output.WriteLine("Result: " + Build($$"""
-            var result = 0; 
-            
-            for (var i = 0; i < 10; i = i + 1) 
-            { 
-                if (i == 10){
-                    print(" break " + string(i));                                  
-                    break;  
-                }
-                if (i / 2 * 2 == i){
-                    print(" continue " + string(i));                 
-                    continue; 
-                }
-                
-                print(" end " + string(i));
+            {  
+                var b = 1; 
+                var i = 5; 
+                for (i = 1; i < 4; i = i + 1)
+                {
+                   b = i;
+                } 
+                b;
             }
-            
-            result;
             """));
     }
 

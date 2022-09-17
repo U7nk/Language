@@ -191,6 +191,17 @@ public class EvaluatorTests
         }
         main();
         """, 4950)]
+    [InlineData(
+        $$"""
+        var i = 0; 
+        while i < 5 
+        {
+            i = i + 1;
+            if i == 5
+                continue;
+        }
+        i;
+        """, 5)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
         AssertValue(expression, expectedValue);
