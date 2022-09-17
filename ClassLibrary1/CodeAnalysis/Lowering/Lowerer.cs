@@ -101,10 +101,10 @@ internal sealed class Lowerer : BoundTreeRewriter
         // lowers to:
         //
         //      goto start
-        // continue:
+        // loop_start:
         //      <body>
-        // start:
-        //      gotoIfTrue <condition> continue
+        // continue:
+        //      gotoIfTrue <condition> loop_start
         // break:
         
         var startLabel = GenerateLabel("loop_start");
