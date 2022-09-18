@@ -159,4 +159,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         Report(returnKeywordSpan, message);
         
     }
+
+    public void ReportAllPathsMustReturn(TextSpan identifierSpan)
+    {
+        var message = $"All paths must return a value.";
+        Report(identifierSpan, message);
+    }
 }

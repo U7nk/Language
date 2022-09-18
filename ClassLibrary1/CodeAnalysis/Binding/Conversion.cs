@@ -24,7 +24,7 @@ internal sealed class Conversion
             if (to == TypeSymbol.String)
                 return Explicit;
         }
-        
+
         if (from == TypeSymbol.String)
         {
             if (to == TypeSymbol.Bool || to == TypeSymbol.Int)

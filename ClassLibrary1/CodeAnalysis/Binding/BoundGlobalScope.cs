@@ -10,7 +10,7 @@ internal sealed class BoundGlobalScope
         ImmutableArray<Diagnostic> diagnostics,
         ImmutableArray<FunctionSymbol> functions, 
         ImmutableArray<VariableSymbol> variables,
-        BoundStatement statement)
+        BoundBlockStatement statement)
     {
         Previous = previous;
         Diagnostics = diagnostics;
@@ -19,7 +19,7 @@ internal sealed class BoundGlobalScope
         Statement = statement;
     }
 
-    public BoundStatement Statement { get; }
+    public BoundBlockStatement Statement { get; }
 
     public ImmutableArray<VariableSymbol> Variables { get; }
 

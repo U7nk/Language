@@ -53,10 +53,21 @@ public sealed class Compilation
             return new(diagnostics, null);
 
         var program = Binder.BindProgram(GlobalScope);
+
         if (program.Diagnostics.Any())
             return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
 
         var statement = GetStatement();
+        
+        var cfgPath = "control_flow.dot";
+        var cfg = ControlFlowGraph.Create(
+            !program.GlobalScope.Statement.Statements.Any() && program.GlobalScope.Functions.Any()
+                ? program.FunctionBodies.Last().Value
+                : statement);
+        
+        using (var streamWriter = new StreamWriter(cfgPath)) 
+            cfg.WriteTo(streamWriter);
+        
         var evaluator = new Evaluator(program.FunctionBodies, statement, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);

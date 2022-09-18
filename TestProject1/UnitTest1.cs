@@ -19,15 +19,12 @@ public class UnitTest1
     public void Evaluate()
     {
         _output.WriteLine("Result: " + Build($$"""
-            function sum(x : int, y : int) : int
-            {
-                return x + y;
+            function sum(x : int, y : int)
+            {  
+                if !true{
+                    return;
+                }  
             }
-            var x = 10;
-            var y = 20;
-            x = sum(x, y);
-            x; 
-            
             """));
     }
 

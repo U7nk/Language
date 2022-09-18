@@ -121,10 +121,9 @@ internal sealed class Binder
     public static BoundProgram BindProgram(BoundGlobalScope globalScope)
     {
         var parentScope = CreateParentScope(globalScope);
-
         var functionBodies
             = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
-        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        var diagnostics = new DiagnosticBag();
 
         var scope = globalScope;
         while (scope is not null)
@@ -132,8 +131,14 @@ internal sealed class Binder
             foreach (var function in scope.Functions)
             {
                 var binder = new Binder(new BoundScope(null), function);
+                Debug.Assert(function.Declaration != null, "function.Declaration != null");
                 var body = binder.BindStatement(function.Declaration.Body);
                 var loweredBody = Lowerer.Lower(body);
+                if (!Equals(function.ReturnType, TypeSymbol.Void) 
+                    && !ControlFlowGraph.AllPathsReturn(loweredBody))
+                {
+                    diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Span);
+                }
                 functionBodies.Add(function, loweredBody);
 
                 diagnostics.AddRange(binder.Diagnostics);
@@ -143,7 +148,7 @@ internal sealed class Binder
         }
 
 
-        var boundProgram = new BoundProgram(globalScope, diagnostics.ToImmutable(), functionBodies.ToImmutable());
+        var boundProgram = new BoundProgram(globalScope, diagnostics.ToImmutableArray(), functionBodies.ToImmutable());
         return boundProgram;
     }
 

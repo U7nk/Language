@@ -25,6 +25,14 @@ internal static class Extensions
 
         return obj;
     }
+
+
+    internal static bool Empty<T>(this IEnumerable<T> enumerable) 
+        => !enumerable.Any();
+
+    internal static IEnumerable<T> Exclude<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate)
+        => enumerable.Where(x => !predicate(x));
+
     internal static string CutTail(this string str, int count)
     {
         return str.Substring(0, str.Length - count);
@@ -41,12 +49,6 @@ internal static class Extensions
     {
         collection.Add(obj);
         return obj;
-    }
-
-    [DebuggerStepThrough]
-    internal static T[] EmptyOf<T>()
-    {
-        return new T[]{};
     }
 
     internal static T[] Slice<T>(this T[] collection, int fromIncluding, int toExcluding = -1)
@@ -85,15 +87,7 @@ internal static class Extensions
         }
         return res;
     }
-
-    internal static List<T> ObjToList<T>(this T obj)
-    {
-        return new List<T>{ obj };
-    }
-    internal static T[] ObjToArray<T>(this T obj)
-    {
-        return new T[] { obj };
-    }
+    
 
     public static bool CanBeConvertedTo<T>(this Type givenType, Type type) => 
         type.IsAssignableFrom(givenType);
@@ -106,91 +100,8 @@ internal static class Extensions
     } 
     public static bool CanBeConvertedTo<T>(this Type givenType) => 
         typeof(T).IsAssignableFrom(givenType);
+    
 
-    public static Type GetTypeThatAssignableToGenericOrDefault(this Type givenType, Type genericType)
-    {
-        var interfaceTypes = givenType.GetInterfaces();
-
-        foreach (var it in interfaceTypes)
-        {
-            if (it.IsGenericType && it.GetGenericTypeDefinition() == genericType.GetGenericTypeDefinition())
-                return it;
-        }
-
-        if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType.GetGenericTypeDefinition())
-            return givenType;
-
-        Type baseType = givenType.BaseType;
-        if (baseType == null) return null;
-
-        return GetTypeThatAssignableToGenericOrDefault(baseType, genericType);
-    }
-    public static bool TypeRespectsGenericParameterConstraints(Type type, Type[] constraints)
-    {
-        // TODO MAKE LOGIC BLYAT;
-        if (!constraints.Any())
-        {
-            return true;
-        }
-        return false;
-    }
-    public static bool IsTypesCompatible(Type left, Type right)
-    {
-        if (right.IsGenericParameter)
-        {
-            if (TypeRespectsGenericParameterConstraints(left, right.GetGenericParameterConstraints()))
-            {
-                return true;
-            }
-        }
-        if (right.IsAssignableTo(left))
-        {
-            return true;
-        }
-        if (left.IsGenericType)
-        {
-            if (right.IsAssignableToGeneric(left))
-            {
-                return true;
-            }
-            return false;
-        }
-        return false;
-    }
-    public static bool IsAssignableToGeneric(this Type givenType, Type genericType)
-    {
-        var interfaceTypes = givenType.GetInterfaces();
-
-        foreach (var it in interfaceTypes)
-        {
-            if (it.IsGenericType && it.GetGenericTypeDefinition() == genericType.GetGenericTypeDefinition())
-                return true;
-        }
-
-        if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType.GetGenericTypeDefinition())
-        {
-            var genericArgs = givenType.GetGenericArguments();
-            for (var i = 0; i < genericArgs.Length; i++)
-            {
-                if (!IsTypesCompatible(genericArgs[i], genericType.GetGenericArguments()[i]))
-                {
-                    goto cont;
-                }
-            }
-            return true;
-            cont:;
-        }
-
-        Type baseType = givenType.BaseType;
-        if (baseType == null) return false;
-
-        return IsAssignableToGeneric(baseType, genericType);
-    }
-
-    public static bool IsAssignableTo(this Type given, Type assignableTo)
-    {
-        return assignableTo.IsAssignableFrom(given);
-    }
     public static ConditionalAdd<T> If<T>(this T obj, bool condition)
     {
         return new ConditionalAdd<T>(obj);
@@ -225,7 +136,7 @@ internal class ConditionalAdd<T>
         }
         if (IfState == false)
         {
-            if (Condition == true)
+            if (Condition == false)
             {
                 list.Add(Obj);
                 return this;
@@ -242,52 +153,4 @@ internal class ConditionalAdd<T>
             return this;
         }
     }
-}
-internal class MoveNexter
-{
-    readonly bool _checkResult;
-    readonly Action _moveNextAction;
-    public MoveNexter()
-    {
-        _checkResult = false;
-    }
-
-    public MoveNexter(Action moveNextAction)
-    {
-        _checkResult = true;
-        this._moveNextAction = moveNextAction;
-    }
-    public static implicit operator bool(MoveNexter moveNexter)
-    { 
-        return moveNexter._checkResult; 
-    }
-
-    public MoveNexter OnTrue(Action action, int times = 1)
-    {
-        if (_checkResult)
-        {
-            for (int i = 0; i < times; i++)
-            {
-                action();
-            }
-            return this;
-        }
-
-        return this;
-    }
-
-    public bool OnFalse(Action action, int times = 1)
-    {
-        if (_checkResult)
-        {
-            return true;
-        }
-        for (int i = 0; i < times; i++)
-        {
-            action();
-        }
-        return false;
-    }
-
-
 }
