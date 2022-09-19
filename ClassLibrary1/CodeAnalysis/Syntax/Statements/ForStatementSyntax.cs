@@ -15,12 +15,12 @@ public sealed class ForStatementSyntax : StatementSyntax
     public StatementSyntax Body { get; }
 
 
-    public ForStatementSyntax(
+    public ForStatementSyntax(SyntaxTree syntaxTree,
         SyntaxToken forKeyword, SyntaxToken openParenthesis,
         VariableDeclarationAssignmentSyntax? variableDeclaration, ExpressionSyntax? expression, 
         SyntaxToken semicolon, ExpressionSyntax condition, 
         SyntaxToken middleSemiColonToken, ExpressionSyntax mutation,
-        SyntaxToken closeParenthesis, StatementSyntax body)
+        SyntaxToken closeParenthesis, StatementSyntax body) : base(syntaxTree)
     {
         ForKeyword = forKeyword;
         OpenParenthesis = openParenthesis;

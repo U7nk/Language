@@ -2,7 +2,8 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class ExpressionStatementSyntax : StatementSyntax
 {
-    public ExpressionStatementSyntax(ExpressionSyntax expression, SyntaxToken semicolonToken)
+    public ExpressionStatementSyntax(SyntaxTree syntaxTree, ExpressionSyntax expression, SyntaxToken semicolonToken) 
+        : base(syntaxTree)
     {
         Expression = expression;
         SemicolonToken = semicolonToken;

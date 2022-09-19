@@ -8,8 +8,9 @@ public class CallExpressionSyntax : ExpressionSyntax
     public SyntaxToken CloseParenthesis { get; }
     public override SyntaxKind Kind => SyntaxKind.CallExpression;
 
-    public CallExpressionSyntax(SyntaxToken identifier, SyntaxToken openParenthesis,
-        SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesis)
+    public CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken openParenthesis,
+        SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesis) 
+        : base(syntaxTree)
     {
         Identifier = identifier;
         OpenParenthesis = openParenthesis;

@@ -2,7 +2,7 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class TypeClauseSyntax : SyntaxNode
 {
-    public TypeClauseSyntax(SyntaxToken colon, SyntaxToken identifier)
+    public TypeClauseSyntax(SyntaxTree syntaxTree, SyntaxToken colon, SyntaxToken identifier) : base(syntaxTree)
     {
         Colon = colon;
         Identifier = identifier;

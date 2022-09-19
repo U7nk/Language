@@ -7,9 +7,11 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
     public override SyntaxKind Kind => SyntaxKind.ParenthesizedExpression;
 
     public ParenthesizedExpressionSyntax(
+        SyntaxTree syntaxTree,
         SyntaxToken openParenthesisToken,
         ExpressionSyntax expression,
-        SyntaxToken closeParenthesisToken)
+        SyntaxToken closeParenthesisToken) 
+        : base(syntaxTree)
     {
         OpenParenthesisToken = openParenthesisToken;
         Expression = expression;

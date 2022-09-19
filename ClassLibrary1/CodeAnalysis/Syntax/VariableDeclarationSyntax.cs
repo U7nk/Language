@@ -4,8 +4,9 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class VariableDeclarationSyntax : SyntaxNode
 {
-    public VariableDeclarationSyntax(SyntaxToken keywordToken, SyntaxToken identifierToken,
-        TypeClauseSyntax? typeClause)
+    public VariableDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifierToken,
+        TypeClauseSyntax? typeClause) :
+        base(syntaxTree)
     {
         KeywordToken = keywordToken;
         IdentifierToken = identifierToken;

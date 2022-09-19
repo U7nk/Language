@@ -5,7 +5,8 @@ class ContinueStatementSyntax : StatementSyntax
     public SyntaxToken ContinueKeyword { get; }
     public SyntaxToken SemicolonToken { get; }
 
-    public ContinueStatementSyntax(SyntaxToken continueKeyword, SyntaxToken semicolonToken)
+    public ContinueStatementSyntax(SyntaxTree syntaxTree,SyntaxToken continueKeyword, SyntaxToken semicolonToken) 
+        : base(syntaxTree)
     {
         ContinueKeyword = continueKeyword;
         SemicolonToken = semicolonToken;

@@ -6,8 +6,8 @@ public class VariableDeclarationStatementSyntax : StatementSyntax
     public SyntaxToken SemicolonToken { get; }
     public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
-    public VariableDeclarationStatementSyntax(
-        VariableDeclarationAssignmentSyntax variableDeclaration, SyntaxToken semicolonToken)
+    public VariableDeclarationStatementSyntax(SyntaxTree syntaxTree, VariableDeclarationAssignmentSyntax variableDeclaration,
+        SyntaxToken semicolonToken) : base(syntaxTree)
     {
         VariableDeclaration = variableDeclaration;
         SemicolonToken = semicolonToken;

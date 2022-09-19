@@ -6,20 +6,23 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class Lexer
 {
+    readonly SyntaxTree _syntaxTree;
     readonly SourceText _sourceText;
-    int _position;
     readonly DiagnosticBag _diagnostics = new();
-    int _start;
-    SyntaxKind _kind;
-    object? _value;
-    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
-    public Lexer(SourceText sourceText)
+    int _position;
+    int _start;
+    object? _value;
+    SyntaxKind _kind;
+    
+    public Lexer(SyntaxTree syntaxTree)
     {
-        this._sourceText = sourceText;
+        _syntaxTree = syntaxTree;
+        _sourceText = syntaxTree.SourceText;
     }
 
 
+    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
     char Current => Peek(0);
     char Lookahead => Peek(1);
 
@@ -43,7 +46,7 @@ public class Lexer
         return _sourceText[index];
     }
 
-    public ICollection<SyntaxToken> Parse()
+    public ICollection<SyntaxToken> Lex()
     {
         var token = NextToken();
         var result = new List<SyntaxToken>();
@@ -194,7 +197,8 @@ public class Lexer
                 }
                 else
                 {
-                    _diagnostics.ReportBadCharacter(_position, Current);
+                    var  span = new TextSpan(_position, 1);
+                    _diagnostics.ReportBadCharacter(new TextLocation(_sourceText, span), Current);
                     Next();
                 }
                 break;
@@ -208,7 +212,7 @@ public class Lexer
             text = _sourceText.ToString(_start, length);
         }
 
-        return new SyntaxToken(_kind, _start, text, _value);
+        return new SyntaxToken(_syntaxTree, _kind, _start, text, _value);
     }
 
     void ReadString()
@@ -223,7 +227,8 @@ public class Lexer
             case '\r':
             case '\n':
                 var span = new TextSpan(_start, 1);
-                _diagnostics.ReportUnterminatedString(span);
+                var location = new TextLocation(_sourceText, span);
+                _diagnostics.ReportUnterminatedString(location);
                 break;
             case '"':
                 Next();
@@ -273,7 +278,12 @@ public class Lexer
         var text = _sourceText.ToString(_start, length);
         if (!int.TryParse(text, out var number))
         {
-            _diagnostics.ReportInvalidNumber(_start, length, text, typeof(int));
+            var span = new TextSpan(_start, length);
+            var location = new TextLocation(_sourceText, span);
+            _diagnostics.ReportInvalidNumber(
+                location,
+                text, 
+                typeof(int));
         }
 
         _value = number;

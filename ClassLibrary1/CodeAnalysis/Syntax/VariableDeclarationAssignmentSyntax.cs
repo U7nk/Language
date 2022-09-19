@@ -4,7 +4,9 @@ public class VariableDeclarationAssignmentSyntax : SyntaxNode
 {
     public override SyntaxKind Kind => SyntaxKind.VariableDeclarationAssignmentSyntax;
 
-    public VariableDeclarationAssignmentSyntax(VariableDeclarationSyntax variableDeclaration, SyntaxToken equalsToken, ExpressionSyntax expression)
+    public VariableDeclarationAssignmentSyntax(SyntaxTree syntaxTree, VariableDeclarationSyntax variableDeclaration, SyntaxToken equalsToken,
+        ExpressionSyntax expression) 
+        : base(syntaxTree)
     {
         VariableDeclaration = variableDeclaration;
         EqualsToken = equalsToken;

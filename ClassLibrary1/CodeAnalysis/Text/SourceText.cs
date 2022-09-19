@@ -5,18 +5,25 @@ namespace Wired.CodeAnalysis.Text;
 
 public class SourceText
 {
+    public string FileName { get; }
     readonly string _text;
     public  ImmutableArray<TextLine> Lines { get; }
 
-    SourceText(string text)
+    SourceText(string text, string fileName)
     {
-        this._text = text;
+        FileName = fileName;
+        _text = text;
         Lines = ParseLines(this, text);
     }
 
     public int Length => _text.Length;
     public char this[int index]
         => _text[index];
+
+    public static SourceText From(string text, string fileName = "") 
+        => new SourceText(text, fileName);
+    
+    
 
     public int GetLineIndex(int position)
     {
@@ -39,11 +46,6 @@ public class SourceText
         => _text.Substring(start, length);
     public string ToString(TextSpan span) 
         => _text.Substring(span.Start, span.Length);
-
-    public static SourceText From(string text)
-    {
-        return new SourceText(text);
-    }
 
     static ImmutableArray<TextLine> ParseLines(SourceText sourceText, string text)
     {
@@ -92,25 +94,4 @@ public class SourceText
             _ => 0
         };
     }
-}
-
-public sealed class TextLine
-{
-    public TextLine(SourceText sourceText, int start, int length, int lengthWithLineBreak)
-    {
-        SourceText = sourceText;
-        Start = start;
-        Length = length;
-        LengthWithLineBreak = lengthWithLineBreak;
-    }
-
-    public SourceText SourceText { get; }
-    public TextSpan Span => new TextSpan(Start, Length);
-    public TextSpan SpanWithLineBreak => new TextSpan(Start, LengthWithLineBreak);
-    public int Start { get; }
-    public int End => Start + Length;
-
-    public int Length { get; }
-
-    public int LengthWithLineBreak { get; }
 }

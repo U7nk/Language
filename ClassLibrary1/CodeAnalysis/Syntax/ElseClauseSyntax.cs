@@ -4,7 +4,8 @@ public sealed class ElseClauseSyntax : SyntaxNode
 {
     public override SyntaxKind Kind => SyntaxKind.ElseClause;
 
-    public ElseClauseSyntax(SyntaxToken elseKeyword, StatementSyntax elseStatement)
+    public ElseClauseSyntax(SyntaxTree syntaxTree, SyntaxToken elseKeyword, StatementSyntax elseStatement) 
+        : base(syntaxTree)
     {
         ElseKeyword = elseKeyword;
         ElseStatement = elseStatement;

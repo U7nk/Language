@@ -18,8 +18,7 @@ public sealed class LexerTests
        tokens.Single().Text.Should().Be("\"Hello");
        tokens.Single().Value.Should().Be("Hello");
        diagnostics.Single().Message.Should().Be("Unterminated string literal.");
-       diagnostics.Single().Span.Should().Be(new TextSpan(0, 1));
-       
+       diagnostics.Single().TextLocation.Span.Should().Be(new TextSpan(0, 1));
     }
     
     [Fact]

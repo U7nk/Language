@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
 namespace TestProject1;
@@ -461,8 +462,8 @@ public class EvaluatorTests
             
             
             var expectedSpan = annotatedText.Spans[i];
-            var actualSpan = diagnostics[i].Span;
-            actualSpan.Should().Be(expectedSpan, "Diagnostic spans do not match");
+            var actualSpan = diagnostics[i].TextLocation.Span;
+            actualSpan.Should().BeOfType<TextSpan>().And.Be(expectedSpan, "Diagnostic spans do not match");
         }
     }
 }

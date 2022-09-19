@@ -4,12 +4,12 @@ namespace Wired.CodeAnalysis;
 
 public sealed class Diagnostic
 {
-    public TextSpan Span { get; }
+    public TextLocation TextLocation { get; }
     public string Message { get; }
 
-    public Diagnostic(TextSpan span, string message)
+    public Diagnostic(TextLocation textLocation, string message)
     {
-        Span = span;
+        TextLocation = textLocation;
         Message = message;
     }
 

@@ -51,12 +51,12 @@ public class UnitTest1
             foreach (var diagnostic in evaluation.Diagnostics)
             {
                 var text = syntaxTree.SourceText;
-                var lineIndex = text.GetLineIndex(diagnostic.Span.Start); 
+                var lineIndex = text.GetLineIndex(diagnostic.TextLocation.Span.Start); 
                 var lineNumber = lineIndex + 1; 
-                var prefix = input.Substring(0, diagnostic.Span.Start);
-                var error = input.Substring(diagnostic.Span.Start, diagnostic.Span.Length);
-                var suffix = input.Substring(diagnostic.Span.End);
-                var line = $"({lineNumber},{diagnostic.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}> {error} <{suffix}\"";
+                var prefix = input.Substring(0, diagnostic.TextLocation.Span.Start);
+                var error = input.Substring(diagnostic.TextLocation.Span.Start, diagnostic.TextLocation.Span.Length);
+                var suffix = input.Substring(diagnostic.TextLocation.Span.End);
+                var line = $"({lineNumber},{diagnostic.TextLocation.Span.Start - text.Lines[lineIndex].Start + 1}): \"{prefix}> {error} <{suffix}\"";
                 _output.WriteLine(line);
                 _output.WriteLine(diagnostic.Message);
             }

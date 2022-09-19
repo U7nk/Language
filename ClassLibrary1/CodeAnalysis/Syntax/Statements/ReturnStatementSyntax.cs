@@ -2,7 +2,9 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public class ReturnStatementSyntax : StatementSyntax
 {
-    public ReturnStatementSyntax(SyntaxToken returnKeyword, ExpressionSyntax? expression, SyntaxToken semicolon)
+    public ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression,
+        SyntaxToken semicolon)
+        : base(syntaxTree)
     {
         ReturnKeyword = returnKeyword;
         Expression = expression;
@@ -15,5 +17,4 @@ public class ReturnStatementSyntax : StatementSyntax
     public SyntaxToken Semicolon { get; }
 
     public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
-    
 }

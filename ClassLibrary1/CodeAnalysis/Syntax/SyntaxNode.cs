@@ -9,6 +9,12 @@ namespace Wired.CodeAnalysis.Syntax;
 
 public abstract class SyntaxNode
 {
+    protected SyntaxNode(SyntaxTree syntaxTree)
+    {
+        SyntaxTree = syntaxTree;
+    }
+    
+    public SyntaxTree SyntaxTree { get; }
     public abstract SyntaxKind Kind { get; }
 
     public virtual TextSpan Span
@@ -21,6 +27,7 @@ public abstract class SyntaxNode
         }
     }
 
+    public TextLocation Location => new(SyntaxTree.SourceText, Span);
     public IEnumerable<SyntaxNode> GetChildren()
     {
         var properties = GetType()

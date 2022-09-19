@@ -2,7 +2,8 @@ namespace Wired.CodeAnalysis.Syntax;
 
 class BreakStatementSyntax : StatementSyntax
 {
-    public BreakStatementSyntax(SyntaxToken breakKeyword, SyntaxToken semicolonToken)
+    public BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken breakKeyword, SyntaxToken semicolonToken) 
+        : base(syntaxTree)
     {
         BreakKeyword = breakKeyword;
         SemicolonToken = semicolonToken;

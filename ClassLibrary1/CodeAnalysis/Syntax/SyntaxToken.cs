@@ -13,7 +13,8 @@ public class SyntaxToken : SyntaxNode
     public object? Value { get; }
     public override TextSpan Span => new(Position, Text.Length);
     
-    public SyntaxToken(SyntaxKind kind,int position, string text, object? value)
+    public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind,int position, string text, object? value) 
+        : base(syntaxTree)
     {
         Kind = kind;
         Position = position;
