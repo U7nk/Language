@@ -29,17 +29,22 @@ internal sealed class Binder
         }
     }
 
-    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, CompilationUnitSyntax syntax)
+    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
     {
         var parentScope = CreateParentScope(previous);
         var binder = new Binder(parentScope, function: null);
 
-        foreach (var function in syntax.Members.OfType<FunctionDeclarationSyntax>())
+        var functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
+            .OfType<FunctionDeclarationSyntax>();
+
+        foreach (var function in functionDeclarations)
             binder.BindFunctionDeclaration(function);
 
 
+        var globalStatements = syntaxTrees.SelectMany(st => st.Root.Members)
+            .OfType<GlobalStatementSyntax>();
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        foreach (var globalStatement in syntax.Members.OfType<GlobalStatementSyntax>())
+        foreach (var globalStatement in globalStatements)
         {
             var s = binder.BindStatement(globalStatement.Statement);
             statements.Add(s);
@@ -130,7 +135,7 @@ internal sealed class Binder
         {
             foreach (var function in scope.Functions)
             {
-                var binder = new Binder(new BoundScope(null), function);
+                var binder = new Binder(parentScope, function);
                 Debug.Assert(function.Declaration != null, "function.Declaration != null");
                 var body = binder.BindStatement(function.Declaration.Body);
                 var loweredBody = Lowerer.Lower(body);

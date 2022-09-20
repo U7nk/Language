@@ -1,6 +1,6 @@
 digraph G {
   N0 [label="(START)" shape = box]
-  N1 [label="print(\"hello world\")\lprint(\"\")\l" shape = box]
+  N1 [label="sayHello()\l" shape = box]
   N2 [label="(END)" shape = box]
   N0 -> N1 [label=""] 
   N1 -> N2 [label=""] 

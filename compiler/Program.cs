@@ -1,37 +1,62 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using compiler;
+﻿using compiler;
 using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Syntax;
 
+IEnumerable<string?> GetFilePaths(IEnumerable<string> paths)
+{
+    var result = new SortedSet<string>();
+    foreach (var path in paths)
+    {
+        if (Directory.Exists(path))
+        {
+            result.UnionWith(Directory.EnumerateFiles(path, "*.ln", SearchOption.AllDirectories));
+        }
+        else if (File.Exists(path))
+        {
+            if (Path.GetExtension(path) == ".ln")
+                result.Add(path);
+        }
+    }
+    
+    return result;
+}
+
 if (args.Length == 0)
 {
-    Console.Error.WriteLine("usage: compiler <file>"); 
+    Console.Error.WriteLine("usage: compiler <file1> <file2> ... <fileN>"); 
     return;
 }
 
-if (args.Length > 1)
+var paths = GetFilePaths(args);
+
+var syntaxTrees = new List<SyntaxTree>();
+var hasErrors = false;
+foreach (var path in paths)
 {
-    Console.WriteLine("Too many arguments. only one file can be compiled at a time.");
-    return;
+    if (!File.Exists(path))
+    {
+        Console.Error.WriteLine($"error: file '{path}' does not exist.");
+        hasErrors = true;
+        continue;
+    }
+
+    var syntaxTree = SyntaxTree.Load(path);
+    syntaxTrees.Add(syntaxTree);
 }
 
-var path = args.Single();
+if (hasErrors)
+    return;
 
-var syntaxTree = SyntaxTree.Load(path);
-
-var compilation = new Compilation(syntaxTree);
+var compilation = new Compilation(syntaxTrees.ToArray());
 var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
 
 if (result.Diagnostics.Any())
 {
     foreach (var diagnostic in result.Diagnostics)
     {
-        var sourceText = syntaxTree.SourceText;
+        var sourceText = diagnostic.TextLocation.Text;
         var text = sourceText.ToString();
-        var lineIndex = sourceText.GetLineIndex(diagnostic.TextLocation.Span.Start); 
-        var lineNumber = lineIndex + 1; 
-        var prefix = syntaxTree.SourceText.ToString().Substring(0, diagnostic.TextLocation.Span.Start);
+        var prefix = sourceText.ToString().Substring(0, diagnostic.TextLocation.Span.Start);
         var error = text.Substring(diagnostic.TextLocation.Span.Start, diagnostic.TextLocation.Span.Length);
         var suffix = text.Substring(diagnostic.TextLocation.Span.End);
         
@@ -48,5 +73,3 @@ if (result.Diagnostics.Any())
         ConsoleEx.WriteLine();
     }
 }
-
-

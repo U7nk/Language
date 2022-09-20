@@ -34,7 +34,7 @@ public class UnitTest1
         var compilation = new Compilation(syntaxTree);
         
         _output.WriteLine("Syntax Tree:");
-        compilation.SyntaxTree.Root.WriteTo(_output);
+        compilation.SyntaxTrees.Single().Root.WriteTo(_output);
         _output.WriteLine();
         _output.WriteLine();
         _output.WriteLine("Bound Tree:");

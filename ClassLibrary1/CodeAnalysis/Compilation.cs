@@ -11,18 +11,18 @@ namespace Wired.CodeAnalysis;
 
 public sealed class Compilation
 {
-    public SyntaxTree SyntaxTree { get; }
+    public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public Compilation? Previous { get; }
 
-    public Compilation(SyntaxTree syntaxTree) 
+    public Compilation(params SyntaxTree[] syntaxTree) 
         : this(null, syntaxTree)
     { }
 
     BoundGlobalScope? _globalScope;
 
-    Compilation(Compilation? previous, SyntaxTree syntaxTree)
+    Compilation(Compilation? previous, SyntaxTree[] syntaxTree)
     {
-        SyntaxTree = syntaxTree;
+        SyntaxTrees = syntaxTree.ToImmutableArray();
         Previous = previous;
     }
 
@@ -32,7 +32,8 @@ public sealed class Compilation
         {
             if (_globalScope is null)
             {
-                var boundGlobalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTree.Root);
+                var boundGlobalScope = Binder
+                    .BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
                 Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
             }
 
@@ -42,18 +43,17 @@ public sealed class Compilation
     
     public Compilation ContinueWith(SyntaxTree syntaxTree)
     {
-        return new Compilation(this, syntaxTree);
+        return new Compilation(this, new []{syntaxTree});
     }
     
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, object?> variables)
     {
-        var diagnostics = SyntaxTree.Diagnostics.Concat(GlobalScope.Diagnostics)
-            .ToImmutableArray();
+        var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
+        var diagnostics = parseDiagnostics.Concat(GlobalScope.Diagnostics).ToImmutableArray();
         if (diagnostics.Any())
-            return new(diagnostics, null);
-
+            return new EvaluationResult(diagnostics, null);
+        
         var program = Binder.BindProgram(GlobalScope);
-
         if (program.Diagnostics.Any())
             return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
 

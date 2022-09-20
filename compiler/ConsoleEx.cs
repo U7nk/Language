@@ -16,7 +16,7 @@ internal static class ConsoleEx
         
         var colorBefore = Console.ForegroundColor;
         Console.ForegroundColor = (ConsoleColor)color;
-        Console.Write(text, color);
+        Console.Write(text);
         Console.ForegroundColor = colorBefore;
     }
 }
