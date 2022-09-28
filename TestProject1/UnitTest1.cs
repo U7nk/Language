@@ -31,7 +31,7 @@ public class UnitTest1
     object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
-        var compilation = new Compilation(syntaxTree);
+        var compilation = Compilation.Create(syntaxTree);
         
         _output.WriteLine("Syntax Tree:");
         compilation.SyntaxTrees.Single().Root.WriteTo(_output);

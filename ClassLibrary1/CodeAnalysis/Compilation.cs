@@ -12,20 +12,30 @@ namespace Wired.CodeAnalysis;
 public sealed class Compilation
 {
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+    public bool IsScript { get; }
     public Compilation? Previous { get; }
 
-    public Compilation(params SyntaxTree[] syntaxTree) 
-        : this(null, syntaxTree)
-    { }
+
 
     BoundGlobalScope? _globalScope;
 
-    Compilation(Compilation? previous, SyntaxTree[] syntaxTree)
+    Compilation(bool isScript, Compilation? previous, SyntaxTree[] syntaxTree)
     {
         SyntaxTrees = syntaxTree.ToImmutableArray();
+        IsScript = isScript;
         Previous = previous;
     }
 
+    public static Compilation Create(params SyntaxTree[] syntaxTrees)
+    {
+        return new Compilation(isScript: false, null, syntaxTrees);
+    }
+    
+    public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees)
+    {
+        return new Compilation(isScript: true, previous, syntaxTrees);
+    }
+    
     internal BoundGlobalScope GlobalScope
     {
         get
@@ -33,17 +43,18 @@ public sealed class Compilation
             if (_globalScope is null)
             {
                 var boundGlobalScope = Binder
-                    .BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
+                    .BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees);
                 Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
             }
 
             return _globalScope;
         }
     }
-    
-    public Compilation ContinueWith(SyntaxTree syntaxTree)
+
+    BoundProgram GetProgram()
     {
-        return new Compilation(this, new []{syntaxTree});
+        var previous = Previous?.GetProgram();
+        return Binder.BindProgram(IsScript, previous, GlobalScope);
     }
     
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, object?> variables)
@@ -52,8 +63,8 @@ public sealed class Compilation
         var diagnostics = parseDiagnostics.Concat(GlobalScope.Diagnostics).ToImmutableArray();
         if (diagnostics.Any())
             return new EvaluationResult(diagnostics, null);
-        
-        var program = Binder.BindProgram(GlobalScope);
+
+        var program = GetProgram();
         if (program.Diagnostics.Any())
             return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
 
@@ -68,7 +79,7 @@ public sealed class Compilation
         using (var streamWriter = new StreamWriter(cfgPath)) 
             cfg.WriteTo(streamWriter);
         
-        var evaluator = new Evaluator(program.FunctionBodies, statement, variables);
+        var evaluator = new Evaluator(program,statement, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);
     }

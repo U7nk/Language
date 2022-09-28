@@ -9,18 +9,20 @@ using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Binding;
 
-internal sealed class Binder
+sealed class Binder
 {
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
     readonly DiagnosticBag _diagnostics = new();
     BoundScope _scope;
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
+    readonly bool _isScript;
     readonly FunctionSymbol? _function;
 
-    Binder(BoundScope parent, FunctionSymbol? function)
+    Binder(bool isScript, BoundScope parent, FunctionSymbol? function)
     {
         _scope = new BoundScope(parent);
+        _isScript = isScript;
         _function = function;
         if (_function is not null)
         {
@@ -29,10 +31,13 @@ internal sealed class Binder
         }
     }
 
-    public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
+    public static BoundGlobalScope BindGlobalScope(
+        bool isScript,
+        BoundGlobalScope? previous,
+        ImmutableArray<SyntaxTree> syntaxTrees)
     {
         var parentScope = CreateParentScope(previous);
-        var binder = new Binder(parentScope, function: null);
+        var binder = new Binder(isScript, parentScope, function: null);
 
         var functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
             .OfType<FunctionDeclarationSyntax>();
@@ -46,7 +51,7 @@ internal sealed class Binder
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
         foreach (var globalStatement in globalStatements)
         {
-            var s = binder.BindStatement(globalStatement.Statement);
+            var s = binder.BindGlobalStatement(globalStatement.Statement);
             statements.Add(s);
         }
 
@@ -123,45 +128,69 @@ internal sealed class Binder
     }
 
 
-    public static BoundProgram BindProgram(BoundGlobalScope globalScope)
+    public static BoundProgram BindProgram(
+        bool isScript,
+        BoundProgram previous,
+        BoundGlobalScope globalScope)
     {
         var parentScope = CreateParentScope(globalScope);
         var functionBodies
             = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
         var diagnostics = new DiagnosticBag();
 
-        var scope = globalScope;
-        while (scope is not null)
+
+        foreach (var function in globalScope.Functions)
         {
-            foreach (var function in scope.Functions)
+            var binder = new Binder(isScript, parentScope, function);
+            Debug.Assert(function.Declaration != null, "function.Declaration != null");
+            var body = binder.BindStatement(function.Declaration.Body);
+            var loweredBody = Lowerer.Lower(body);
+            if (!Equals(function.ReturnType, TypeSymbol.Void)
+                && !ControlFlowGraph.AllPathsReturn(loweredBody))
             {
-                var binder = new Binder(parentScope, function);
-                Debug.Assert(function.Declaration != null, "function.Declaration != null");
-                var body = binder.BindStatement(function.Declaration.Body);
-                var loweredBody = Lowerer.Lower(body);
-                if (!Equals(function.ReturnType, TypeSymbol.Void)
-                    && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                {
-                    diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
-                }
-
-                functionBodies.Add(function, loweredBody);
-
-                diagnostics.AddRange(binder.Diagnostics);
+                diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
             }
 
-            scope = scope.Previous;
+            functionBodies.Add(function, loweredBody);
+
+            diagnostics.AddRange(binder.Diagnostics);
         }
 
 
-        var boundProgram = new BoundProgram(globalScope, diagnostics.ToImmutableArray(), functionBodies.ToImmutable());
+        var boundProgram = new BoundProgram(previous, globalScope, diagnostics.ToImmutableArray(),
+            functionBodies.ToImmutable());
         return boundProgram;
     }
 
     BoundStatement BindErrorStatement()
         => new BoundExpressionStatement(new BoundErrorExpression());
 
-    BoundStatement BindStatement(StatementSyntax syntax)
+    BoundStatement BindGlobalStatement(StatementSyntax syntax)
+    {
+        return BindStatement(syntax, true);
+    }
+    
+    BoundStatement BindStatement(StatementSyntax syntax, bool isGlobal = false)
+    {
+        var result = BindStatementInternal(syntax);
+        if (!_isScript || !isGlobal)
+        {
+            if (result is BoundExpressionStatement es)
+            {
+                var isAllowedExpression = es.Expression.Kind
+                    is BoundNodeKind.AssignmentExpression
+                    or BoundNodeKind.CallExpression
+                    or BoundNodeKind.ErrorExpression;
+                if (!isAllowedExpression)
+                {
+                    _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
+                }
+            }
+        }
+
+        return result;
+    }
+    BoundStatement BindStatementInternal(StatementSyntax syntax)
     {
         switch (syntax.Kind)
         {

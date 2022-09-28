@@ -9,20 +9,32 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
-    readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> _functionBodies;
+    readonly BoundProgram? _program;
+    readonly Dictionary<FunctionSymbol, BoundBlockStatement> _functionBodies;
     readonly BoundBlockStatement _root;
     readonly Stack<Dictionary<VariableSymbol, object?>> _stacks;
     object? _lastValue;
 
-    public Evaluator(
-        ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functionBodies,
+    public Evaluator(BoundProgram? program,
         BoundBlockStatement root, Dictionary<VariableSymbol, object?> globals)
     {
-        _functionBodies = functionBodies;
-        _root = root;
         _stacks = new Stack<Dictionary<VariableSymbol, object?>>();
+        _functionBodies = new Dictionary<FunctionSymbol, BoundBlockStatement>();
+        
+        _program = program;
+        _root = root;
+        
         _stacks.Push(globals);
-    }
+        var current = program;
+        while (current != null)
+        {
+            foreach (var (symbol, functionBody) in current.FunctionBodies)
+            {
+                _functionBodies.Add(symbol, functionBody);
+            }
+            current = current.Previous;
+        }
+    } 
 
     public object? Evaluate() 
         => EvaluateStatement(_root);
@@ -156,7 +168,8 @@ internal class Evaluator
             Assign(parameter, value);
         }
 
-        var result =  EvaluateStatement(_functionBodies[node.FunctionSymbol]);
+        var statement = _functionBodies[node.FunctionSymbol];
+        var result =  EvaluateStatement(statement);
         _stacks.Pop();
         return result;
     }

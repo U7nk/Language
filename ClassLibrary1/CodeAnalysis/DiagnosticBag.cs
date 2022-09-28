@@ -165,4 +165,10 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = $"All paths must return a value.";
         Report(location, message);
     }
+
+    public void ReportInvalidExpressionStatement(TextLocation syntaxLocation)
+    {
+        var message = "Only assignment, and call expressions can be used as a statement.";
+        Report(syntaxLocation, message);
+    }
 }

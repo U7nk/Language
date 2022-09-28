@@ -84,37 +84,32 @@ public class EvaluatorTests
     [InlineData("\"te\"\"st\";", "te\"st")]
     [InlineData("\"\" == \"\";", true)]
     [InlineData("\" \" != \"\";", true)]
-    [InlineData("{ let a = 10; a * a; }", 100)]
-    [InlineData("{ var a = 10; a * a; }", 100)]
-    [InlineData("{ var a = 10; a = 5; }", 5)]
-    [InlineData("{ var a = 10; if true == true a = 2; a; }", 2)]
-    [InlineData("{ var a = 0; while a < 5 a = a + 1; a;}", 5)]
-    [InlineData("{ let hello = \"hello\"; hello;}", "hello")]
+    [InlineData("let a = 10; a * a;", 100)]
+    [InlineData("var a = 10; a * a;", 100)]
+    [InlineData("var a = 10; a = 5;", 5)]
+    [InlineData("var a = 10; if true == true a = 2; a; ", 2)]
+    [InlineData("var a = 0; while a < 5 a = a + 1; a;", 5)]
+    [InlineData("let hello = \"hello\"; hello;", "hello")]
     [InlineData(
         $$"""
-        {   
-            var x = 10; 
-            if true != false
-            {
-                x = 5;
-            }
-            x;
+        var x = 10; 
+        if true != false
+        {
+            x = 5;
         }
+        x;
       """, 5)]
     [InlineData(
         $$"""
-        {   
-            var x = 10; 
-            if true == false
-            {
-                x = 5;
-            }
-            x;
+        var x = 10; 
+        if true == false
+        {
+            x = 5;
         }
+        x;
       """, 10)]
     [InlineData(
       $$"""
-       { 
          var a = 0; 
          var b = 1;
          while a < 5 
@@ -123,11 +118,9 @@ public class EvaluatorTests
            b = b + 1; 
          }
          a + b;
-       }
       """, 11)]
     [InlineData(
         $$"""
-       {  
          var b = 1; 
          var i = 5; 
          for (i = 1; i < 4; i = i + 1)
@@ -135,60 +128,51 @@ public class EvaluatorTests
             b = i;
          } 
          b;
-       }
       """, 3)]
     [InlineData(
         $$"""
-       {  
          var b = 1; 
          for (var i = 1; i < 4; i = i + 1)
          {
             b = i;
          } 
          b;
-       }
       """, 3)]
     [InlineData(
         $$"""
-        {
             var result = 0;
             if 1 > 1
                 result = 1;
             else 
                 result = 2;
             result;
-        }
         """, 2)]
     [InlineData(
         $$"""
-        {
-            var result = 0;
-            result;
-        }
+        var result = 0;
+        result;
         """, 0)]
     [InlineData(
         $$"""
+        var result = 0;
+        for (var i = 0; i < 100; i = i + 1)
         {
-            var result = 0;
-            for (var i = 0; i < 100; i = i + 1)
-            {
-                result = result + i;
-            }
-            result;
+            result = result + i;
         }
+        result;
         """, 4950)]
-    [InlineData("{let hi = \"hellow\" + \" world\" + \" \"; hi;}", "hellow world ")]
-    [InlineData("{let boo : string = \"hellow world \"; boo;}", "hellow world ")]
+    [InlineData("let hi = \"hellow\" + \" world\" + \" \"; hi;", "hellow world ")]
+    [InlineData("let boo : string = \"hellow world \"; boo;", "hellow world ")]
     [InlineData(
         $$"""
-        function main()
+        function main() : int
         {
             var result = 0;
             for (var i = 0; i < 100; i = i + 1)
             {
                 result = result + i;
             }
-            result;
+            return result;
         }
         main();
         """, 4950)]
@@ -222,7 +206,7 @@ public class EvaluatorTests
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
 
-        var compilation = new Compilation(syntaxTree);
+        var compilation = Compilation.CreateScript(null, syntaxTree);
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);
 
@@ -242,6 +226,25 @@ public class EvaluatorTests
             """;
         var diagnostics = new[] {
             $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
+        };
+        AssertDiagnostics(text, diagnostics);
+    }
+    [Fact]
+    public void Evaluator_Report_InvalidStatements()
+    {
+        var text = 
+            $$"""
+            {
+                let a = 5;
+                [10 * 5;]
+                [a;]
+                [a + a;]
+            } 
+            """;
+        var diagnostics = new[] {
+            $"Only assignment, and call expressions can be used as a statement.",
+            $"Only assignment, and call expressions can be used as a statement.",
+            $"Only assignment, and call expressions can be used as a statement.",
         };
         AssertDiagnostics(text, diagnostics);
     }
@@ -444,7 +447,7 @@ public class EvaluatorTests
     {
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
-        var compilation = new Compilation(syntaxTree);
+        var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
 

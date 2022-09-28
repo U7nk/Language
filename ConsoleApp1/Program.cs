@@ -23,7 +23,7 @@ var result = 0;
         result;
 """);
 
-var result = new Compilation(st)
+var result = Compilation.Create(st)
     .Evaluate(new());
 
 if (result.Diagnostics.Any())
