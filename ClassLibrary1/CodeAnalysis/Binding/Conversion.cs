@@ -15,19 +15,24 @@ internal sealed class Conversion
 
     public static Conversion Classify(TypeSymbol from, TypeSymbol to)
     {
-        if (from == to)
+        if (Equals(from, to))
             return Identity;
 
-        if (from == TypeSymbol.Bool ||
-            from == TypeSymbol.Int)
+        if (!Equals(from, TypeSymbol.Void) && Equals(to, TypeSymbol.Any))
+            return Implicit;
+        
+        if (Equals(from, TypeSymbol.Any) && !Equals(to, TypeSymbol.Void))
+            return Explicit; 
+        
+        if (Equals(from, TypeSymbol.Bool) || Equals(from, TypeSymbol.Int))
         {
-            if (to == TypeSymbol.String)
+            if (Equals(to, TypeSymbol.String))
                 return Explicit;
         }
 
-        if (from == TypeSymbol.String)
+        if (Equals(from, TypeSymbol.String))
         {
-            if (to == TypeSymbol.Bool || to == TypeSymbol.Int)
+            if (Equals(to, TypeSymbol.Bool) || Equals(to, TypeSymbol.Int))
                 return Explicit;
         }
 

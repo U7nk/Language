@@ -5,6 +5,7 @@ namespace Wired.CodeAnalysis;
 public class TypeSymbol : Symbol
 {
     public static readonly TypeSymbol Error = new("error");
+    public static readonly TypeSymbol Any = new("any");
     public static readonly TypeSymbol Void = new("void");
     public static readonly TypeSymbol Bool = new("bool");
     public static readonly TypeSymbol Int = new("int");

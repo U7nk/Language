@@ -131,15 +131,19 @@ internal class Evaluator
     object? EvaluateConversionExpression(BoundConversionExpression node)
     {
         var value = EvaluateExpression(node.Expression);
-        if (node.Type == TypeSymbol.Bool) 
+
+        if (Equals(node.Type, TypeSymbol.Bool)) 
             return Convert.ToBoolean(value);
 
-        if (node.Type == TypeSymbol.Int)
+        if (Equals(node.Type, TypeSymbol.Int))
             return Convert.ToInt32(value);
 
-        if (node.Type == TypeSymbol.String)
+        if (Equals(node.Type, TypeSymbol.String))
             return Convert.ToString(value);
         
+        if (Equals(node.Type, TypeSymbol.Any))
+            return value;
+
         throw new Exception($"Unexpected type {node.Type}");
         
     }

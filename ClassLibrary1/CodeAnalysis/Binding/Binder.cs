@@ -582,6 +582,8 @@ sealed class Binder
             return TypeSymbol.Int;
         if (name == TypeSymbol.String.Name)
             return TypeSymbol.String;
+        if (name == TypeSymbol.Any.Name)
+            return TypeSymbol.Any;
 
 
         return null;
