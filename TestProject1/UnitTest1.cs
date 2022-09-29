@@ -19,12 +19,7 @@ public class UnitTest1
     public void Evaluate()
     {
         _output.WriteLine("Result: " + Build($$"""
-            function write(x: any)
-            {
-                print(string(x));
-            }
-            write(55);
-            89;
+            return 6;
             """));
     }
 

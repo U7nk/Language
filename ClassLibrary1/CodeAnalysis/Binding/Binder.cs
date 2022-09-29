@@ -49,12 +49,6 @@ sealed class Binder
             .SelectMany(st => st.Root.Members)
             .OfType<GlobalStatementSyntax>()
             .ToList();
-        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        foreach (var globalStatement in globalStatements)
-        {
-            var s = binder.BindGlobalStatement(globalStatement.Statement);
-            statements.Add(s);
-        }
 
         var firstGlobalStatementPerSyntaxTree = syntaxTrees
             .Select(x => x.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault())
@@ -67,13 +61,12 @@ sealed class Binder
                 binder._diagnostics.ReportGlobalStatementsShouldOnlyBeInASingleFile(globalStatementSyntax.Location);
         }
         
-
-        var statement = new BoundBlockStatement(statements.ToImmutable());
+        
         var functions = binder._scope.GetDeclaredFunctions();
         var variables = binder._scope.GetDeclaredVariables();
         var diagnostics = binder.Diagnostics.ToImmutableArray();
 
-        var mainFunctionUsageDiagnostics = DiagnoseMainFunctionAndGlobalStatementsUsage(functions, statements);
+        var mainFunctionUsageDiagnostics = DiagnoseMainFunctionAndGlobalStatementsUsage(functions, globalStatements);
         if (mainFunctionUsageDiagnostics.Any()) 
             diagnostics = diagnostics.InsertRange(0, mainFunctionUsageDiagnostics);
 
@@ -113,17 +106,34 @@ sealed class Binder
             scriptMainFunction = null;
         }
         
+        
+        
+        var globalStatementFunction = mainFunction ?? scriptMainFunction;
+        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+        if (globalStatementFunction is not null)
+        {
+            var statementBinder = new Binder(isScript, parentScope, globalStatementFunction);
+            foreach (var globalStatement in globalStatements)
+            {
+                var s = statementBinder.BindGlobalStatement(globalStatement.Statement);
+                statements.Add(s);
+            }
+
+            diagnostics = diagnostics.AddRange(statementBinder.Diagnostics);
+        }
+
         if (previous is not null)
             diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
+        
         return new BoundGlobalScope(
             previous, diagnostics,
             mainFunction, scriptMainFunction,
-            functions, variables, statement);
+            functions, variables, new BoundBlockStatement(statements.ToImmutable()));
     }
 
     static ImmutableArray<Diagnostic> DiagnoseMainFunctionAndGlobalStatementsUsage(
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<BoundStatement>.Builder statements)
+        IEnumerable<GlobalStatementSyntax> statements)
     {
         var diagnosticBag = new DiagnosticBag();
 
@@ -264,7 +274,7 @@ sealed class Binder
                 statements = statements.SetItem(statements.Length - 1,
                     new BoundReturnStatement(expressionStatement.Expression));
             }
-            else
+            else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(statements)))
             {
                 var nullValue = new BoundLiteralExpression("", TypeSymbol.String);
                 statements = statements.Add(new BoundReturnStatement(nullValue));
