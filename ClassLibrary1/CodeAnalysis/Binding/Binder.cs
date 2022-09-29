@@ -22,7 +22,7 @@ sealed class Binder
 
     Binder(bool isScript, BoundScope parent, FunctionSymbol? function)
     {
-        _scope = new BoundScope(parent);
+        _scope = parent;
         _isScript = isScript;
         _function = function;
         if (_function is not null)
@@ -105,7 +105,6 @@ sealed class Binder
 
             scriptMainFunction = null;
         }
-        
         
         
         var globalStatementFunction = mainFunction ?? scriptMainFunction;
@@ -243,9 +242,10 @@ sealed class Binder
         var functionBodies
             = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
         var diagnostics = new DiagnosticBag();
-
-
-        foreach (var function in globalScope.Functions)
+        
+        var functionsToBind = globalScope.Functions
+            .Except(BuiltInFunctions.GetAll());    
+        foreach (var function in functionsToBind)
         {
             var binder = new Binder(isScript, parentScope, function);
             Debug.Assert(function.Declaration != null, "function.Declaration != null");
