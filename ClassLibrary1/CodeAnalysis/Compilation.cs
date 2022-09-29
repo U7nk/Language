@@ -14,8 +14,7 @@ public sealed class Compilation
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public bool IsScript { get; }
     public Compilation? Previous { get; }
-
-
+    public FunctionSymbol? MainFunction => GlobalScope.MainFunction;
 
     BoundGlobalScope? _globalScope;
 
@@ -70,24 +69,42 @@ public sealed class Compilation
 
         var statement = GetStatement();
         
-        var cfgPath = "control_flow.dot";
-        var cfg = ControlFlowGraph.Create(
-            !program.GlobalScope.Statement.Statements.Any() && program.GlobalScope.Functions.Any()
-                ? program.FunctionBodies.Last().Value
-                : statement);
+        // var cfgPath = "control_flow.dot";
+        // var cfg = ControlFlowGraph.Create(
+        //     !GlobalScope.Statement.Statements.Any() && GlobalScope.Functions.Any()
+        //         ? program.FunctionBodies.Last().Value
+        //         : statement);        // using (var streamWriter = new StreamWriter(cfgPath)) 
+        //     cfg.WriteTo(streamWriter);
         
-        using (var streamWriter = new StreamWriter(cfgPath)) 
-            cfg.WriteTo(streamWriter);
-        
-        var evaluator = new Evaluator(program,statement, variables);
+        var evaluator = new Evaluator(program, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);
     }
 
     public void EmitTree(TextWriter writer)
     {
-        var statement = GetStatement();
-        statement.WriteTo(writer);
+        if (GlobalScope.MainFunction is not null)
+            EmitTree(GlobalScope.MainFunction, writer);
+        else if (GlobalScope.ScriptMainFunction is not null) 
+            EmitTree(GlobalScope.ScriptMainFunction, writer);
+
+        foreach (var function in GlobalScope.Functions
+                     .Where(x => !Equals(x, GlobalScope.MainFunction)
+                                 && !Equals(x, GlobalScope.ScriptMainFunction)))
+        {
+            EmitTree(function, writer);
+        }
+    }
+    
+    public void EmitTree(FunctionSymbol function, TextWriter writer)
+    {
+        var program = GetProgram();
+        function.WriteTo(writer);
+        writer.WriteLine();
+        if (!program.Functions.TryGetValue(function, out var body))
+            return;
+        
+        body.WriteTo(writer);
     }
 
     BoundBlockStatement GetStatement()

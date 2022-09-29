@@ -1,1 +1,4 @@
-sayHello();
+function main()
+{
+    sayHello();
+}

@@ -19,15 +19,19 @@ public class UnitTest1
     public void Evaluate()
     {
         _output.WriteLine("Result: " + Build($$"""
-            var x : any = 5;
-            x = "hello";
+            function write(x: any)
+            {
+                print(string(x));
+            }
+            write(55);
+            89;
             """));
     }
 
     object Build(string input)
     {
         var syntaxTree = SyntaxTree.Parse(input);
-        var compilation = Compilation.Create(syntaxTree);
+        var compilation = Compilation.CreateScript(null, syntaxTree);
         
         _output.WriteLine("Syntax Tree:");
         compilation.SyntaxTrees.Single().Root.WriteTo(_output);

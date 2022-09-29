@@ -1,12 +1,33 @@
 using System;
 using System.CodeDom.Compiler;
 using System.IO;
+using System.Linq;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis.Binding;
 
 static class BoundNodePrinter
 {
+    public static void WriteTo(this FunctionSymbol functionSymbol, TextWriter writer)
+    {
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.FunctionKeyword));
+        writer.Write(" ");
+        writer.Write(functionSymbol.Name);
+        writer.Write("(");
+        foreach (var parameter in functionSymbol.Parameters)
+        {
+            writer.Write(parameter.Name);
+            if (!Equals(parameter, functionSymbol.Parameters.Last()))
+            {
+                writer.Write(", ");
+            }
+        }
+        writer.Write(")");
+        writer.Write(" ");
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.ColonToken));
+        writer.Write(" ");
+        writer.Write(functionSymbol.ReturnType);
+    }
     public static void WriteTo(this BoundNode node, TextWriter writer)
     {
         if (writer is IndentedTextWriter indented)
@@ -83,6 +104,7 @@ static class BoundNodePrinter
     {
         writer.Write("return ");
         node.Expression?.WriteTo(writer);
+        writer.WriteLine();
     }
 
     static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
@@ -294,7 +316,6 @@ static class BoundNodePrinter
     static void WriteBlockStatement(BoundBlockStatement node, IndentedTextWriter writer)
     {
         writer.WriteLine("{");
-        writer.WriteLine();
         writer.Indent++;
         foreach (var statement in node.Statements)
             statement.WriteTo(writer);

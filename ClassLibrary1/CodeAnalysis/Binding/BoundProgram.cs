@@ -5,20 +5,19 @@ namespace Wired.CodeAnalysis.Binding;
 class BoundProgram
 {
     public BoundProgram(
-        BoundProgram previous,
-        BoundGlobalScope globalScope, ImmutableArray<Diagnostic> diagnostics,
-        ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functionBodies)
+        BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics,
+        FunctionSymbol? mainFunction, FunctionSymbol? scriptMainFunction,
+        ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions)
     {
         Previous = previous;
-        GlobalScope = globalScope;
         Diagnostics = diagnostics;
-        FunctionBodies = functionBodies;
+        MainFunction = mainFunction;
+        ScriptMainFunction = scriptMainFunction;
+        Functions = functions;
     }
-
-    public ImmutableDictionary<FunctionSymbol,BoundBlockStatement> FunctionBodies { get; }
-
+    public ImmutableDictionary<FunctionSymbol, BoundBlockStatement> Functions { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
-
-    public BoundProgram Previous { get; }
-    public BoundGlobalScope GlobalScope { get; }
+    public FunctionSymbol? MainFunction { get; }
+    public FunctionSymbol? ScriptMainFunction { get; }
+    public BoundProgram? Previous { get; }
 }

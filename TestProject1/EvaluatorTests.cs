@@ -165,7 +165,7 @@ public class EvaluatorTests
     [InlineData("let boo : string = \"hellow world \"; boo;", "hellow world ")]
     [InlineData(
         $$"""
-        function main() : int
+        function count() : int
         {
             var result = 0;
             for (var i = 0; i < 100; i = i + 1)
@@ -174,7 +174,7 @@ public class EvaluatorTests
             }
             return result;
         }
-        main();
+        count();
         """, 4950)]
     [InlineData(
         $$"""

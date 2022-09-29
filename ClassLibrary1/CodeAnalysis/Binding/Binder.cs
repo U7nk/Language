@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Syntax;
@@ -41,13 +42,13 @@ sealed class Binder
 
         var functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
             .OfType<FunctionDeclarationSyntax>();
-
         foreach (var function in functionDeclarations)
             binder.BindFunctionDeclaration(function);
-
-
-        var globalStatements = syntaxTrees.SelectMany(st => st.Root.Members)
-            .OfType<GlobalStatementSyntax>();
+        
+        var globalStatements = syntaxTrees
+            .SelectMany(st => st.Root.Members)
+            .OfType<GlobalStatementSyntax>()
+            .ToList();
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
         foreach (var globalStatement in globalStatements)
         {
@@ -55,15 +56,104 @@ sealed class Binder
             statements.Add(s);
         }
 
-        var statement = new BoundBlockStatement(statements.ToImmutable());
+        var firstGlobalStatementPerSyntaxTree = syntaxTrees
+            .Select(x => x.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault())
+            .Where(x => x is not null)
+            .Cast<GlobalStatementSyntax>()
+            .ToList();
+        if (firstGlobalStatementPerSyntaxTree.Count > 1)
+        {
+            foreach (var globalStatementSyntax in firstGlobalStatementPerSyntaxTree)
+                binder._diagnostics.ReportGlobalStatementsShouldOnlyBeInASingleFile(globalStatementSyntax.Location);
+        }
+        
 
+        var statement = new BoundBlockStatement(statements.ToImmutable());
         var functions = binder._scope.GetDeclaredFunctions();
         var variables = binder._scope.GetDeclaredVariables();
         var diagnostics = binder.Diagnostics.ToImmutableArray();
+
+        var mainFunctionUsageDiagnostics = DiagnoseMainFunctionAndGlobalStatementsUsage(functions, statements);
+        if (mainFunctionUsageDiagnostics.Any()) 
+            diagnostics = diagnostics.InsertRange(0, mainFunctionUsageDiagnostics);
+
+        FunctionSymbol? mainFunction;
+        FunctionSymbol? scriptMainFunction;
+        if (isScript)
+        {
+            if (globalStatements.Any())
+            {
+                scriptMainFunction = new FunctionSymbol("$main",
+                    ImmutableArray<ParameterSymbol>.Empty,
+                    TypeSymbol.Any,
+                    null
+                );
+                
+            }
+            else
+            {
+                scriptMainFunction = null;
+            }
+
+            mainFunction = null;
+        }
+        else
+        {
+            mainFunction = functions.FirstOrDefault(f => f.Name == "main");
+
+            if (mainFunction is null && globalStatements.Any())
+            {
+                mainFunction = new FunctionSymbol("main",
+                    ImmutableArray<ParameterSymbol>.Empty,
+                    TypeSymbol.Void, 
+                    null
+                );
+            }
+
+            scriptMainFunction = null;
+        }
+        
         if (previous is not null)
             diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
+        return new BoundGlobalScope(
+            previous, diagnostics,
+            mainFunction, scriptMainFunction,
+            functions, variables, statement);
+    }
 
-        return new BoundGlobalScope(previous, diagnostics, functions, variables, statement);
+    static ImmutableArray<Diagnostic> DiagnoseMainFunctionAndGlobalStatementsUsage(
+        ImmutableArray<FunctionSymbol> functions,
+        ImmutableArray<BoundStatement>.Builder statements)
+    {
+        var diagnosticBag = new DiagnosticBag();
+
+        if (functions.Any(x => x.Name == "main") && statements.Any())
+        {
+            foreach (var function in functions.Where(x=> x.Name == "main"))
+            {
+                var identifierLocation = function
+                    .Declaration?
+                    .Identifier
+                    .Location ?? throw new InvalidOperationException();
+                diagnosticBag.ReportMainCannotBeUsedWithGlobalStatements(identifierLocation);   
+            }
+        }
+        
+        foreach (var function in functions.Where(x=> x.Name == "main"))
+        {
+            if (function.Parameters.Any() 
+                || !Equals(function.ReturnType, TypeSymbol.Void))
+            {
+                var identifierLocation = function
+                    .Declaration?
+                    .Identifier
+                    .Location ?? throw new InvalidOperationException();
+                diagnosticBag.ReportMainMustHaveCorrectSignature(identifierLocation);
+            }   
+        }
+        
+        
+        return diagnosticBag.ToImmutableArray();
     }
 
     void BindFunctionDeclaration(FunctionDeclarationSyntax function)
@@ -80,6 +170,12 @@ sealed class Binder
             }
 
             var parameterType = BindTypeClause(parameter.Type);
+            if (parameterType is null)
+            {
+                _diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
+                parameterType = TypeSymbol.Error;
+            }
+
             parameters.Add(new ParameterSymbol(parameterName, parameterType));
         }
 
@@ -130,7 +226,7 @@ sealed class Binder
 
     public static BoundProgram BindProgram(
         bool isScript,
-        BoundProgram previous,
+        BoundProgram? previous,
         BoundGlobalScope globalScope)
     {
         var parentScope = CreateParentScope(globalScope);
@@ -156,8 +252,37 @@ sealed class Binder
             diagnostics.AddRange(binder.Diagnostics);
         }
 
+        if (globalScope.ScriptMainFunction is not null)
+        {
+            var statements = globalScope.Statement.Statements;
+            var expressionStatement = statements[^1] as BoundExpressionStatement; 
+            var needsReturn = expressionStatement is not null 
+                              && !Equals(expressionStatement.Expression.Type, TypeSymbol.Void);
+            if (needsReturn)
+            {
+                Debug.Assert(expressionStatement != null, nameof(expressionStatement) + " != null");
+                statements = statements.SetItem(statements.Length - 1,
+                    new BoundReturnStatement(expressionStatement.Expression));
+            }
+            else
+            {
+                var nullValue = new BoundLiteralExpression("", TypeSymbol.String);
+                statements = statements.Add(new BoundReturnStatement(nullValue));
+            }
 
-        var boundProgram = new BoundProgram(previous, globalScope, diagnostics.ToImmutableArray(),
+            var body = Lowerer.Lower(new BoundBlockStatement(statements));
+            functionBodies.Add(globalScope.ScriptMainFunction, body);
+        }
+        else if (globalScope.MainFunction is not null && globalScope.Statement.Statements.Any())
+        {
+            var body = Lowerer.Lower(new BoundBlockStatement(globalScope.Statement.Statements));
+            functionBodies.Add(globalScope.MainFunction, body);
+        }
+        var boundProgram = new BoundProgram(
+            previous,
+            diagnostics.ToImmutableArray(),
+            globalScope.MainFunction,
+            globalScope.ScriptMainFunction,
             functionBodies.ToImmutable());
         return boundProgram;
     }
@@ -340,6 +465,7 @@ sealed class Binder
         return new BoundVariableDeclarationStatement(variable, initializer);
     }
 
+    
     TypeSymbol? BindTypeClause(TypeClauseSyntax? typeClause)
     {
         if (typeClause is null)

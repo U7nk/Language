@@ -9,26 +9,24 @@ namespace Wired.CodeAnalysis;
 
 internal class Evaluator
 {
-    readonly BoundProgram? _program;
+    readonly BoundProgram _program;
     readonly Dictionary<FunctionSymbol, BoundBlockStatement> _functionBodies;
-    readonly BoundBlockStatement _root;
     readonly Stack<Dictionary<VariableSymbol, object?>> _stacks;
     object? _lastValue;
 
-    public Evaluator(BoundProgram? program,
-        BoundBlockStatement root, Dictionary<VariableSymbol, object?> globals)
+    public Evaluator(BoundProgram program,
+         Dictionary<VariableSymbol, object?> globals)
     {
         _stacks = new Stack<Dictionary<VariableSymbol, object?>>();
         _functionBodies = new Dictionary<FunctionSymbol, BoundBlockStatement>();
         
         _program = program;
-        _root = root;
         
         _stacks.Push(globals);
         var current = program;
         while (current != null)
         {
-            foreach (var (symbol, functionBody) in current.FunctionBodies)
+            foreach (var (symbol, functionBody) in current.Functions)
             {
                 _functionBodies.Add(symbol, functionBody);
             }
@@ -36,8 +34,15 @@ internal class Evaluator
         }
     } 
 
-    public object? Evaluate() 
-        => EvaluateStatement(_root);
+    public object? Evaluate()
+    {
+        var function = _program.MainFunction ?? _program.ScriptMainFunction;
+        if (function is null)
+            return null;
+        
+        var body = _functionBodies[function];
+        return EvaluateStatement(body);
+    }
 
     object? EvaluateStatement(BoundBlockStatement body)
     {
@@ -67,7 +72,7 @@ internal class Evaluator
                     break;
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
-                    var condition = (bool)EvaluateExpression(cgs.Condition);
+                    var condition = (bool)(EvaluateExpression(cgs.Condition) ?? throw new InvalidOperationException());
                     if (condition == cgs.JumpIfTrue)
                         i = labelToIndex[cgs.Label];
                     else
@@ -178,31 +183,52 @@ internal class Evaluator
         return result;
     }
 
+    T NullCheckConvert<T>(object? obj)
+    {
+        if (obj is null)
+            throw new Exception("Null reference exception");
+
+        return (T)obj;
+    }
+    
     object EvaluateBinaryExpression(BoundBinaryExpression b)
     {
         var left = EvaluateExpression(b.Left);
         var right = EvaluateExpression(b.Right);
-        if (b.Left.Type == TypeSymbol.Int)
+        if (Equals(b.Left.Type, TypeSymbol.Int))
         {
-            if (b.Right.Type == TypeSymbol.Int)
+            if (Equals(b.Right.Type, TypeSymbol.Int))
             {
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => (int)left + (int)right,
-                    BoundBinaryOperatorKind.Subtraction => (int)left - (int)right,
-                    BoundBinaryOperatorKind.Multiplication => (int)left * (int)right,
-                    BoundBinaryOperatorKind.Division => (int)left / (int)right,
+                    BoundBinaryOperatorKind.Addition => 
+                        NullCheckConvert<int>(left) + NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Subtraction => 
+                        NullCheckConvert<int>(left) - NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Multiplication => 
+                        NullCheckConvert<int>(left) * NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Division => 
+                        NullCheckConvert<int>(left) / NullCheckConvert<int>(right),
 
-                    BoundBinaryOperatorKind.Equality => (int)left == (int)right,
-                    BoundBinaryOperatorKind.Inequality => (int)left != (int)right,
-                    BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
-                    BoundBinaryOperatorKind.LessThanOrEquals => (int)left <= (int)right,
-                    BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
-                    BoundBinaryOperatorKind.GreaterThanOrEquals => (int)left >= (int)right,
+                    BoundBinaryOperatorKind.Equality => 
+                        NullCheckConvert<int>(left) == NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Inequality => 
+                        NullCheckConvert<int>(left) != NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.LessThan => 
+                        NullCheckConvert<int>(left) < NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.LessThanOrEquals => 
+                        NullCheckConvert<int>(left) <= NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.GreaterThan => 
+                        NullCheckConvert<int>(left) > NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.GreaterThanOrEquals => 
+                        NullCheckConvert<int>(left) >= NullCheckConvert<int>(right),
 
-                    BoundBinaryOperatorKind.BitwiseAnd => (int)left & (int)right,
-                    BoundBinaryOperatorKind.BitwiseOr => (int)left | (int)right,
-                    BoundBinaryOperatorKind.BitwiseXor => (int)left ^ (int)right,
+                    BoundBinaryOperatorKind.BitwiseAnd => 
+                        NullCheckConvert<int>(left) & NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.BitwiseOr => 
+                        NullCheckConvert<int>(left) | NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.BitwiseXor => 
+                        NullCheckConvert<int>(left) ^ NullCheckConvert<int>(right),
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
@@ -214,30 +240,30 @@ internal class Evaluator
             {
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => (string)left + (string)right,
+                    BoundBinaryOperatorKind.Addition => NullCheckConvert<string>(left) + NullCheckConvert<string>(right),
                     
-                    BoundBinaryOperatorKind.Equality => (string)left == (string)right,
-                    BoundBinaryOperatorKind.Inequality => (string)left != (string)right,
+                    BoundBinaryOperatorKind.Equality => NullCheckConvert<string>(left) == NullCheckConvert<string>(right),
+                    BoundBinaryOperatorKind.Inequality => NullCheckConvert<string>(left) != NullCheckConvert<string>(right),
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
         }
 
-        if (b.Left.Type == TypeSymbol.Bool)
+        if (Equals(b.Left.Type, TypeSymbol.Bool))
         {
-            if (b.Right.Type == TypeSymbol.Bool)
+            if (Equals(b.Right.Type, TypeSymbol.Bool))
             {
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Equality => (bool)left == (bool)right,
-                    BoundBinaryOperatorKind.Inequality => (bool)left != (bool)right,
+                    BoundBinaryOperatorKind.Equality => NullCheckConvert<bool>(left) == NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.Inequality => NullCheckConvert<bool>(left) != NullCheckConvert<bool>(right),
                     
-                    BoundBinaryOperatorKind.BitwiseAnd => (bool)left & (bool)right,
-                    BoundBinaryOperatorKind.BitwiseOr => (bool)left | (bool)right,
-                    BoundBinaryOperatorKind.BitwiseXor => (bool)left ^ (bool)right,
+                    BoundBinaryOperatorKind.BitwiseAnd => NullCheckConvert<bool>(left) & NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.BitwiseOr => NullCheckConvert<bool>(left) | NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.BitwiseXor => NullCheckConvert<bool>(left) ^ NullCheckConvert<bool>(right),
                     
-                    BoundBinaryOperatorKind.LogicalAnd => (bool)left && (bool)right,
-                    BoundBinaryOperatorKind.LogicalOr => (bool)left || (bool)right,
+                    BoundBinaryOperatorKind.LogicalAnd => NullCheckConvert<bool>(left) && NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.LogicalOr => NullCheckConvert<bool>(left) || NullCheckConvert<bool>(right),
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
@@ -249,9 +275,9 @@ internal class Evaluator
     object EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
         var operand = EvaluateExpression(unary.Operand);
-        if (unary.Type == TypeSymbol.Int)
+        if (Equals(unary.Type, TypeSymbol.Int))
         {
-            var intOperand = (int)operand;
+            var intOperand = NullCheckConvert<int>(operand);
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.Negation => -intOperand,
@@ -261,9 +287,9 @@ internal class Evaluator
             };
         }
 
-        if (unary.Type == TypeSymbol.Bool)
+        if (Equals(unary.Type, TypeSymbol.Bool))
         {
-            var boolOperand = (bool)operand;
+            var boolOperand = NullCheckConvert<bool>(operand);
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.LogicalNegation => !boolOperand,

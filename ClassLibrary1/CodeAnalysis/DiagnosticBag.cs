@@ -171,4 +171,34 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         var message = "Only assignment, and call expressions can be used as a statement.";
         Report(syntaxLocation, message);
     }
+
+    public void ReportMainCannotBeUsedWithGlobalStatements(TextLocation identifierLocation)
+    {
+        var message = "Main cannot be used with global statements.";
+        Report(identifierLocation, message);
+    }
+
+    public void ReportMultipleMainFunctions(TextLocation identifierLocation)
+    {
+        var message = "Multiple main functions found.";
+        Report(identifierLocation, message);
+    }
+
+    public void ReportParameterShouldHaveTypeExplicitlyDefined(TextLocation parameterLocation, string parameterName)
+    {
+        var message = $"Parameter '{parameterName}' should have type explicitly defined.";
+        Report(parameterLocation, message);
+    }
+
+    public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
+    {
+        var message = $"main function must have correct signature(return type {TypeSymbol.Void} and 0 parameters).";
+        Report(identifierLocation, message);
+    }
+
+    public void ReportGlobalStatementsShouldOnlyBeInASingleFile(TextLocation location)
+    {
+        var message = $"Global statements should only be in a single file.";
+        Report(location, message);
+    }
 }
