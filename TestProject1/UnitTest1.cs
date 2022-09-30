@@ -19,16 +19,7 @@ public class UnitTest1
     public void Evaluate()
     {
         _output.WriteLine("Result: " + Build($$"""
-            function count() : int
-            {
-                var result = 0;
-                for (var i = 0; i < 100; i = i + 1)
-                {
-                    result = result + i;
-                }
-                return result;
-            }
-            count();
+            return;
             """));
     }
 

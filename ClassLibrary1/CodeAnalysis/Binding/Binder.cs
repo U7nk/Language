@@ -64,11 +64,11 @@ sealed class Binder
         
         var functions = binder._scope.GetDeclaredFunctions();
         var variables = binder._scope.GetDeclaredVariables();
-        var diagnostics = binder.Diagnostics.ToImmutableArray();
+        var diagnostics = binder.Diagnostics.ToList();
 
         var mainFunctionUsageDiagnostics = DiagnoseMainFunctionAndGlobalStatementsUsage(functions, globalStatements);
         if (mainFunctionUsageDiagnostics.Any()) 
-            diagnostics = diagnostics.InsertRange(0, mainFunctionUsageDiagnostics);
+            diagnostics.InsertRange(0, mainFunctionUsageDiagnostics);
 
         FunctionSymbol? mainFunction;
         FunctionSymbol? scriptMainFunction;
@@ -118,14 +118,14 @@ sealed class Binder
                 statements.Add(s);
             }
 
-            diagnostics = diagnostics.AddRange(statementBinder.Diagnostics);
+            diagnostics.AddRange(statementBinder.Diagnostics);
         }
 
-        if (previous is not null)
-            diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
+        if (previous is not null) 
+            diagnostics.InsertRange(0, previous.Diagnostics);
         
         return new BoundGlobalScope(
-            previous, diagnostics,
+            previous, diagnostics.ToImmutableArray(),
             mainFunction, scriptMainFunction,
             functions, variables, new BoundBlockStatement(statements.ToImmutable()));
     }
@@ -362,7 +362,7 @@ sealed class Binder
             _diagnostics.ReportInvalidReturn(syntax.ReturnKeyword.Location);
         else
         {
-            if (_function.ReturnType == TypeSymbol.Void)
+            if (Equals(_function.ReturnType, TypeSymbol.Void))
             {
                 if (expression is not null)
                     _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Location);
@@ -370,7 +370,15 @@ sealed class Binder
             else
             {
                 if (expression is null)
-                    _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location);
+                {
+                    if (_isScript) 
+                        expression = new BoundLiteralExpression("null", TypeSymbol.String);
+                    else
+                    {
+                        _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location,
+                            _function.ReturnType);
+                    }
+                }
                 else
                 {
                     Debug.Assert(syntax.Expression != null, "syntax.Expression != null");

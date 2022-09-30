@@ -147,9 +147,9 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, message);
     }
 
-    public void ReportReturnStatementIsInvalidForNonVoidFunction(TextLocation location)
+    public void ReportReturnStatementIsInvalidForNonVoidFunction(TextLocation location, TypeSymbol functionReturnType)
     {
-        var message = $"return should have value for {TypeSymbol.Void} function.";
+        var message = $"return should have value for function with return type of {functionReturnType}.";
         Report(location, message);
     }
 
