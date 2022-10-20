@@ -9,14 +9,18 @@ void setBuildStatus(String message, String state) {
 }
 
 pipeline {
-    agent any
+    agent {
+		docker {
+			image 'mcr.microsoft.com/dotnet/sdk:7.0'
+		}
+	}
 	
     stages {
         stage('Build') {
 			steps{
 				script{
 					try{
-						echo 'Building..'
+						dotnet build
 						setBuildStatus("Build succeeded", "SUCCESS");
 					}
 					catch(exc){
