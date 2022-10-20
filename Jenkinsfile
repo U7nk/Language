@@ -3,13 +3,17 @@ pipeline {
 
     stages {
         stage('Build') {
-				try{
-					echo 'Building..'
-					setBuildStatus("Build succeeded", "SUCCESS");
-				}
-				catch(exc){
+			steps{
+				script{
+					try{
+						echo 'Building..'
+						setBuildStatus("Build succeeded", "SUCCESS");
+					}
+					catch(exc){
 				
+					}
 				}
+			}	
         }
         stage('Test') {
             steps {
