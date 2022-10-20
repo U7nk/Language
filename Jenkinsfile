@@ -18,11 +18,6 @@ void setTestsStatus(String message, String state) {
   ]);
 }
 
-node{
-	script{
-		setBuildStatus("Build running", "FAILURE");
-	}
-}
 pipeline {
     agent {
 		docker {
