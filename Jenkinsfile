@@ -24,13 +24,16 @@ pipeline {
 			image 'mcr.microsoft.com/dotnet/sdk:7.0'
 		}
 	}
+	environment {
+        HOME = '/tmp'
+    }
 	
     stages {
         stage('Build') {
 			steps{
 				script{
 					try{
-						dotnet build
+						sh 'dotnet build'
 						setBuildStatus("Build succeeded", "SUCCESS");
 					}
 					catch(exc){
