@@ -4,17 +4,18 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building..'
+				try{
+					echo 'Building..'
+					setBuildStatus("Build succeeded", "SUCCESS");
+				}
+				catch(exc){
+				
+				}
             }
         }
         stage('Test') {
             steps {
                 echo 'Testing..'
-            }
-        }
-        post {
-            success {
-                setBuildStatus("Build succeeded", "SUCCESS");
             }
         }
         stage('Deploy') {
