@@ -17,8 +17,7 @@ void setTestsStatus(String message, String state) {
       statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
   ]);
 }
-
-  
+	
 pipeline {
     agent {
 		docker {
@@ -28,15 +27,6 @@ pipeline {
 	environment {
         HOME = '/tmp'
     }
-	checkout resolveScm(
-		source: github(
-			repoOwner: 'U7nk',
-			repository: 'Language',
-			traits: [
-				githubSkipNotifications()
-			]
-		)
-	)
     stages {
         stage('Build') {
 			steps{
