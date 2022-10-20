@@ -17,8 +17,12 @@ void setTestsStatus(String message, String state) {
       statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
   ]);
 }
+
 	
 pipeline {
+	script{
+		setBuildStatus("Build running", "FAILURE");
+	}
     agent {
 		docker {
 			image 'mcr.microsoft.com/dotnet/sdk:7.0'
