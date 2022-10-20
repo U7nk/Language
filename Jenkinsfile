@@ -19,10 +19,10 @@ void setTestsStatus(String message, String state) {
 }
 checkout resolveScm(
     source: github(
-      repoOwner: 'u7nk',
+      repoOwner: 'U7nk',
       repository: 'Language',
       traits: [
-        githubSkipNotifications(),
+        githubSkipNotifications()
       ]
     )
   )
