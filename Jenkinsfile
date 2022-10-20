@@ -18,11 +18,12 @@ void setTestsStatus(String message, String state) {
   ]);
 }
 
-	
-pipeline {
+node{
 	script{
 		setBuildStatus("Build running", "FAILURE");
 	}
+}
+pipeline {
     agent {
 		docker {
 			image 'mcr.microsoft.com/dotnet/sdk:7.0'
