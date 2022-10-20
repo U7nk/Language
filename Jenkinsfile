@@ -12,6 +12,11 @@ pipeline {
                 echo 'Testing..'
             }
         }
+        post {
+            success {
+                setBuildStatus("Build succeeded", "SUCCESS");
+            }
+        }
         stage('Deploy') {
             steps {
                 echo 'Deploying....'
