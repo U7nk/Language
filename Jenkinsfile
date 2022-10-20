@@ -38,6 +38,7 @@ pipeline {
 					}
 					catch(exc){
 						setBuildStatus("Build failed", "FAILURE");
+						setTestsStatus("Tests skipped", "FAILURE");
 					}
 				}
 			}	
@@ -46,12 +47,12 @@ pipeline {
             steps {
                 script{
 					try{
-						setTestsStatus("tests running", "PENDING");
+						setTestsStatus("Tests running", "PENDING");
 						sh 'dotnet test --logger:"xunit;LogFilePath=test_result.xml"'
-						setTestsStatus("tests succeeded", "SUCCESS");
+						setTestsStatus("Tests succeeded", "SUCCESS");
 					}
 					catch(exc){
-						setTestsStatus("tests failed", "FAILURE");
+						setTestsStatus("Tests failed", "FAILURE");
 					}
 				}
             }
