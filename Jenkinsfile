@@ -3,7 +3,6 @@ pipeline {
 
     stages {
         stage('Build') {
-            steps {
 				try{
 					echo 'Building..'
 					setBuildStatus("Build succeeded", "SUCCESS");
@@ -11,7 +10,6 @@ pipeline {
 				catch(exc){
 				
 				}
-            }
         }
         stage('Test') {
             steps {
