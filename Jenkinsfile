@@ -32,11 +32,12 @@ pipeline {
 			steps{
 				script{
 					try{
+						setBuildStatus("Build running", "PENDING");
 						sh 'dotnet build'
 						setBuildStatus("Build succeeded", "SUCCESS");
 					}
 					catch(exc){
-				
+						setBuildStatus("Build failed", "FAILURE");
 					}
 				}
 			}	
@@ -45,18 +46,14 @@ pipeline {
             steps {
                 script{
 					try{
+						setTestsStatus("tests running", "PENDING");
 						sh 'dotnet test --logger:"xunit;LogFilePath=test_result.xml"'
 						setTestsStatus("tests succeeded", "SUCCESS");
 					}
 					catch(exc){
-				
+						setTestsStatus("tests failed", "FAILURE");
 					}
 				}
-            }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'Deploying....'
             }
         }
     }
