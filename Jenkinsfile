@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script{
 					try{
-						dotnet test --logger:"xunit;LogFilePath=test_result.xml"
+						sh 'dotnet test --logger:"xunit;LogFilePath=test_result.xml"'
 						setTestsStatus("tests succeeded", "SUCCESS");
 					}
 					catch(exc){
