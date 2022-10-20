@@ -20,6 +20,7 @@ public class UnitTest1
     [Fact]
     public void Evaluate()
     {
+        throw new Exception();
         _output.WriteLine("Result: " + Build($$"""
             return; 
             """));
