@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
+using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Symbols;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis;
 
 class ControlFlowGraph
 {
@@ -120,7 +121,7 @@ class ControlFlowGraph
                     }
                 }
 
-                for (int i = 0; i < blocks.Count; i++)
+                foreach (var i in 0..blocks.Count)
                 {
                     var block = blocks[i];
                     var next = i == blocks.Count - 1 ? _end : blocks[i + 1];
@@ -255,7 +256,7 @@ class ControlFlowGraph
     {
         writer.WriteLine("digraph G {");
         var blockIds = new Dictionary<BasicBlock, string>();
-        for (var i = 0; i < Blocks.Count; i++)
+        foreach(var i in 0..Blocks.Count)
         {
             var block = Blocks[i];
             blockIds.Add(block, $"N{i}");

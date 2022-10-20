@@ -1,6 +1,6 @@
 using System;
 
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Symbols;
 
 public abstract class Symbol
 {

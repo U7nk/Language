@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Binding.Lookup;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis;
@@ -10,28 +12,16 @@ namespace Wired.CodeAnalysis;
 internal class Evaluator
 {
     readonly BoundProgram _program;
-    readonly Dictionary<FunctionSymbol, BoundBlockStatement> _functionBodies;
     readonly Stack<Dictionary<VariableSymbol, object?>> _stacks;
     object? _lastValue;
 
-    public Evaluator(BoundProgram program,
-         Dictionary<VariableSymbol, object?> globals)
+    public Evaluator(BoundProgram program, Dictionary<VariableSymbol, object?> globalVariables)
     {
         _stacks = new Stack<Dictionary<VariableSymbol, object?>>();
-        _functionBodies = new Dictionary<FunctionSymbol, BoundBlockStatement>();
         
+        _stacks.Push(globalVariables);
+        _stacks.Push(new Dictionary<VariableSymbol, object?>());
         _program = program;
-        
-        _stacks.Push(globals);
-        var current = program;
-        while (current != null)
-        {
-            foreach (var (symbol, functionBody) in current.Functions)
-            {
-                _functionBodies.Add(symbol, functionBody);
-            }
-            current = current.Previous;
-        }
     } 
 
     public object? Evaluate()
@@ -40,7 +30,10 @@ internal class Evaluator
         if (function is null)
             return null;
         
-        var body = _functionBodies[function];
+        var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
+        var body = programType.MethodTable[function].Unwrap();
+        var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(programType));
+        Assign(new VariableSymbol("this", programType, true), programInstance);
         return EvaluateStatement(body);
     }
 
@@ -48,7 +41,7 @@ internal class Evaluator
     {
         var labelToIndex = new Dictionary<LabelSymbol, int>();
 
-        for (var index = 0; index < body.Statements.Length; index++)
+        foreach(var index in 0..body.Statements.Length)
         {
             var statement = body.Statements[index];
             if (statement is BoundLabelStatement l)
@@ -124,13 +117,58 @@ internal class Evaluator
                 EvaluateUnaryExpression((BoundUnaryExpression)node),
             BoundNodeKind.BinaryExpression =>
                 EvaluateBinaryExpression((BoundBinaryExpression)node),
-            BoundNodeKind.CallExpression =>
-                EvaluateCallExpression((BoundCallExpression)node),
+            BoundNodeKind.MethodCallExpression =>
+                EvaluateCallExpression((BoundMethodCallExpression)node),
             BoundNodeKind.ConversionExpression =>
                 EvaluateConversionExpression((BoundConversionExpression)node),
+            BoundNodeKind.ThisExpression =>
+                EvaluateThisExpression((BoundThisExpression)node),
+            BoundNodeKind.ObjectCreationExpression =>
+                EvaluateObjectCreationExpression((BoundObjectCreationExpression)node),
+            BoundNodeKind.FieldExpression =>
+                EvaluateFieldExpression((BoundFieldExpression)node),
+            BoundNodeKind.FieldAssignmentExpression =>
+                EvaluateFieldAssignmentExpression((BoundFieldAssignmentExpression)node),
             _ =>
                 throw new($"Unexpected node  {node.Kind}")
         };
+    }
+
+    object EvaluateFieldAssignmentExpression(BoundFieldAssignmentExpression node)
+    {
+        var instance = (Dictionary<string, object>?)EvaluateExpression(node.ObjectAccess);
+        instance.Unwrap();
+        var value = EvaluateExpression(node.Initializer).Unwrap();
+        instance[node.Field.Name] = value;
+        return value;
+    }
+
+    object? EvaluateFieldExpression(BoundFieldExpression node)
+    {
+        var thisInstance = GetThisInstance();
+        var fieldInstance = thisInstance[node.Field.Name];
+        return fieldInstance;
+    }
+
+    object EvaluateObjectCreationExpression(BoundObjectCreationExpression node)
+    {
+        return EvaluateDefaultValueObjectCreation(node.Type);
+    }
+    
+    object EvaluateDefaultValueObjectCreation(TypeSymbol typeSymbol)
+    {
+        var instance = new Dictionary<string, object>();
+        foreach (var field in typeSymbol.FieldTable)
+        {
+            instance.Add(field.Name, EvaluateDefaultValueObjectCreation(field.Type));
+        }
+        
+        return instance;
+    }
+
+    object? EvaluateThisExpression(BoundThisExpression node)
+    {
+        return _stacks.Peek()[new VariableSymbol("this", node.Type, true)];
     }
 
     object? EvaluateConversionExpression(BoundConversionExpression node)
@@ -153,32 +191,44 @@ internal class Evaluator
         
     }
 
-    object? EvaluateCallExpression(BoundCallExpression node)
+    object? EvaluateCallExpression(BoundMethodCallExpression node)
     {
-        var arguments = node.Arguments.Select(EvaluateExpression).ToList();
+        var nodeArguments = node.Arguments
+            // skip "this" arg
+            .Skip(1)
+            .ToList();
+        var thisArg = node.Arguments[0];
+        var evaluatedArguments = node.Arguments
+            // skip "this" arg
+            .Skip(1)
+            .Select(EvaluateExpression).ToList();
+        var thisEvaluatedArg = EvaluateExpression(node.Arguments[0]);
         
-        if (node.FunctionSymbol == BuiltInFunctions.Input)
+        if (Equals(node.FunctionSymbol, BuiltInFunctions.Input))
         {
             return Console.ReadLine();
         }
 
-        if (node.FunctionSymbol == BuiltInFunctions.Print)
+        if (Equals(node.FunctionSymbol, BuiltInFunctions.Print))
         {
-            var value = arguments[0];
+            var value = evaluatedArguments[0];
             Console.WriteLine(value);
             return null;
         }
 
         _stacks.Push(new Dictionary<VariableSymbol, object?>());
-        for (int i = 0; i < node.Arguments.Length; i++)
+        foreach(var i in 0..nodeArguments.Count)
         {
             var parameter = node.FunctionSymbol.Parameters[i];
-            var value = arguments[i];
+            var value = evaluatedArguments[i];
             Assign(parameter, value);
         }
-
-        var statement = _functionBodies[node.FunctionSymbol];
-        var result =  EvaluateStatement(statement);
+        
+        // add "this" arg
+        Assign(new VariableSymbol("this", thisArg.Type, true), thisEvaluatedArg);
+        
+        var statement = thisArg.Type.MethodTable[node.FunctionSymbol].Unwrap();
+        var result = EvaluateStatement(statement);
         _stacks.Pop();
         return result;
     }
@@ -190,60 +240,87 @@ internal class Evaluator
 
         return (T)obj;
     }
-    
-    object EvaluateBinaryExpression(BoundBinaryExpression b)
+
+    object? EvaluateMethodCallBinaryExpression(BoundBinaryExpression b)
     {
+        var lValue = EvaluateExpression(b.Left);
+        var methodCallExpr = (BoundMethodCallExpression)b.Right; 
+        b.Left.Type.MethodTable.TryGetValue(methodCallExpr.FunctionSymbol, out var method);
+        if (method is null)
+            throw new Exception($"Method {methodCallExpr.FunctionSymbol.Name} not found on type {b.Left.Type.Name}");
+            
+            
+        var arguments = methodCallExpr.Arguments
+            // skip "this" arg
+            .Skip(1)
+            .Select(EvaluateExpression)
+            .ToList();
+        
+        _stacks.Push(new Dictionary<VariableSymbol, object?>());
+        Assign(new VariableSymbol("this", b.Left.Type, true), lValue);
+        
+        foreach(var i in 0..arguments.Count)
+        {
+            var parameter = methodCallExpr.FunctionSymbol.Parameters[i];
+            var value = arguments[i];
+            Assign(parameter, value);
+        }
+        
+        var result = EvaluateStatement(method);
+        _stacks.Pop();
+        return result;
+    }
+    
+    object? EvaluateBinaryExpression(BoundBinaryExpression b)
+    {
+        if (b.Op.Kind == BoundBinaryOperatorKind.MethodCall)
+        {
+            return EvaluateMethodCallBinaryExpression(b);
+        }
+        
         var left = EvaluateExpression(b.Left);
         var right = EvaluateExpression(b.Right);
+        
         if (Equals(b.Left.Type, TypeSymbol.Int))
         {
             if (Equals(b.Right.Type, TypeSymbol.Int))
             {
+                var intRight = NullCheckConvert<int>(right);
+                var intLeft = NullCheckConvert<int>(left);
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => 
-                        NullCheckConvert<int>(left) + NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.Subtraction => 
-                        NullCheckConvert<int>(left) - NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.Multiplication => 
-                        NullCheckConvert<int>(left) * NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.Division => 
-                        NullCheckConvert<int>(left) / NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Addition => intLeft + intRight,
+                    BoundBinaryOperatorKind.Subtraction => intLeft - intRight,
+                    BoundBinaryOperatorKind.Multiplication => intLeft * intRight,
+                    BoundBinaryOperatorKind.Division => intLeft / intRight,
 
-                    BoundBinaryOperatorKind.Equality => 
-                        NullCheckConvert<int>(left) == NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.Inequality => 
-                        NullCheckConvert<int>(left) != NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.LessThan => 
-                        NullCheckConvert<int>(left) < NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.LessThanOrEquals => 
-                        NullCheckConvert<int>(left) <= NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.GreaterThan => 
-                        NullCheckConvert<int>(left) > NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.GreaterThanOrEquals => 
-                        NullCheckConvert<int>(left) >= NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.Equality => intLeft == intRight,
+                    BoundBinaryOperatorKind.Inequality => intLeft != intRight,
+                    BoundBinaryOperatorKind.LessThan => intLeft < intRight,
+                    BoundBinaryOperatorKind.LessThanOrEquals => intLeft <= intRight,
+                    BoundBinaryOperatorKind.GreaterThan => intLeft > intRight,
+                    BoundBinaryOperatorKind.GreaterThanOrEquals => intLeft >= intRight,
 
-                    BoundBinaryOperatorKind.BitwiseAnd => 
-                        NullCheckConvert<int>(left) & NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.BitwiseOr => 
-                        NullCheckConvert<int>(left) | NullCheckConvert<int>(right),
-                    BoundBinaryOperatorKind.BitwiseXor => 
-                        NullCheckConvert<int>(left) ^ NullCheckConvert<int>(right),
+                    BoundBinaryOperatorKind.BitwiseAnd => intLeft & intRight,
+                    BoundBinaryOperatorKind.BitwiseOr => intLeft | intRight,
+                    BoundBinaryOperatorKind.BitwiseXor => intLeft ^ intRight,
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
         }
 
-        if (b.Left.Type == TypeSymbol.String)
+        if (Equals(b.Left.Type, TypeSymbol.String))
         {
-            if (b.Right.Type == TypeSymbol.String)
+            if (Equals(b.Right.Type, TypeSymbol.String))
             {
+                var stringRight = NullCheckConvert<string>(right);
+                var stringLeft = NullCheckConvert<string>(left);
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => NullCheckConvert<string>(left) + NullCheckConvert<string>(right),
+                    BoundBinaryOperatorKind.Addition => stringLeft + stringRight,
                     
-                    BoundBinaryOperatorKind.Equality => NullCheckConvert<string>(left) == NullCheckConvert<string>(right),
-                    BoundBinaryOperatorKind.Inequality => NullCheckConvert<string>(left) != NullCheckConvert<string>(right),
+                    BoundBinaryOperatorKind.Equality => stringLeft == stringRight,
+                    BoundBinaryOperatorKind.Inequality => stringLeft != stringRight,
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
@@ -253,17 +330,19 @@ internal class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Bool))
             {
+                var boolRight = NullCheckConvert<bool>(right);
+                var boolLeft = NullCheckConvert<bool>(left);
                 return b.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Equality => NullCheckConvert<bool>(left) == NullCheckConvert<bool>(right),
-                    BoundBinaryOperatorKind.Inequality => NullCheckConvert<bool>(left) != NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.Equality => boolLeft == boolRight,
+                    BoundBinaryOperatorKind.Inequality => boolLeft != boolRight,
                     
-                    BoundBinaryOperatorKind.BitwiseAnd => NullCheckConvert<bool>(left) & NullCheckConvert<bool>(right),
-                    BoundBinaryOperatorKind.BitwiseOr => NullCheckConvert<bool>(left) | NullCheckConvert<bool>(right),
-                    BoundBinaryOperatorKind.BitwiseXor => NullCheckConvert<bool>(left) ^ NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.BitwiseAnd => boolLeft & boolRight,
+                    BoundBinaryOperatorKind.BitwiseOr => boolLeft | boolRight,
+                    BoundBinaryOperatorKind.BitwiseXor => boolLeft ^ boolRight,
                     
-                    BoundBinaryOperatorKind.LogicalAnd => NullCheckConvert<bool>(left) && NullCheckConvert<bool>(right),
-                    BoundBinaryOperatorKind.LogicalOr => NullCheckConvert<bool>(left) || NullCheckConvert<bool>(right),
+                    BoundBinaryOperatorKind.LogicalAnd => boolLeft && boolRight,
+                    BoundBinaryOperatorKind.LogicalOr => boolLeft || boolRight,
                     _ => throw new($"Unexpected binary operator {b.Op.Kind}")
                 };
             }
@@ -321,5 +400,11 @@ internal class Evaluator
     { 
         var currentStack = _stacks.Peek();
         currentStack[variableSymbol] = value;
+    }
+
+    Dictionary<string, object> GetThisInstance()
+    {
+        var thisKey = _stacks.Peek().Keys.Single(x => x.Name == "this");
+        return (Dictionary<string, object>)_stacks.Peek()[thisKey].Unwrap();
     }
 }

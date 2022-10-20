@@ -1,11 +1,12 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-public class FunctionDeclarationSyntax : MemberSyntax
-{
 
+
+public class FunctionDeclarationSyntax : SyntaxNode, ITopMemberSyntax, IClassMemberSyntax
+{
     public FunctionDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken functionKeyword, SyntaxToken identifier,
         SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters,
-        SyntaxToken closeParenthesisToken, TypeClauseSyntax? type,
+        SyntaxToken closeParenthesisToken, TypeClauseSyntax? returnType,
         BlockStatementSyntax body) 
         : base(syntaxTree)
     {
@@ -14,7 +15,7 @@ public class FunctionDeclarationSyntax : MemberSyntax
         OpenParenthesisToken = openParenthesisToken;
         Parameters = parameters;
         CloseParenthesisToken = closeParenthesisToken;
-        Type = type;
+        ReturnType = returnType;
         Body = body;
     }
     
@@ -23,8 +24,8 @@ public class FunctionDeclarationSyntax : MemberSyntax
     public SyntaxToken OpenParenthesisToken { get; }
     public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }
     public SyntaxToken CloseParenthesisToken { get; }
-    public TypeClauseSyntax? Type { get; }
+    public TypeClauseSyntax? ReturnType { get; }
     public BlockStatementSyntax Body { get; }
-
+    
     public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 }

@@ -1,6 +1,6 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-class GlobalStatementSyntax : MemberSyntax
+public class GlobalStatementSyntax : SyntaxNode, ITopMemberSyntax
 {
     public GlobalStatementSyntax(SyntaxTree syntaxTree, StatementSyntax statement) : base(syntaxTree)
     {

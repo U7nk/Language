@@ -11,10 +11,49 @@ namespace Wired;
 
 internal static class Extensions
 {
+        
+    public static RangeEnumerator GetEnumerator(this Range range) => new(range);
+
+    public ref struct RangeEnumerator
+    {
+        int _current;
+        readonly int _end;
+        readonly sbyte _step;
+
+        public RangeEnumerator(Range range)
+        {
+            if (range.Start.IsFromEnd)
+            {
+                throw new NotSupportedException("Start from end is not supported");
+            }
+            
+            if (range.Start.Value > range.End.Value)
+            {
+                _current = range.Start.Value;
+                _end = range.End.Value - 1;
+                _step = -1;
+            }
+            else
+            {
+                _current = range.Start.Value - 1;
+                _end = range.End.Value;
+                _step = 1;
+            }
+        }
+        
+        public bool MoveNext()
+        {
+            _current += _step;
+            return _current != _end;
+        }
+        
+        public int Current => _current;
+    }
+    
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: NotNull]
-    public static T ThrowIfNull<T>(
+    public static T Unwrap<T>(
         [NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
@@ -24,6 +63,21 @@ internal static class Extensions
         }
 
         return obj;
+    }
+    
+    [DebuggerHidden]
+    [DebuggerStepThrough]
+    [return: NotNull]
+    public static T Unwrap<T>(
+        [NotNull]this object? obj,
+        [CallerArgumentExpression("obj")] string objExpression = "")
+    {
+        if (obj is null)
+        {
+            throw new ArgumentNullException(objExpression);
+        }
+
+        return (T)obj;
     }
 
 
@@ -59,7 +113,7 @@ internal static class Extensions
         }
         var res = new T[toExcluding - fromIncluding];
         var counter = 0;
-        for (int i = 0; i < collection.Length; i++)
+        foreach(var i in 0..collection.Length)
         {
             if (i < fromIncluding || i >= toExcluding)
             {

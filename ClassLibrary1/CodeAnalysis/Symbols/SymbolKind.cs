@@ -1,4 +1,4 @@
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Symbols;
 
 public enum SymbolKind
 {
@@ -6,4 +6,5 @@ public enum SymbolKind
     Type,
     Parameter,
     Function,
+    Field
 }

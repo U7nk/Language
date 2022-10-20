@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using Wired;
 using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
@@ -170,6 +172,7 @@ public class EvaluatorTests
             var result = 0;
             for (var i = 0; i < 100; i = i + 1)
             {
+                var f = this;
                 result = result + i;
             }
             return result;
@@ -191,22 +194,75 @@ public class EvaluatorTests
         $$"""
         var i = 0;
         while false 
-        {
+        { 
             i = i + 1; 
-        }
+        } 
         i;
         """, 0)]
+    [InlineData(
+        $$"""
+        var pp = new Program();
+        pp.ten();
+        function ten() : int
+        {
+            return 10;
+        }
+        """, 10)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
-        AssertValue(expression, expectedValue);
+        AssertValue(expression, expectedValue, isScript: true);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesWithProgramDeclaration()
+    {
+        AssertValue($$"""
+            class Program
+            {
+                function main() 
+                {
+                    return this.ten();
+                }
+                
+                function ten() : int
+                {
+                    return 10;
+                }
+            }
+            """,
+            expectedValue: 10, isScript: false);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesWithFieldsDeclaration()
+    {
+        AssertValue($$"""
+            class Program
+            {
+                Fieldo : int;
+                
+                function main() 
+                {
+                    this.AssignTenToFieldo(); 
+                    var newApp = new Program();
+                    newApp.AssignTenToFieldo(); 
+                }
+                
+                function AssignTenToFieldo()
+                {
+                    this.Fieldo = 10;
+                }
+            }
+            """,
+            expectedValue: 10, isScript: false);
     }
 
-    static void AssertValue(string expression, object expectedValue)
+    static void AssertValue(string expression, object expectedValue, bool isScript)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
 
-        var compilation = Compilation.CreateScript(null, syntaxTree);
+        var compilation =  isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);
 
@@ -457,7 +513,7 @@ public class EvaluatorTests
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        for (int i = 0; i < diagnosticsText.Length; i++)
+        foreach(var i in 0..diagnosticsText.Length)
         {
             var expectedMessage = diagnosticsText[i];
             var actualMessage = diagnostics[i].Message;

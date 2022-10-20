@@ -1,0 +1,48 @@
+   0:	ICONST 0
+   2:	STLOC 0
+   4:	BR 93
+   6:	LDLOC 0
+   8:	ICONST 2
+  10:	IDIV
+  11:	ICONST 2
+  13:	IMUL
+  14:	LDLOC 0
+  16:	IEQ
+  17:	BRF 36
+  19:	SCONST  len:10 "i: is even"
+  33:	PRINT
+  34:	BR 86
+  36:	SCONST  len:9 "i: is odd"
+  49:	PRINT
+  50:	SCONST  len:24 "here is factorial of i: "
+  78:	LDLOC 0
+  80:	CALL address:101 args:1
+  83:	CastIntToString
+  84:	SADD
+  85:	PRINT
+  86:	LDLOC 0
+  88:	ICONST 1
+  90:	IADD
+  91:	STLOC 0
+  93:	LDLOC 0
+  95:	ICONST 101
+  97:	ILT
+  98:	BRT 6
+ 100:	HALT
+ 101:	LDARG 0
+ 103:	ICONST 0
+ 105:	IEQ
+ 106:	BRF 111
+ 108:	ICONST 1
+ 110:	RET
+ 111:	LDARG 0
+ 113:	LDARG 0
+ 115:	ICONST 1
+ 117:	ISUB
+ 118:	CALL address:101 args:1
+ 121:	CALL address:125 args:2
+ 124:	RET
+ 125:	LDARG 0
+ 127:	LDARG 1
+ 129:	IADD
+ 130:	RET

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Wired.CodeAnalysis.Symbols;
 
 namespace Wired.CodeAnalysis.Binding;
 
@@ -7,15 +8,15 @@ class BoundProgram
     public BoundProgram(
         BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics,
         FunctionSymbol? mainFunction, FunctionSymbol? scriptMainFunction,
-        ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions)
+        ImmutableArray<TypeSymbol> types)
     {
         Previous = previous;
         Diagnostics = diagnostics;
         MainFunction = mainFunction;
         ScriptMainFunction = scriptMainFunction;
-        Functions = functions;
+        Types = types;
     }
-    public ImmutableDictionary<FunctionSymbol, BoundBlockStatement> Functions { get; }
+    public ImmutableArray<TypeSymbol> Types { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
     public FunctionSymbol? MainFunction { get; }
     public FunctionSymbol? ScriptMainFunction { get; }

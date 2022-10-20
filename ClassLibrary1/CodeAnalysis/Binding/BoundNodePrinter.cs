@@ -2,6 +2,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis.Binding;
@@ -28,6 +29,14 @@ static class BoundNodePrinter
         writer.Write(" ");
         writer.Write(functionSymbol.ReturnType);
     }
+    
+    public static void WriteTo(this TypeSymbol functionSymbol, TextWriter writer)
+    {
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.ClassKeyword));
+        writer.Write(" ");
+        writer.Write(functionSymbol.Name);
+    }
+    
     public static void WriteTo(this BoundNode node, TextWriter writer)
     {
         if (writer is IndentedTextWriter indented)
@@ -89,8 +98,8 @@ static class BoundNodePrinter
             case BoundNodeKind.ErrorExpression:
                 WriteErrorExpression((BoundErrorExpression)node, writer);
                 break;
-            case BoundNodeKind.CallExpression:
-                WriteCallExpression((BoundCallExpression)node, writer);
+            case BoundNodeKind.MethodCallExpression:
+                WriteCallExpression((BoundMethodCallExpression)node, writer);
                 break;
             case BoundNodeKind.ConversionExpression:
                 WriteConversionExpression((BoundConversionExpression)node, writer);
@@ -209,7 +218,7 @@ static class BoundNodePrinter
         writer.Write("?");
     }
 
-    static void WriteCallExpression(BoundCallExpression node, IndentedTextWriter writer)
+    static void WriteCallExpression(BoundMethodCallExpression node, IndentedTextWriter writer)
     {
         writer.Write(node.FunctionSymbol.Name);
         writer.Write("(");

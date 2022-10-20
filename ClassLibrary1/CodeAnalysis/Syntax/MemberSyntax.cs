@@ -1,8 +1,9 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-public abstract class MemberSyntax : SyntaxNode
+
+public interface ITopMemberSyntax : ISyntaxNode
 {
-    protected MemberSyntax(SyntaxTree syntaxTree) : base(syntaxTree)
-    {
-    }
+}
+interface IClassMemberSyntax : ISyntaxNode
+{
 }

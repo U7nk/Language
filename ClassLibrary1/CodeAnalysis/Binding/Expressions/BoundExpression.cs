@@ -1,8 +1,9 @@
 using System;
+using Wired.CodeAnalysis.Symbols;
 
 namespace Wired.CodeAnalysis.Binding;
 
-abstract class BoundExpression : BoundNode
+public abstract class BoundExpression : BoundNode
 {
     internal abstract TypeSymbol Type { get; }
 }

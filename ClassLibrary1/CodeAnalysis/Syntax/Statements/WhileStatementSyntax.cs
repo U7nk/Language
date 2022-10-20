@@ -1,6 +1,6 @@
 ﻿namespace Wired.CodeAnalysis.Syntax;
 
-internal sealed class WhileStatementSyntax : StatementSyntax
+public sealed class WhileStatementSyntax : StatementSyntax
 {
   public override SyntaxKind Kind => SyntaxKind.WhileStatement;
   

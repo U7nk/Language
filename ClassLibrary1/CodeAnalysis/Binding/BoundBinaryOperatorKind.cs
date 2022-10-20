@@ -16,5 +16,8 @@ internal enum BoundBinaryOperatorKind
     LessThanOrEquals,
     BitwiseAnd,
     BitwiseOr,
-    BitwiseXor
+    BitwiseXor,
+    
+    MethodCall,
+    FieldAccess,
 }

@@ -19,4 +19,5 @@ public sealed class TextLine
     public int Length { get; }
 
     public int LengthWithLineBreak { get; }
+    public override string ToString() => SourceText.ToString(Span);
 }

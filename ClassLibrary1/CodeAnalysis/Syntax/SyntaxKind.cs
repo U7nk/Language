@@ -32,7 +32,8 @@ public enum SyntaxKind
     AmpersandToken,
     HatToken,
     TildeToken,
-    CommaToken,
+    CommaToken,   
+    DotToken,
 
     // keywords
     TrueKeyword,
@@ -47,25 +48,33 @@ public enum SyntaxKind
     BreakKeyword,
     ContinueKeyword,
     ReturnKeyword,
-    
+    ClassKeyword,
+    ThisKeyword,
+    NewKeyword,
+
     // nodes
     CompilationUnit,
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
     TypeClause,
+    ClassDeclaration,
     FunctionDeclaration,
+    FieldDeclaration,
     GlobalStatement,
     Parameter,
     
     // expressions
     LiteralExpression,
-    BinaryExpression,
+    BinaryOperatorExpression,
     ParenthesizedExpression,
     UnaryExpression,
     AssignmentExpression,
     NameExpression,
-    CallExpression,
-
+    MethodCallExpression,
+    ThisExpression,
+    ObjectCreationExpression,
+    FieldAssignmentExpression,
+    
     // statements
     BlockStatement,
     ExpressionStatement,
@@ -77,5 +86,6 @@ public enum SyntaxKind
     ColonToken,
     ContinueStatement,
     BreakStatement,
-    ReturnStatement
+    ReturnStatement,
+ 
 }

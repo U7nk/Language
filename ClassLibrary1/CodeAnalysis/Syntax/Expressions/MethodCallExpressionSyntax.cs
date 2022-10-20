@@ -1,14 +1,15 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-public class CallExpressionSyntax : ExpressionSyntax
+public class MethodCallExpressionSyntax : ExpressionSyntax
 {
     public SyntaxToken Identifier { get; }
     public SyntaxToken OpenParenthesis { get; }
     public SeparatedSyntaxList<ExpressionSyntax> Arguments { get; }
     public SyntaxToken CloseParenthesis { get; }
-    public override SyntaxKind Kind => SyntaxKind.CallExpression;
+    public override SyntaxKind Kind => SyntaxKind.MethodCallExpression;
 
-    public CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken openParenthesis,
+    public MethodCallExpressionSyntax(SyntaxTree syntaxTree,
+        SyntaxToken identifier, SyntaxToken openParenthesis,
         SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesis) 
         : base(syntaxTree)
     {

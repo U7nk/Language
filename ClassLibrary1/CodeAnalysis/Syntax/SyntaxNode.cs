@@ -7,7 +7,13 @@ using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
-public abstract class SyntaxNode
+public interface ISyntaxNode
+{
+    public SyntaxTree SyntaxTree { get; }
+    public abstract SyntaxKind Kind { get; }
+}
+
+public abstract class SyntaxNode : ISyntaxNode
 {
     protected SyntaxNode(SyntaxTree syntaxTree)
     {
@@ -43,7 +49,7 @@ public abstract class SyntaxNode
             else if (property.PropertyType.CanBeConvertedTo<SeparatedSyntaxList>())
             {
                 var value = (SeparatedSyntaxList?)property.GetValue(this);
-                value.ThrowIfNull();
+                value.Unwrap();
                 
                 foreach (var child in value.GetWithSeparators())
                     yield return child;

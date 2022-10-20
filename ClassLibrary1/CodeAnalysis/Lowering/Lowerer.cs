@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Symbols;
 
 namespace Wired.CodeAnalysis.Lowering;
 
@@ -151,11 +152,11 @@ internal sealed class Lowerer : BoundTreeRewriter
             statement = new BoundVariableDeclarationStatement(node.VariableDeclaration.Variable,
                 node.VariableDeclaration.Initializer);
         else
-            statement = new BoundExpressionStatement(node.Expression.ThrowIfNull());
+            statement = new BoundExpressionStatement(node.Expression.Unwrap());
 
-        var condition = node.Condition.ThrowIfNull();
+        var condition = node.Condition.Unwrap();
          
-        var mutation = new BoundExpressionStatement(node.Mutation.ThrowIfNull());
+        var mutation = new BoundExpressionStatement(node.Mutation.Unwrap());
         var body = new BoundBlockStatement(ImmutableArray.Create(
             node.Body,
             mutation));

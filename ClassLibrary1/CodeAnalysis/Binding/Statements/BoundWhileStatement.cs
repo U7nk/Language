@@ -1,4 +1,6 @@
-﻿namespace Wired.CodeAnalysis.Binding;
+﻿using Wired.CodeAnalysis.Symbols;
+
+namespace Wired.CodeAnalysis.Binding;
 
 
 abstract class BoundLoopStatement : BoundStatement

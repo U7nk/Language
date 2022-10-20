@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{3E77
 		samples\hello-world.ln = samples\hello-world.ln
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGen", "CodeGen\CodeGen.csproj", "{AC62CA46-5260-4991-A6CA-6999284DF3B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +81,18 @@ Global
 		{D61F00D0-E506-4CE8-BFF6-31AB29B27861}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D61F00D0-E506-4CE8-BFF6-31AB29B27861}.Release|x86.ActiveCfg = Release|Any CPU
 		{D61F00D0-E506-4CE8-BFF6-31AB29B27861}.Release|x86.Build.0 = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Debug|x86.Build.0 = Debug|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|x86.ActiveCfg = Release|Any CPU
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -88,5 +102,6 @@ Global
 		{E1DD50F5-A707-41C3-8107-AB9A3AE4D632} = {8925AA5E-E28A-4855-9BC4-8EA84B303CDB}
 		{FBE7329F-D52F-4C3E-AEBF-0365622745E5} = {8925AA5E-E28A-4855-9BC4-8EA84B303CDB}
 		{D61F00D0-E506-4CE8-BFF6-31AB29B27861} = {42DD1E69-5920-4FAF-A4AC-87BF9DBE08CE}
+		{AC62CA46-5260-4991-A6CA-6999284DF3B6} = {42DD1E69-5920-4FAF-A4AC-87BF9DBE08CE}
 	EndGlobalSection
 EndGlobal

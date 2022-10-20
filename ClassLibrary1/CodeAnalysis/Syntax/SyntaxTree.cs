@@ -2,12 +2,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Syntax;
 
-public class SyntaxTree
+public partial class SyntaxTree
 {
     
     delegate void ParseHandler(SyntaxTree tree, 
@@ -66,7 +65,7 @@ public class SyntaxTree
         {
             var lexer = new Lexer(syntaxTree);
             tokens = lexer.Lex();
-            root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<MemberSyntax>.Empty, lexer.NextToken());
+            root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<ITopMemberSyntax>.Empty, lexer.NextToken());
             diags = lexer.Diagnostics.ToImmutableArray();
         }
         

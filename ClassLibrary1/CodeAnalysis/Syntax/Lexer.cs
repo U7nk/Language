@@ -88,7 +88,6 @@ public class Lexer
                 Next();
                 _kind = SyntaxKind.SlashToken;
                 break;
-      
             case '(':
                 Next();
                 _kind = SyntaxKind.OpenParenthesisToken;
@@ -175,6 +174,9 @@ public class Lexer
                 {
                     _kind = SyntaxKind.BangToken;
                 }
+                break;
+            case '.':
+                _kind = Next(SyntaxKind.DotToken);
                 break;
             case '"':
                 ReadString();

@@ -1,6 +1,6 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-class ContinueStatementSyntax : StatementSyntax
+public class ContinueStatementSyntax : StatementSyntax
 {
     public SyntaxToken ContinueKeyword { get; }
     public SyntaxToken SemicolonToken { get; }

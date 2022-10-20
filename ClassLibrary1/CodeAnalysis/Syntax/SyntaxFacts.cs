@@ -5,6 +5,11 @@ namespace Wired.CodeAnalysis.Syntax;
 
 internal static class SyntaxFacts
 {
+
+    public static string StartTypeName => "Program";
+    public static string MainFunctionName => "main";
+    public static string ScriptMainFunctionName => "$main";
+    
     public static int GetUnaryOperatorPrecedence(this SyntaxKind syntaxKind)
     {
         switch (syntaxKind)
@@ -24,6 +29,9 @@ internal static class SyntaxFacts
     {
         switch (syntaxKind)
         {
+            case SyntaxKind.DotToken:
+                return 7;
+            
             case SyntaxKind.StarToken:
             case SyntaxKind.SlashToken:
                 return 5;
@@ -94,6 +102,9 @@ internal static class SyntaxFacts
             "break" => SyntaxKind.BreakKeyword,
             "continue" => SyntaxKind.ContinueKeyword,
             "return" => SyntaxKind.ReturnKeyword,
+            "class" => SyntaxKind.ClassKeyword,
+            "this" => SyntaxKind.ThisKeyword,
+            "new" => SyntaxKind.NewKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -127,6 +138,7 @@ internal static class SyntaxFacts
             SyntaxKind.AmpersandToken => "&",
             SyntaxKind.HatToken => "^",
             SyntaxKind.TildeToken => "~",
+            SyntaxKind.DotToken => ".",
             
             SyntaxKind.TrueKeyword => "true",
             SyntaxKind.FalseKeyword => "false",
@@ -140,6 +152,9 @@ internal static class SyntaxFacts
             SyntaxKind.ContinueKeyword => "continue",
             SyntaxKind.BreakKeyword => "break",
             SyntaxKind.ReturnKeyword => "return",
+            SyntaxKind.ClassKeyword => "class",
+            SyntaxKind.ThisKeyword => "this",
+            SyntaxKind.NewKeyword => "new",
             _ => null
         };
     }

@@ -1,26 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis;
 
-public class DiagnosticBag : IEnumerable<Diagnostic>
+public class DiagnosticBag : List<Diagnostic>
 {
-    readonly List<Diagnostic> _diagnostics = new();
-
-
     public void Report(TextLocation textLocation, string message) 
-        => _diagnostics.Add(new Diagnostic(textLocation, message));
-    
-    public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        => Add(new Diagnostic(textLocation, message));
 
-    public void AddRange(IEnumerable<Diagnostic> diagnosticsEnumerable) 
-        => _diagnostics.AddRange(diagnosticsEnumerable);
-    
-    
+
     public void ReportInvalidNumber(TextLocation textLocation, string text, Type type)
     {
         var message = $"Number '{text}' is not a valid '{type}'.";
@@ -105,9 +98,9 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, message);
     }
 
-    public void ReportUndefinedType(TextLocation location, string identifierText)
+    public void ReportUndefinedType(TextLocation location, string typeName)
     {
-        var message = $"Type '{identifierText}' is undefined.";
+        var message = $"Type '{typeName}' is undefined.";
         Report(location, message);
     }
 
@@ -200,5 +193,52 @@ public class DiagnosticBag : IEnumerable<Diagnostic>
     {
         var message = $"Global statements should only be in a single file.";
         Report(location, message);
+    }
+
+    public void ReportCannotEmitGlobalStatementsBecauseTypeAlreadyExists(string typeName, TextLocation location)
+    {
+        var message = $"Cannot emit global statements because type '{typeName}' already exists.";
+        Report(location, message);
+    }
+
+    public void ReportUndefinedMethodCall(TextLocation rightLocation, string functionSymbolName, TypeSymbol leftType)
+    {
+        var message = $"Function '{functionSymbolName}' is undefined for type '{leftType}'.";
+        Report(rightLocation, message);
+    }
+
+    public void ReportAmbiguousType(TextLocation typeIdentifierLocation, string typeIdentifier, List<TypeSymbol> matchingTypes)
+    {
+        var message = $"Type '{typeIdentifier}' is ambiguous. Found {matchingTypes.Count} matching types: {string.Join(", ", matchingTypes.Select(t => t.Name))}.";
+        Report(typeIdentifierLocation, message);
+    }
+
+    public void ReportNoMainFunctionAllowedInScriptMode(TextLocation mainIdentifierLocation)
+    {
+        var message = $"No main function allowed in script mode. Use global statements instead.";
+        Report(mainIdentifierLocation, message);
+    }
+
+    public void ReportNoGlobalStatementsFound()
+    {
+        var message = $"No global statements found.";
+    }
+
+    public void ReportFieldAlreadyDeclared(TextLocation fieldLocation, string fieldName)
+    {
+        var message = $"Field '{fieldName}' is already declared.";
+        Report(fieldLocation, message);
+    }
+
+    public void ReportUndefinedFieldAccess(TextLocation fieldLocation, string fieldName, TypeSymbol typeWhereFieldLocated)
+    {
+        var message = $"Field '{fieldName}' is undefined for type '{typeWhereFieldLocated}'.";
+        Report(fieldLocation, message);
+    }
+
+    public void ReportUndefinedField(TextLocation fieldIdentifierLocation, string fieldName)
+    {
+        var message = $"Field '{fieldName}' is undefined.";
+        Report(fieldIdentifierLocation, message);
     }
 }

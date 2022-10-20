@@ -29,8 +29,8 @@ public class ParserTests
             //
             // asserting nodes from up to down, left to right
             using var e = new AssertingEnumerator(expression);
-            e.AssertNode(SyntaxKind.BinaryExpression);
-            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
             e.AssertToken(op2, op2Text);
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertNode(SyntaxKind.NameExpression);
@@ -50,10 +50,10 @@ public class ParserTests
             //        |       |
             //        bT      cT
             using var e = new AssertingEnumerator(expression);
-            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(op1, op1Text);
-            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "a");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(op2, op2Text);
@@ -86,7 +86,7 @@ public class ParserTests
             //           |              
             //          aT           
             using var e = new AssertingEnumerator(expression);
-            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertToken(binaryKind, binaryText);
             e.AssertNode(SyntaxKind.NameExpression);
@@ -107,7 +107,7 @@ public class ParserTests
             using var e = new AssertingEnumerator(expression);
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertToken(unaryKind, unaryText);
-            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.BinaryOperatorExpression);
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(binaryKind, binaryText);
             e.AssertNode(SyntaxKind.NameExpression);

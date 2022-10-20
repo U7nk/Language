@@ -1,5 +1,5 @@
 namespace Wired.CodeAnalysis.Binding;
 
-internal abstract class BoundStatement : BoundNode
+public abstract class BoundStatement : BoundNode
 {
 }

@@ -1,4 +1,4 @@
-namespace Wired.CodeAnalysis;
+namespace Wired.CodeAnalysis.Symbols;
 
 public sealed class ParameterSymbol : VariableSymbol
 {

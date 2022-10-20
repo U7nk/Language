@@ -2,170 +2,33 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Wired.CodeAnalysis.Lowering;
+using Wired.CodeAnalysis.Binding.Lookup;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
 
 namespace Wired.CodeAnalysis.Binding;
 
-sealed class Binder
+sealed class FunctionBinder
 {
-    public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
-
-    readonly DiagnosticBag _diagnostics = new();
     BoundScope _scope;
-    readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
+    readonly DiagnosticBag _diagnostics = new();
     readonly bool _isScript;
-    readonly FunctionSymbol? _function;
+    readonly SingleInitialized<FunctionSymbol> _function = new();
+    readonly FunctionBinderLookup? _lookup;
+    
+    readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
-    Binder(bool isScript, BoundScope parent, FunctionSymbol? function)
+    public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
+    public FunctionBinder(BoundScope scope, bool isScript, FunctionBinderLookup? lookup)
     {
-        _scope = parent;
+        _scope = scope;
         _isScript = isScript;
-        _function = function;
-        if (_function is not null)
-        {
-            foreach (var p in _function.Parameters)
-                _scope.TryDeclareVariable(p);
-        }
+        _lookup = lookup;
     }
 
-    public static BoundGlobalScope BindGlobalScope(
-        bool isScript,
-        BoundGlobalScope? previous,
-        ImmutableArray<SyntaxTree> syntaxTrees)
-    {
-        var parentScope = CreateParentScope(previous);
-        var binder = new Binder(isScript, parentScope, function: null);
-
-        var functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
-            .OfType<FunctionDeclarationSyntax>();
-        foreach (var function in functionDeclarations)
-            binder.BindFunctionDeclaration(function);
-        
-        var globalStatements = syntaxTrees
-            .SelectMany(st => st.Root.Members)
-            .OfType<GlobalStatementSyntax>()
-            .ToList();
-
-        var firstGlobalStatementPerSyntaxTree = syntaxTrees
-            .Select(x => x.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault())
-            .Where(x => x is not null)
-            .Cast<GlobalStatementSyntax>()
-            .ToList();
-        if (firstGlobalStatementPerSyntaxTree.Count > 1)
-        {
-            foreach (var globalStatementSyntax in firstGlobalStatementPerSyntaxTree)
-                binder._diagnostics.ReportGlobalStatementsShouldOnlyBeInASingleFile(globalStatementSyntax.Location);
-        }
-        
-        
-        var functions = binder._scope.GetDeclaredFunctions();
-        var variables = binder._scope.GetDeclaredVariables();
-        var diagnostics = binder.Diagnostics.ToList();
-
-        var mainFunctionUsageDiagnostics = DiagnoseMainFunctionAndGlobalStatementsUsage(functions, globalStatements);
-        if (mainFunctionUsageDiagnostics.Any()) 
-            diagnostics.InsertRange(0, mainFunctionUsageDiagnostics);
-
-        FunctionSymbol? mainFunction;
-        FunctionSymbol? scriptMainFunction;
-        if (isScript)
-        {
-            if (globalStatements.Any())
-            {
-                scriptMainFunction = new FunctionSymbol("$main",
-                    ImmutableArray<ParameterSymbol>.Empty,
-                    TypeSymbol.Any,
-                    null
-                );
-                
-            }
-            else
-            {
-                scriptMainFunction = null;
-            }
-
-            mainFunction = null;
-        }
-        else
-        {
-            mainFunction = functions.FirstOrDefault(f => f.Name == "main");
-
-            if (mainFunction is null && globalStatements.Any())
-            {
-                mainFunction = new FunctionSymbol("main",
-                    ImmutableArray<ParameterSymbol>.Empty,
-                    TypeSymbol.Void, 
-                    null
-                );
-            }
-
-            scriptMainFunction = null;
-        }
-        
-        
-        var globalStatementFunction = mainFunction ?? scriptMainFunction;
-        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        if (globalStatementFunction is not null)
-        {
-            var statementBinder = new Binder(isScript, parentScope, globalStatementFunction);
-            foreach (var globalStatement in globalStatements)
-            {
-                var s = statementBinder.BindGlobalStatement(globalStatement.Statement);
-                statements.Add(s);
-            }
-
-            diagnostics.AddRange(statementBinder.Diagnostics);
-        }
-
-        if (previous is not null) 
-            diagnostics.InsertRange(0, previous.Diagnostics);
-        
-        return new BoundGlobalScope(
-            previous, diagnostics.ToImmutableArray(),
-            mainFunction, scriptMainFunction,
-            functions, variables, new BoundBlockStatement(statements.ToImmutable()));
-    }
-
-    static ImmutableArray<Diagnostic> DiagnoseMainFunctionAndGlobalStatementsUsage(
-        ImmutableArray<FunctionSymbol> functions,
-        IEnumerable<GlobalStatementSyntax> statements)
-    {
-        var diagnosticBag = new DiagnosticBag();
-
-        if (functions.Any(x => x.Name == "main") && statements.Any())
-        {
-            foreach (var function in functions.Where(x=> x.Name == "main"))
-            {
-                var identifierLocation = function
-                    .Declaration?
-                    .Identifier
-                    .Location ?? throw new InvalidOperationException();
-                diagnosticBag.ReportMainCannotBeUsedWithGlobalStatements(identifierLocation);   
-            }
-        }
-        
-        foreach (var function in functions.Where(x=> x.Name == "main"))
-        {
-            if (function.Parameters.Any() 
-                || !Equals(function.ReturnType, TypeSymbol.Void))
-            {
-                var identifierLocation = function
-                    .Declaration?
-                    .Identifier
-                    .Location ?? throw new InvalidOperationException();
-                diagnosticBag.ReportMainMustHaveCorrectSignature(identifierLocation);
-            }   
-        }
-        
-        
-        return diagnosticBag.ToImmutableArray();
-    }
-
-    void BindFunctionDeclaration(FunctionDeclarationSyntax function)
+    public void BindFunctionDeclaration(FunctionDeclarationSyntax function)
     {
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
         var seenParameters = new HashSet<string>();
@@ -188,7 +51,7 @@ sealed class Binder
             parameters.Add(new ParameterSymbol(parameterName, parameterType));
         }
 
-        var returnType = BindTypeClause(function.Type) ?? TypeSymbol.Void;
+        var returnType = BindTypeClause(function.ReturnType) ?? TypeSymbol.Void;
 
         var functionSymbol =
             new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
@@ -196,115 +59,11 @@ sealed class Binder
             _diagnostics.ReportFunctionAlreadyDeclared(function.Identifier.Location, function.Identifier.Text);
     }
 
-    static BoundScope CreateParentScope(BoundGlobalScope? previous)
-    {
-        var stack = new Stack<BoundGlobalScope>();
-        while (previous is not null)
-        {
-            stack.Push(previous);
-            previous = previous.Previous;
-        }
+    public BoundBlockStatement BindFunctionBody(FunctionSymbol functionSymbol) 
+        => BindBlockStatement(functionSymbol.Declaration.Unwrap().Body);
 
-        var parent = CreateRootScope();
+    public BoundStatement BindGlobalStatement(StatementSyntax syntax) => BindStatement(syntax, isGlobal: true);
 
-        while (stack.Count > 0)
-        {
-            previous = stack.Pop();
-            var scope = new BoundScope(parent);
-            foreach (var variable in previous.Variables)
-                scope.TryDeclareVariable(variable);
-
-            foreach (var function in previous.Functions)
-                scope.TryDeclareFunction(function);
-
-            parent = scope;
-        }
-
-        return parent;
-    }
-
-    static BoundScope CreateRootScope()
-    {
-        var result = new BoundScope(null);
-        foreach (var functionSymbol in BuiltInFunctions.GetAll())
-            result.TryDeclareFunction(functionSymbol);
-
-        return result;
-    }
-
-
-    public static BoundProgram BindProgram(
-        bool isScript,
-        BoundProgram? previous,
-        BoundGlobalScope globalScope)
-    {
-        var parentScope = CreateParentScope(globalScope);
-        var functionBodies
-            = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
-        var diagnostics = new DiagnosticBag();
-        
-        var functionsToBind = globalScope.Functions
-            .Except(BuiltInFunctions.GetAll());    
-        foreach (var function in functionsToBind)
-        {
-            var binder = new Binder(isScript, parentScope, function);
-            Debug.Assert(function.Declaration != null, "function.Declaration != null");
-            var body = binder.BindStatement(function.Declaration.Body);
-            var loweredBody = Lowerer.Lower(body);
-            if (!Equals(function.ReturnType, TypeSymbol.Void)
-                && !ControlFlowGraph.AllPathsReturn(loweredBody))
-            {
-                diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
-            }
-
-            functionBodies.Add(function, loweredBody);
-
-            diagnostics.AddRange(binder.Diagnostics);
-        }
-
-        if (globalScope.ScriptMainFunction is not null)
-        {
-            var statements = globalScope.Statement.Statements;
-            var expressionStatement = statements[^1] as BoundExpressionStatement; 
-            var needsReturn = expressionStatement is not null 
-                              && !Equals(expressionStatement.Expression.Type, TypeSymbol.Void);
-            if (needsReturn)
-            {
-                Debug.Assert(expressionStatement != null, nameof(expressionStatement) + " != null");
-                statements = statements.SetItem(statements.Length - 1,
-                    new BoundReturnStatement(expressionStatement.Expression));
-            }
-            else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(statements)))
-            {
-                var nullValue = new BoundLiteralExpression("", TypeSymbol.String);
-                statements = statements.Add(new BoundReturnStatement(nullValue));
-            }
-
-            var body = Lowerer.Lower(new BoundBlockStatement(statements));
-            functionBodies.Add(globalScope.ScriptMainFunction, body);
-        }
-        else if (globalScope.MainFunction is not null && globalScope.Statement.Statements.Any())
-        {
-            var body = Lowerer.Lower(new BoundBlockStatement(globalScope.Statement.Statements));
-            functionBodies.Add(globalScope.MainFunction, body);
-        }
-        var boundProgram = new BoundProgram(
-            previous,
-            diagnostics.ToImmutableArray(),
-            globalScope.MainFunction,
-            globalScope.ScriptMainFunction,
-            functionBodies.ToImmutable());
-        return boundProgram;
-    }
-
-    BoundStatement BindErrorStatement()
-        => new BoundExpressionStatement(new BoundErrorExpression());
-
-    BoundStatement BindGlobalStatement(StatementSyntax syntax)
-    {
-        return BindStatement(syntax, true);
-    }
-    
     BoundStatement BindStatement(StatementSyntax syntax, bool isGlobal = false)
     {
         var result = BindStatementInternal(syntax);
@@ -314,7 +73,7 @@ sealed class Binder
             {
                 var isAllowedExpression = es.Expression.Kind
                     is BoundNodeKind.AssignmentExpression
-                    or BoundNodeKind.CallExpression
+                    or BoundNodeKind.MethodCallExpression
                     or BoundNodeKind.ErrorExpression;
                 if (!isAllowedExpression)
                 {
@@ -358,11 +117,11 @@ sealed class Binder
             ? null
             : BindExpression(syntax.Expression);
 
-        if (_function is null)
+        if (!_function.IsInitialized)
             _diagnostics.ReportInvalidReturn(syntax.ReturnKeyword.Location);
         else
         {
-            if (Equals(_function.ReturnType, TypeSymbol.Void))
+            if (Equals(_function.Value.ReturnType, TypeSymbol.Void))
             {
                 if (expression is not null)
                     _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Location);
@@ -376,13 +135,13 @@ sealed class Binder
                     else
                     {
                         _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location,
-                            _function.ReturnType);
+                            _function.Value.ReturnType);
                     }
                 }
                 else
                 {
                     Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
-                    expression = BindConversion(expression, _function.ReturnType, syntax.Expression.Location);
+                    expression = BindConversion(expression, _function.Value.ReturnType, syntax.Expression.Location);
                 }
             }
         }
@@ -419,7 +178,7 @@ sealed class Binder
         if (syntax.VariableDeclaration is not null)
             variableDeclaration = BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
         else
-            expression = BindExpression(syntax.Expression.ThrowIfNull());
+            expression = BindExpression(syntax.Expression.Unwrap());
 
         var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
         var mutation = BindExpression(syntax.Mutation);
@@ -489,7 +248,8 @@ sealed class Binder
         if (typeClause is null)
             return null;
 
-        var type = LookupType(typeClause.Identifier.Text);
+        _lookup.Unwrap();
+        var type = _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
 
@@ -531,7 +291,7 @@ sealed class Binder
     BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
     {
         var result = BindExpressionInternal(syntax);
-        if (!canBeVoid && result.Type == TypeSymbol.Void)
+        if (!canBeVoid && Equals(result.Type, TypeSymbol.Void))
         {
             _diagnostics.ReportExpressionMustHaveValue(syntax.Location);
             return new BoundErrorExpression();
@@ -548,25 +308,81 @@ sealed class Binder
                 return BindLiteralExpression((LiteralExpressionSyntax)syntax);
             case SyntaxKind.UnaryExpression:
                 return BindUnaryExpression((UnaryExpressionSyntax)syntax);
-            case SyntaxKind.BinaryExpression:
+            case SyntaxKind.BinaryOperatorExpression:
                 return BindBinaryExpression((BinaryExpressionSyntax)syntax);
             case SyntaxKind.ParenthesizedExpression:
                 return BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
             case SyntaxKind.NameExpression:
                 return BindNameExpression((NameExpressionSyntax)syntax);
-            case SyntaxKind.CallExpression:
-                return BindCallExpression((CallExpressionSyntax)syntax);
+            case SyntaxKind.MethodCallExpression:
+                return BindCallExpression((MethodCallExpressionSyntax)syntax);
             case SyntaxKind.AssignmentExpression:
                 return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
+            case SyntaxKind.ThisExpression:
+                return BindThisExpression((ThisExpressionSyntax)syntax);
+            case SyntaxKind.ObjectCreationExpression:
+                return BindObjectCreationExpression((ObjectCreationExpressionSyntax)syntax);
+            case SyntaxKind.FieldAssignmentExpression:
+                return BindFieldAssignmentExpression((FieldAssignmentExpressionSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
     }
 
-    BoundExpression BindCallExpression(CallExpressionSyntax syntax)
+    BoundExpression BindFieldAssignmentExpression(FieldAssignmentExpressionSyntax syntax)
     {
+        _lookup.Unwrap();
+        var objectAccess = BindExpression(syntax.ObjectAccess);
+        var fieldName = syntax.FieldIdentifier.Text;
+        var initializer = BindExpression(syntax.Initializer);
+        
+        var type = _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == objectAccess.Type.Name);
+        if (type is null)
+        {
+            _diagnostics.ReportUndefinedType(syntax.FieldIdentifier.Location, syntax.FieldIdentifier.Text);
+            return new BoundErrorExpression();
+        }
+        
+        var field = type.FieldTable.Symbols.SingleOrDefault(x=> x.Name == fieldName);
+        if (field is null)
+        {
+            _diagnostics.ReportUndefinedField(syntax.FieldIdentifier.Location, fieldName);
+            return new BoundErrorExpression();
+        }
+        return new BoundFieldAssignmentExpression(objectAccess, field, initializer);
+    }
+
+    BoundExpression BindObjectCreationExpression(ObjectCreationExpressionSyntax syntax)
+    {
+        _lookup.Unwrap();
+
+        var typeName = syntax.TypeIdentifier.Text;
+        var matchingTypes = _lookup.AvailableTypes
+            .Where(t => t.Name == typeName)
+            .ToList();
+        if (matchingTypes.Count > 1)
+        {
+            _diagnostics.ReportAmbiguousType(syntax.TypeIdentifier.Location, typeName, matchingTypes);
+            return new BoundErrorExpression();
+        }
+
+        if (matchingTypes.Count < 1)
+        {
+            _diagnostics.ReportUndefinedType(syntax.TypeIdentifier.Location, typeName);
+            return new BoundErrorExpression();
+        }
+
+        return new BoundObjectCreationExpression(matchingTypes.Single());
+    }
+
+    BoundExpression BindThisExpression(ThisExpressionSyntax syntax) 
+        => new BoundThisExpression(_lookup.Unwrap().CurrentType);
+
+    BoundExpression BindCallExpression(MethodCallExpressionSyntax syntax)
+    {
+        _lookup.Unwrap();
         if (syntax.Arguments.Count == 1
-            && LookupType(syntax.Identifier.Text) is { } type)
+            && _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == syntax.Identifier.Text) is { } type)
         {
             return BindConversion(syntax.Arguments[0], type, allowExplicitConversion: true);
         }
@@ -576,7 +392,7 @@ sealed class Binder
             _diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
             return new BoundErrorExpression();
         }
-
+        
         if (function.Parameters.Length != syntax.Arguments.Count)
         {
             _diagnostics.ReportParameterCountMismatch(
@@ -589,8 +405,10 @@ sealed class Binder
 
         var arguments = syntax.Arguments
             .Select((x, i) => BindExpression(x, function.Parameters[i].Type))
-            .ToImmutableArray();
-        return new BoundCallExpression(function, arguments);
+            .ToList();
+        
+        arguments.Insert(0, new BoundThisExpression(_lookup.Unwrap().CurrentType));
+        return new BoundMethodCallExpression(function, arguments.ToImmutableArray());
     }
 
     BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicitConversion = false)
@@ -660,13 +478,17 @@ sealed class Binder
             return new BoundErrorExpression();
         }
 
-        if (!_scope.TryLookupVariable(name, out var variable))
+        if (_scope.TryLookupVariable(name, out var variable))
         {
-            _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
-            return new BoundErrorExpression();
+            return new BoundVariableExpression(variable);
         }
-
-        return new BoundVariableExpression(variable);
+        if (_scope.TryLookupField(name, out var field))
+        {
+            return new BoundFieldExpression(field);
+        }
+        
+        _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
+        return new BoundErrorExpression();
     }
 
     BoundExpression BindParenthesizedExpression(ParenthesizedExpressionSyntax syntax)
@@ -680,7 +502,7 @@ sealed class Binder
         var operand = BindExpression(syntax.Operand);
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
 
-        if (operand.Type == TypeSymbol.Error)
+        if (Equals(operand.Type, TypeSymbol.Error))
             return new BoundErrorExpression();
 
         if (unaryOperator is null)
@@ -692,24 +514,67 @@ sealed class Binder
 
         return new BoundUnaryExpression(unaryOperator, operand);
     }
-
+    
     BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax)
     {
         var left = BindExpression(syntax.Left);
-        var right = BindExpression(syntax.Right);
+        
+        // bug: 
+        // if method call is binary expression, then we can have void method call
+        // and BindExpression(right) will return BoundErrorExpression
+        // because in other binary expressions like +, -, *, /  void is not allowed for operands
+        // so condition var leftCanBeVoid = syntax.Right is MethodCallExpressionSyntax is not correct
+        // we should create additional syntax node for method call
+        // so method call expression is not appear here
+        var leftCanBeVoid = syntax.Right is MethodCallExpressionSyntax;
+        var right = BindExpression(syntax.Right, leftCanBeVoid);
 
-        if (left.Type == TypeSymbol.Error || right.Type == TypeSymbol.Error)
+        if (Equals(left.Type, TypeSymbol.Error) || Equals(right.Type, TypeSymbol.Error))
             return new BoundErrorExpression();
 
-        var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
-        if (binaryOperator is null)
+        if (syntax.OperatorToken.Kind == SyntaxKind.DotToken)
         {
-            _diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
-                left.Type, right.Type);
-            return new BoundErrorExpression();
-        }
+            if (syntax.Right.Kind is SyntaxKind.MethodCallExpression)
+            {
+                var methodCallOperator =
+                    BoundBinaryOperator.BindMethodCall(left.Type, ((BoundMethodCallExpression)right).FunctionSymbol);
+                if (methodCallOperator is null)
+                {
+                    _diagnostics.ReportUndefinedMethodCall(syntax.Right.Location,
+                        ((BoundMethodCallExpression)right).FunctionSymbol.Name, left.Type);
+                    return new BoundErrorExpression();
+                }
 
-        return new BoundBinaryExpression(left, binaryOperator, right);
+                return new BoundBinaryExpression(left, methodCallOperator, right);
+            }
+
+            if (syntax.Right.Kind is SyntaxKind.NameExpression)
+            {
+                var fieldAccessOperator = BoundBinaryOperator.BindFieldAccess(left.Type, ((BoundFieldExpression)right).Field);
+                if (fieldAccessOperator is null)
+                {
+                    _diagnostics.ReportUndefinedFieldAccess(syntax.Right.Location,
+                        ((BoundFieldExpression)right).Field.Name, left.Type);
+                    return new BoundErrorExpression();
+                }
+
+                return new BoundBinaryExpression(left, fieldAccessOperator, right);
+            }
+        }
+        else
+        {
+            var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
+            if (binaryOperator is null)
+            {
+                _diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
+                    left.Type, right.Type);
+                return new BoundErrorExpression();
+            }
+
+            return new BoundBinaryExpression(left, binaryOperator, right);
+        }
+        
+        throw new Exception($"Unexpected binary expression {syntax}");
     }
 
     BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
@@ -718,18 +583,19 @@ sealed class Binder
         return new BoundLiteralExpression(value, TypeSymbol.FromLiteral(syntax.LiteralToken));
     }
 
-    TypeSymbol? LookupType(string name)
+    BoundStatement BindErrorStatement()
+        => new BoundExpressionStatement(new BoundErrorExpression());
+}
+
+public class BoundFieldExpression : BoundExpression
+{
+    public FieldSymbol Field { get; }
+
+    public BoundFieldExpression(FieldSymbol field)
     {
-        if (name == TypeSymbol.Bool.Name)
-            return TypeSymbol.Bool;
-        if (name == TypeSymbol.Int.Name)
-            return TypeSymbol.Int;
-        if (name == TypeSymbol.String.Name)
-            return TypeSymbol.String;
-        if (name == TypeSymbol.Any.Name)
-            return TypeSymbol.Any;
-
-
-        return null;
+        Field = field;
     }
+
+    internal override BoundNodeKind Kind => BoundNodeKind.FieldExpression;
+    internal override TypeSymbol Type => Field.Type;
 }

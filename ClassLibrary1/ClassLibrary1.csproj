@@ -10,4 +10,12 @@
         <Product />
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\CodeGen\CodeGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="ClassLibrary1.csproj.DotSettings" />
+    </ItemGroup>
+
 </Project>

@@ -1,3 +1,5 @@
+using Wired.CodeAnalysis.Symbols;
+
 namespace Wired.CodeAnalysis.Binding;
 
 internal class BoundVariableDeclarationStatement : BoundStatement

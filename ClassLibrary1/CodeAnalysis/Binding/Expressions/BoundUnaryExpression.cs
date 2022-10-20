@@ -1,4 +1,5 @@
 using System;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
 namespace Wired.CodeAnalysis.Binding;

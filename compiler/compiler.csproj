@@ -11,4 +11,8 @@
       <ProjectReference Include="..\ClassLibrary1\ClassLibrary1.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Mono.Options" Version="6.12.0.148" />
+    </ItemGroup>
+
 </Project>

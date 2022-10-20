@@ -1,6 +1,6 @@
 namespace Wired.CodeAnalysis.Syntax;
 
-class BreakStatementSyntax : StatementSyntax
+public class BreakStatementSyntax : StatementSyntax
 {
     public BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken breakKeyword, SyntaxToken semicolonToken) 
         : base(syntaxTree)

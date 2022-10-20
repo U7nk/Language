@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
+using Wired.CodeAnalysis.Binding;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis;
 
 internal abstract class BoundTreeRewriter
 {
@@ -13,11 +14,41 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.LiteralExpression => RewriteLiteralExpression((BoundLiteralExpression)node),
             BoundNodeKind.BinaryExpression => RewriteBinaryExpression((BoundBinaryExpression)node),
             BoundNodeKind.UnaryExpression => RewriteUnaryExpression((BoundUnaryExpression)node),
-            BoundNodeKind.CallExpression => RewriteCallExpression((BoundCallExpression)node),
+            BoundNodeKind.MethodCallExpression => RewriteCallExpression((BoundMethodCallExpression)node),
             BoundNodeKind.ConversionExpression => RewriteConversionExpression((BoundConversionExpression)node),
+            BoundNodeKind.ThisExpression => RewriteThisExpression((BoundThisExpression)node),
+            BoundNodeKind.ObjectCreationExpression => RewriteObjectCreationExpression((BoundObjectCreationExpression)node),
+            BoundNodeKind.FieldExpression => RewriteFieldExpression((BoundFieldExpression)node),
+            BoundNodeKind.FieldAssignmentExpression => RewriteFieldAssignmentExpression((BoundFieldAssignmentExpression)node),
             BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
+    }
+
+    protected virtual BoundExpression RewriteFieldAssignmentExpression(BoundFieldAssignmentExpression node)
+    {
+        var objectAccess = RewriteExpression(node.ObjectAccess);
+        var initializer = RewriteExpression(node.Initializer);
+        if (objectAccess == node.ObjectAccess && initializer == node.Initializer)
+            return node;
+        
+        return new BoundFieldAssignmentExpression(objectAccess, node.Field, initializer);
+    }
+
+    protected virtual BoundExpression RewriteFieldExpression(BoundFieldExpression node)
+    {
+        return node;
+    }
+
+    protected virtual BoundExpression RewriteObjectCreationExpression(BoundObjectCreationExpression node)
+    {
+        // TODO: Rewrite arguments
+        return node;
+    }
+
+    protected virtual BoundExpression RewriteThisExpression(BoundThisExpression node)
+    {
+        return node;
     }
 
     protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
@@ -29,7 +60,7 @@ internal abstract class BoundTreeRewriter
         return new BoundConversionExpression(node.Type, expression);
     }
 
-    protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
+    protected virtual BoundExpression RewriteCallExpression(BoundMethodCallExpression node)
     {
         var statements = ImmutableArray.CreateBuilder<BoundExpression>();
         var changed = false;
@@ -43,7 +74,7 @@ internal abstract class BoundTreeRewriter
         if (!changed)
             return node;
         
-        return new BoundCallExpression(node.FunctionSymbol, statements.ToImmutable());
+        return new BoundMethodCallExpression(node.FunctionSymbol, statements.ToImmutable());
     }
 
     protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node)
@@ -202,7 +233,7 @@ internal abstract class BoundTreeRewriter
         if (node.VariableDeclaration is not null)
             declaration = RewriteVariableDeclarationStatement(node.VariableDeclaration);
         else
-            expression = RewriteExpression(node.Expression.ThrowIfNull());
+            expression = RewriteExpression(node.Expression.Unwrap());
 
         var condition = RewriteExpression(node.Condition);
         var mutation = RewriteExpression(node.Mutation);

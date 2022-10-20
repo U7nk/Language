@@ -1,7 +1,9 @@
+using System.CodeDom.Compiler;
 using FluentAssertions;
 using FluentAssertions.Common;
 using Wired.CodeAnalysis;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 namespace TestProject1;
@@ -19,7 +21,7 @@ public class UnitTest1
     public void Evaluate()
     {
         _output.WriteLine("Result: " + Build($$"""
-            return;
+            return; 
             """));
     }
 
@@ -33,9 +35,10 @@ public class UnitTest1
         _output.WriteLine();
         _output.WriteLine();
         _output.WriteLine("Bound Tree:");
-        var output = new StringWriter();
+        var tw = new StringWriter();
+        var output = new IndentedTextWriter(tw);
         compilation.EmitTree(output);
-        output.ToString().Split(Environment.NewLine)
+        tw.ToString().Split(Environment.NewLine)
             .ToList()
             .ForEach(x => _output.WriteLine(x));
         

@@ -1,4 +1,4 @@
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Symbols;
 
 internal class LabelSymbol
 {
