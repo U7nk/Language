@@ -17,7 +17,7 @@ void setTestsStatus(String message, String state) {
       statusResultSource: [ $class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
   ]);
 }
-	
+
 pipeline {
     agent {
 		docker {
@@ -38,6 +38,7 @@ pipeline {
 					}
 					catch(exc){
 						setBuildStatus("Build failed", "FAILURE");
+						setTestsStatus("Tests skipped", "FAILURE");
 					}
 				}
 			}	
@@ -46,15 +47,22 @@ pipeline {
             steps {
                 script{
 					try{
-						setTestsStatus("tests running", "PENDING");
+						setTestsStatus("Tests running", "PENDING");
 						sh 'dotnet test --logger:"xunit;LogFilePath=test_result.xml"'
-						setTestsStatus("tests succeeded", "SUCCESS");
+						setTestsStatus("Tests succeeded", "SUCCESS");
 					}
 					catch(exc){
-						setTestsStatus("tests failed", "FAILURE");
+						setTestsStatus("Tests failed", "FAILURE");
 					}
 				}
             }
         }
     }
+	post {
+		always{
+            xunit (
+                tools: [ xUnitDotNet(pattern: '**/test_result.xml') ]
+            )
+        }
+	}
 }
