@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Language;
+using Language.Analysis;
 
 namespace TestProject1;
 
