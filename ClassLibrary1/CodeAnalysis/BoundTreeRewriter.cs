@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Binding.Binders;
 
 namespace Wired.CodeAnalysis;
 

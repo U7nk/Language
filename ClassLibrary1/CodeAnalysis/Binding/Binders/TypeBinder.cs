@@ -1,11 +1,10 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Wired.CodeAnalysis.Binding.Lookup;
 using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Binding.Binders;
 
 sealed class TypeBinder
 {
@@ -20,48 +19,6 @@ sealed class TypeBinder
         _lookup = lookup;
     }
 
-    public void BindClassDeclaration(ClassDeclarationSyntax classDeclaration)
-    {
-        var name = classDeclaration.Identifier.Text;
-
-        var type = TypeSymbol.New(name, classDeclaration, new MethodTable(), new FieldTable());
-        
-        _scope.TryDeclareType(type);
-    }
-
-
-    public void BindMembersDeclaration(ClassDeclarationSyntax classDeclaration)
-    {
-        _lookup.Unwrap();
-        if (classDeclaration is not { })
-        {
-            return;
-        }
-        
-        var typeScope = new BoundScope(_scope);
-        foreach (var function in classDeclaration.Functions)
-        {
-            var functionBinder = new FunctionBinder(typeScope, _isScript, new FunctionBinderLookup(_lookup.CurrentType, _lookup.AvailableTypes, null!));
-            functionBinder.BindFunctionDeclaration(function);
-        }
-        
-        foreach (var declaredFunction in typeScope.GetDeclaredFunctions())
-        {
-            _lookup.CurrentType.MethodTable.Add(declaredFunction, null);
-        }
-        
-        foreach (var field in classDeclaration.Fields)
-        {
-            var fieldBinder = new FieldBinder(typeScope, _isScript, new FieldBinderLookup(_lookup.AvailableTypes));
-            fieldBinder.BindDeclaration(field);
-        }
-        
-        foreach (var declaredField in typeScope.GetDeclaredFields())
-        {
-            _lookup.CurrentType.FieldTable.Add(declaredField);
-        }
-    }
-    
     public ImmutableArray<Diagnostic> BindBody()
     {
         var diagnostics = new DiagnosticBag();

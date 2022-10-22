@@ -8,7 +8,7 @@ using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 using Wired.CodeAnalysis.Text;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Binding.Binders;
 
 sealed class FunctionBinder
 {
@@ -21,42 +21,12 @@ sealed class FunctionBinder
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
+
     public FunctionBinder(BoundScope scope, bool isScript, FunctionBinderLookup? lookup)
     {
         _scope = scope;
         _isScript = isScript;
         _lookup = lookup;
-    }
-
-    public void BindFunctionDeclaration(FunctionDeclarationSyntax function)
-    {
-        var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-        var seenParameters = new HashSet<string>();
-        foreach (var parameter in function.Parameters)
-        {
-            var parameterName = parameter.Identifier.Text;
-            if (!seenParameters.Add(parameterName))
-            {
-                _diagnostics.ReportParameterAlreadyDeclared(parameter.Location, parameterName);
-                continue;
-            }
-
-            var parameterType = BindTypeClause(parameter.Type);
-            if (parameterType is null)
-            {
-                _diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
-                parameterType = TypeSymbol.Error;
-            }
-
-            parameters.Add(new ParameterSymbol(parameterName, parameterType));
-        }
-
-        var returnType = BindTypeClause(function.ReturnType) ?? TypeSymbol.Void;
-
-        var functionSymbol =
-            new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
-        if (!_scope.TryDeclareFunction(functionSymbol))
-            _diagnostics.ReportFunctionAlreadyDeclared(function.Identifier.Location, function.Identifier.Text);
     }
 
     public BoundBlockStatement BindFunctionBody(FunctionSymbol functionSymbol) 
@@ -585,17 +555,4 @@ sealed class FunctionBinder
 
     BoundStatement BindErrorStatement()
         => new BoundExpressionStatement(new BoundErrorExpression());
-}
-
-public class BoundFieldExpression : BoundExpression
-{
-    public FieldSymbol Field { get; }
-
-    public BoundFieldExpression(FieldSymbol field)
-    {
-        Field = field;
-    }
-
-    internal override BoundNodeKind Kind => BoundNodeKind.FieldExpression;
-    internal override TypeSymbol Type => Field.Type;
 }

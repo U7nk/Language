@@ -8,7 +8,7 @@ using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Binding.Binders;
 
 sealed class ProgramBinder
 {
@@ -16,7 +16,7 @@ sealed class ProgramBinder
     readonly BoundScope _scope;
     readonly ImmutableArray<SyntaxTree> _syntaxTrees;
     readonly DiagnosticBag _diagnostics = new();
-    
+
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
     public bool IsScript { get; }
 
@@ -32,60 +32,52 @@ sealed class ProgramBinder
         IsScript = isScript;
     }
 
+    void DeclareBuiltInTypes()
+    {
+        _scope.TryDeclareType(TypeSymbol.Any);
+        _scope.TryDeclareType(TypeSymbol.Bool);
+        _scope.TryDeclareType(TypeSymbol.Int);
+        _scope.TryDeclareType(TypeSymbol.String);
+        _scope.TryDeclareType(TypeSymbol.Void);
+    }
+
     public BoundGlobalScope BindGlobalScope()
     {
-        // declare builtin types
-        new List<TypeSymbol>
-        {
-            TypeSymbol.Any,
-            TypeSymbol.Bool,
-            TypeSymbol.Int,
-            TypeSymbol.String,
-            TypeSymbol.Void,
-        }.ForEach(x=> _scope.TryDeclareType(x));
-        
-        
-        var classDeclarations = _syntaxTrees
-            .SelectMany(st => st.Root.Members)
-            .OfType<ClassDeclarationSyntax>()
-            .ToImmutableArray();
-        
-        foreach (var classDeclaration in classDeclarations)
-        {
-            var typeBinder = new TypeBinder(_scope, IsScript, null);
-            typeBinder.BindClassDeclaration(classDeclaration);
-        }
-        
-        foreach (var classDeclaration in classDeclarations)
-        {
-            _scope.TryLookupType(classDeclaration.Identifier.Text, out var currentType);
-            var typeBinder = new TypeBinder(_scope, IsScript, new TypeBinderLookup(currentType.Unwrap(), _scope.GetDeclaredTypes()));
-            typeBinder.BindMembersDeclaration(classDeclaration);
-        }
-        
-        var topFunctionDeclarations = _syntaxTrees
-            .SelectMany(x => x.Root.Members)
-            .OfType<FunctionDeclarationSyntax>()
-            .ToImmutableArray();
-        
-        foreach (var topFunctionDeclaration in topFunctionDeclarations)
-        {
-            new FunctionBinder(_scope, IsScript, new FunctionBinderLookup(null!, _scope.GetDeclaredTypes(), null!))
-                .BindFunctionDeclaration(topFunctionDeclaration);
-        }
+        DeclareBuiltInTypes();
 
-        var topFunctions = _scope.GetDeclaredFunctions()
-            .Except(BuiltInFunctions.GetAll())
+        var classDeclarations = _syntaxTrees
+            .Only<ClassDeclarationSyntax>()
             .ToImmutableArray();
+
+        var typeSignatureBinder = new TypeSignatureBinder(_scope);
+        classDeclarations.ForEach(classDeclaration =>
+            typeSignatureBinder.BindClassDeclaration(classDeclaration).AddRangeTo(_diagnostics));
+
+        var typeMembersSignaturesBinder =
+            new TypeMembersSignaturesBinder(new BaseBinderLookup(_scope.GetDeclaredTypes()), _scope, IsScript);
+        classDeclarations.ForEach(classDeclaration =>
+            typeMembersSignaturesBinder.BindMembersSignatures(classDeclaration).AddRangeTo(_diagnostics));
+
+        var topFunctionDeclarations = _syntaxTrees
+            .Only<FunctionDeclarationSyntax>()
+            .ToImmutableArray();
+
+        var functionSignatureBinder =
+            new FunctionSignatureBinder(new BaseBinderLookup(_scope.GetDeclaredTypes()), _scope);
+        topFunctionDeclarations.ForEach(topFunctionDeclaration => 
+            functionSignatureBinder.BindFunctionSignature(topFunctionDeclaration).AddRangeTo(_diagnostics));
         
+
         DiagnoseGlobalStatementsUsage();
         var globalStatements = _syntaxTrees
-            .SelectMany(st => st.Root.Members)
-            .OfType<GlobalStatementSyntax>()
+            .Only<GlobalStatementSyntax>()
             .ToList();
-        
+
         DiagnoseMainFunctionAndGlobalStatementsUsage(globalStatements);
 
+        var topFunctionsSymbols = _scope.GetDeclaredFunctions()
+            .Except(BuiltInFunctions.GetAll())
+            .ToImmutableArray();
         FunctionSymbol? mainFunction = null;
         FunctionSymbol? scriptMainFunction = null;
         if (IsScript)
@@ -101,7 +93,7 @@ sealed class ProgramBinder
                 {
                     scriptMainFunction = mainFunctionGeneration.Success.Function;
                     var mainFunctionType = mainFunctionGeneration.Success.Type;
-                    foreach (var topFunction in topFunctions)
+                    foreach (var topFunction in topFunctionsSymbols)
                     {
                         mainFunctionType.MethodTable.Declare(topFunction, null);
                     }
@@ -112,7 +104,8 @@ sealed class ProgramBinder
                 var foundMain = TryFindMainFunction();
                 if (foundMain is { })
                 {
-                    _diagnostics.ReportNoMainFunctionAllowedInScriptMode(foundMain.Declaration.Unwrap().Identifier.Location);
+                    _diagnostics.ReportNoMainFunctionAllowedInScriptMode(foundMain.Declaration.Unwrap().Identifier
+                        .Location);
                 }
             }
         }
@@ -121,7 +114,7 @@ sealed class ProgramBinder
             mainFunction = TryFindMainFunction();
             if (mainFunction is null && globalStatements.Any())
             {
-                var mainFunctionGeneration = GenerateMainFunction(_scope, IsScript); 
+                var mainFunctionGeneration = GenerateMainFunction(_scope, IsScript);
                 if (mainFunctionGeneration.IsFail)
                 {
                     _diagnostics.AddRange(mainFunctionGeneration.Fail);
@@ -130,7 +123,7 @@ sealed class ProgramBinder
                 {
                     mainFunction = mainFunctionGeneration.Success.Function;
                     var mainFunctionType = mainFunctionGeneration.Success.Type;
-                    foreach (var topFunction in topFunctions)
+                    foreach (var topFunction in topFunctionsSymbols)
                     {
                         mainFunctionType.MethodTable.Declare(topFunction, null);
                     }
@@ -140,25 +133,26 @@ sealed class ProgramBinder
 
 
         var programType = _scope.GetDeclaredTypes().SingleOrDefault(x => x.Name == SyntaxFacts.StartTypeName);
-        
+
         var globalStatementFunction = mainFunction ?? scriptMainFunction;
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
         if (globalStatementFunction is not null)
         {
-            var statementBinder = new FunctionBinder(_scope, IsScript, new FunctionBinderLookup(
+            var functionBinder = new FunctionBinder(_scope, IsScript, new FunctionBinderLookup(
                 programType.Unwrap(),
                 _scope.GetDeclaredTypes(),
                 globalStatementFunction));
-            
+
             foreach (var globalStatement in globalStatements)
             {
-                var s = statementBinder.BindGlobalStatement(globalStatement.Statement);
+                var s = functionBinder.BindGlobalStatement(globalStatement.Statement);
                 statements.Add(s);
             }
-            _diagnostics.AddRange(statementBinder.Diagnostics);
+
+            _diagnostics.AddRange(functionBinder.Diagnostics);
         }
 
-        
+
         return new BoundGlobalScope(
             _previous, _diagnostics.ToImmutableArray(),
             mainFunction, scriptMainFunction,
@@ -180,11 +174,12 @@ sealed class ProgramBinder
         }
     }
 
-    static Result<(FunctionSymbol Function, TypeSymbol Type), DiagnosticBag> GenerateMainFunction(BoundScope scope, bool isScript)
+    static Result<(FunctionSymbol Function, TypeSymbol Type), DiagnosticBag> GenerateMainFunction(BoundScope scope,
+        bool isScript)
     {
         var main = new FunctionSymbol(SyntaxFacts.MainFunctionName,
             ImmutableArray<ParameterSymbol>.Empty,
-            TypeSymbol.Void, 
+            TypeSymbol.Void,
             null
         );
         if (isScript)
@@ -195,23 +190,25 @@ sealed class ProgramBinder
                 null
             );
         }
-        
-        var type = TypeSymbol.New(SyntaxFacts.StartTypeName, null, new MethodTable{{main, null}}, new FieldTable());
+
+        var type = TypeSymbol.New(SyntaxFacts.StartTypeName, null, new MethodTable { { main, null } },
+            new FieldTable());
         if (!scope.TryDeclareType(type))
         {
             var diagnostics = new DiagnosticBag();
             var alreadyDeclared = scope.GetDeclaredTypes()
                 .Single(x => x.Name == SyntaxFacts.StartTypeName);
-            diagnostics.ReportCannotEmitGlobalStatementsBecauseTypeAlreadyExists(type.Name, alreadyDeclared.Declaration.Unwrap().Location);
+            diagnostics.ReportCannotEmitGlobalStatementsBecauseTypeAlreadyExists(type.Name,
+                alreadyDeclared.Declaration.Unwrap().Location);
             return diagnostics;
         }
 
-        return  (main, type);
+        return (main, type);
     }
 
     FunctionSymbol? TryFindMainFunction()
     {
-        foreach (var function in _scope.GetDeclaredTypes().SelectMany(x=> x.MethodTable.Symbols))
+        foreach (var function in _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Symbols))
         {
             if (function.Name == SyntaxFacts.MainFunctionName)
                 return function;
@@ -219,27 +216,26 @@ sealed class ProgramBinder
 
         return null;
     }
-    
+
     void DiagnoseMainFunctionAndGlobalStatementsUsage(
         IEnumerable<GlobalStatementSyntax> statements)
     {
-
         var functions = _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Symbols).ToList();
         if (functions.Any(x => x.Name == "main") && statements.Any())
         {
-            foreach (var function in functions.Where(x=> x.Name == "main"))
+            foreach (var function in functions.Where(x => x.Name == "main"))
             {
                 var identifierLocation = function
                     .Declaration?
                     .Identifier
                     .Location ?? throw new InvalidOperationException();
-                _diagnostics.ReportMainCannotBeUsedWithGlobalStatements(identifierLocation);   
+                _diagnostics.ReportMainCannotBeUsedWithGlobalStatements(identifierLocation);
             }
         }
-        
-        foreach (var function in functions.Where(x=> x.Name == "main"))
+
+        foreach (var function in functions.Where(x => x.Name == "main"))
         {
-            if (function.Parameters.Any() 
+            if (function.Parameters.Any()
                 || !Equals(function.ReturnType, TypeSymbol.Void))
             {
                 var identifierLocation = function
@@ -247,7 +243,7 @@ sealed class ProgramBinder
                     .Identifier
                     .Location ?? throw new InvalidOperationException();
                 _diagnostics.ReportMainMustHaveCorrectSignature(identifierLocation);
-            }   
+            }
         }
     }
 
@@ -294,11 +290,11 @@ sealed class ProgramBinder
         BoundGlobalScope globalScope)
     {
         var parentScope = CreateParentScope(globalScope);
-        
+
         var diagnostics = new DiagnosticBag();
-        
+
         var typesToBind = globalScope.Types;
-        
+
         foreach (var type in typesToBind)
         {
             var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, typesToBind));
@@ -309,8 +305,8 @@ sealed class ProgramBinder
         if (globalScope.ScriptMainFunction is not null)
         {
             var statements = globalScope.Statement.Statements;
-            var expressionStatement = statements[^1] as BoundExpressionStatement; 
-            var needsReturn = expressionStatement is not null 
+            var expressionStatement = statements[^1] as BoundExpressionStatement;
+            var needsReturn = expressionStatement is not null
                               && !Equals(expressionStatement.Expression.Type, TypeSymbol.Void);
             if (needsReturn)
             {
@@ -324,17 +320,17 @@ sealed class ProgramBinder
                 statements = statements.Add(new BoundReturnStatement(nullValue));
             }
 
-            var type = globalScope.Types.Single(x=> x.MethodTable.ContainsKey(globalScope.ScriptMainFunction));
+            var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.ScriptMainFunction));
             var properReturnBody = Lowerer.Lower(new BoundBlockStatement(statements));
             type.MethodTable[globalScope.ScriptMainFunction] = properReturnBody;
         }
         else if (globalScope.MainFunction is not null && globalScope.Statement.Statements.Any())
         {
             var body = Lowerer.Lower(new BoundBlockStatement(globalScope.Statement.Statements));
-            var type = globalScope.Types.Single(x=> x.MethodTable.ContainsKey(globalScope.MainFunction));
+            var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.MainFunction));
             type.MethodTable[globalScope.MainFunction] = body;
         }
-        
+
         var boundProgram = new BoundProgram(
             previous,
             diagnostics.ToImmutableArray(),

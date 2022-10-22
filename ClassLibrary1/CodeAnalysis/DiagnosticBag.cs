@@ -219,9 +219,10 @@ public class DiagnosticBag : List<Diagnostic>
         Report(mainIdentifierLocation, message);
     }
 
-    public void ReportNoGlobalStatementsFound()
+    public void ReportClassWithThatNameIsAlreadyDeclared(TextLocation classIdentifierLocation, string className)
     {
-        var message = $"No global statements found.";
+        var message = $"Class with name '{className}' is already declared.";
+        Report(classIdentifierLocation, message);
     }
 
     public void ReportFieldAlreadyDeclared(TextLocation fieldLocation, string fieldName)

@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.Collections;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Wired.CodeAnalysis.Syntax;
 
 namespace Wired;
 
@@ -103,6 +105,36 @@ internal static class Extensions
     {
         collection.Add(obj);
         return obj;
+    }
+    
+    [DebuggerStepThrough]
+    internal static IEnumerable<T> AddRangeTo<T>(this ICollection<T> enumerable, ICollection<T> collection)
+    {
+        foreach (var obj in enumerable)
+        {
+            collection.Add(obj);
+        }
+        
+        return enumerable;
+    }
+    
+    [DebuggerStepThrough]
+    internal static IEnumerable<T> Only<T>(this IEnumerable<SyntaxTree> syntaxTrees)
+    {
+        return syntaxTrees
+            .SelectMany(st => st.Root.Members)
+            .OfType<T>();
+    }
+    
+    
+    
+    [DebuggerStepThrough]
+    internal static void ForEach<T>(this ICollection<T> enumerable, Action<T> action)
+    {
+        foreach (var obj in enumerable)
+        {
+            action(obj);
+        }
     }
 
     internal static T[] Slice<T>(this T[] collection, int fromIncluding, int toExcluding = -1)

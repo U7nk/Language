@@ -3,15 +3,15 @@ using Wired.CodeAnalysis.Binding.Lookup;
 using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;
 
-namespace Wired.CodeAnalysis.Binding;
+namespace Wired.CodeAnalysis.Binding.Binders;
 
-public sealed class FieldBinder
+public sealed class FieldSignatureBinder
 {
     readonly FieldBinderLookup? _lookup;
     readonly BoundScope _scope;
     readonly bool _isScript;
 
-    public FieldBinder(BoundScope scope, bool isScript, FieldBinderLookup? lookup)
+    public FieldSignatureBinder(BoundScope scope, bool isScript, FieldBinderLookup? lookup)
     {
         _scope = scope;
         _isScript = isScript;

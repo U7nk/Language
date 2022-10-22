@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Binding.Binders;
 using Wired.CodeAnalysis.Binding.Lookup;
 using Wired.CodeAnalysis.Symbols;
 using Wired.CodeAnalysis.Syntax;

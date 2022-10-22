@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Wired.CodeAnalysis.Binding;
+using Wired.CodeAnalysis.Binding.Binders;
 using Wired.CodeAnalysis.Emit;
 using Wired.CodeAnalysis.Lowering;
 using Wired.CodeAnalysis.Symbols;
