@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 public class EvaluationResult
 {

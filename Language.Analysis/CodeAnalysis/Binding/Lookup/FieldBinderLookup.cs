@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis.Binding.Lookup;
+namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
 public class FieldBinderLookup : BaseBinderLookup
 {

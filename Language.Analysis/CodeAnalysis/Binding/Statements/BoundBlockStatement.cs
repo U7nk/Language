@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 public sealed class BoundBlockStatement : BoundStatement
 {

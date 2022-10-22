@@ -1,6 +1,6 @@
 using System;
 
-namespace Language;
+namespace Language.Analysis;
 
 /// <summary>
 /// Not thread safe

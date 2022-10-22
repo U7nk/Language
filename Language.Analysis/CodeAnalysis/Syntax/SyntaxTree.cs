@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Text;
 
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public partial class SyntaxTree
 {

@@ -1,6 +1,4 @@
-using System.Linq;
-
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public sealed class LiteralExpressionSyntax : ExpressionSyntax
 {

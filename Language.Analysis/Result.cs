@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Language;
+namespace Language.Analysis;
 
 public class Result<TSuccess, TFail> 
 {

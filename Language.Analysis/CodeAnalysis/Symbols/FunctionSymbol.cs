@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.CodeAnalysis.Symbols;
+namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class FunctionSymbol : Symbol
 {

@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Data;
 using System.Linq;
-using Language.CodeAnalysis.Text;
-using Language.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Text;
 
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class Parser
 {

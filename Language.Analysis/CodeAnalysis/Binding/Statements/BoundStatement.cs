@@ -1,4 +1,4 @@
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 public abstract class BoundStatement : BoundNode
 {

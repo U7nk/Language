@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Text;
 
 namespace TestProject1.Text;
 

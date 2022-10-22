@@ -1,10 +1,9 @@
 using System.CodeDom.Compiler;
 using FluentAssertions;
 using FluentAssertions.Common;
-using Language.CodeAnalysis;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 namespace TestProject1;
 

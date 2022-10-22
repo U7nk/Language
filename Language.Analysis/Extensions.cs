@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
 using System.Collections;
-using System.Collections.Immutable;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language;
+namespace Language.Analysis;
 
 internal static class Extensions
 {

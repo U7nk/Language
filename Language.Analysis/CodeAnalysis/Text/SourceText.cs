@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
-using System.Linq;
 
-namespace Language.CodeAnalysis.Text;
+namespace Language.Analysis.CodeAnalysis.Text;
 
 public class SourceText
 {

@@ -1,4 +1,4 @@
-namespace Language.CodeAnalysis.Text;
+namespace Language.Analysis.CodeAnalysis.Text;
 
 public sealed class TextLine
 {

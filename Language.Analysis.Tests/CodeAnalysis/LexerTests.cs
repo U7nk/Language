@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using FluentAssertions.Primitives;
-using Language.CodeAnalysis.Syntax;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Text;
 
 namespace TestProject1.CodeAnalysis;
 

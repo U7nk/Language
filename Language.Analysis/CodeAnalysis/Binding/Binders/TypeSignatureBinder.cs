@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 sealed class TypeSignatureBinder
 {

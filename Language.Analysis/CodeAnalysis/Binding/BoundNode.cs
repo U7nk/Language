@@ -1,10 +1,6 @@
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 public abstract class BoundNode
 {

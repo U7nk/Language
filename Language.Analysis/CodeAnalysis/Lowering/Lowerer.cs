@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis.Lowering;
+namespace Language.Analysis.CodeAnalysis.Lowering;
 
 internal sealed class Lowerer : BoundTreeRewriter
 {

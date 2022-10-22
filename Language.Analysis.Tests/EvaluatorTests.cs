@@ -1,15 +1,15 @@
 using System.Collections.Immutable;
 using Language;
-using Language.CodeAnalysis;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Text;
+using Language.Analysis;
+using Language.Analysis.CodeAnalysis;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
 namespace TestProject1;
 
 using FluentAssertions;
-using Language.CodeAnalysis.Syntax;
 
 public class EvaluatorTests
 {

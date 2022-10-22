@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 internal static class BuiltInFunctions
 {

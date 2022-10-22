@@ -2,10 +2,10 @@ using System;
 using System.CodeDom.Compiler;
 using System.IO;
 using System.Linq;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 static class BoundNodePrinter
 {

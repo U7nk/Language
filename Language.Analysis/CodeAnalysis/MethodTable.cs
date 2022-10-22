@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 /// <summary>
 /// Function symbol -> Lowered function body

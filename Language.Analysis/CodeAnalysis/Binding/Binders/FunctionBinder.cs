@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Language.CodeAnalysis.Binding.Lookup;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Text;
 
-namespace Language.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 sealed class FunctionBinder
 {

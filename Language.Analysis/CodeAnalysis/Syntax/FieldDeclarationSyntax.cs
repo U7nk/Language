@@ -1,6 +1,4 @@
-using Language.CodeAnalysis.Symbols;
-
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class FieldDeclarationSyntax : SyntaxNode, IClassMemberSyntax
 {

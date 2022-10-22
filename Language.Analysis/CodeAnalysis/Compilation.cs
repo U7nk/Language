@@ -1,18 +1,16 @@
-using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Binding.Binders;
-using Language.CodeAnalysis.Emit;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
-using Language.CodeAnalysis.Lowering;
+using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Binding.Binders;
+using Language.Analysis.CodeAnalysis.Emit;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 public sealed class Compilation
 {

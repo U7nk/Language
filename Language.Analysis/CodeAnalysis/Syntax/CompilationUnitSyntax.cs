@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public sealed class CompilationUnitSyntax : SyntaxNode
 {

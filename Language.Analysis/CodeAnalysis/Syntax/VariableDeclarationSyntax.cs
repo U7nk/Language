@@ -1,6 +1,4 @@
-using Language.CodeAnalysis.Binding;
-
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class VariableDeclarationSyntax : SyntaxNode
 {

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Text;
 
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class Lexer
 {

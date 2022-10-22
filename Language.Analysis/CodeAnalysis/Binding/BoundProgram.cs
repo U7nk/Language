@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 class BoundProgram
 {

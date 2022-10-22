@@ -4,10 +4,10 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis.Emit;
+namespace Language.Analysis.CodeAnalysis.Emit;
 
 public class Bytecode
 {

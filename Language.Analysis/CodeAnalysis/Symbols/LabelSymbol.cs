@@ -1,4 +1,4 @@
-namespace Language.CodeAnalysis.Symbols;
+namespace Language.Analysis.CodeAnalysis.Symbols;
 
 internal class LabelSymbol
 {

@@ -1,12 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
-using Language.CodeAnalysis.Text;
+using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Text;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 public class DiagnosticBag : List<Diagnostic>
 {

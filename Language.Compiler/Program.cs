@@ -1,6 +1,6 @@
-﻿using Mono.Options;
-using Language.CodeAnalysis;
-using Language.CodeAnalysis.Syntax;
+﻿using Language.Analysis.CodeAnalysis;
+using Language.Analysis.CodeAnalysis.Syntax;
+using Mono.Options;
 
 namespace compiler;
 

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 
 namespace TestProject1.CodeAnalysis;

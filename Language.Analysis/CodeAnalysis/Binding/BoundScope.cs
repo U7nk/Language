@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using Language.CodeAnalysis.Symbols;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis.Binding;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 public class BoundScope
 {

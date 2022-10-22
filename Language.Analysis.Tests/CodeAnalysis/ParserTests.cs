@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Language;
-using Language.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace TestProject1.CodeAnalysis;
 

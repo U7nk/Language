@@ -1,8 +1,7 @@
 using System.Collections.Immutable;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Binding.Binders;
+using Language.Analysis.CodeAnalysis.Binding;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 internal abstract class BoundTreeRewriter
 {

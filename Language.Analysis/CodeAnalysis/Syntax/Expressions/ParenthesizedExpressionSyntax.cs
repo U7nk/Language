@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Language.CodeAnalysis.Syntax;
+namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
 {

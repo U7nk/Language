@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Language.CodeAnalysis.Binding;
-using Language.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Symbols;
 
-namespace Language.CodeAnalysis;
+namespace Language.Analysis.CodeAnalysis;
 
 class ControlFlowGraph
 {

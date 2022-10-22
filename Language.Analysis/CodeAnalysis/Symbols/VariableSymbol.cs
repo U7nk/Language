@@ -1,6 +1,6 @@
 using System;
 
-namespace Language.CodeAnalysis.Symbols;
+namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class VariableSymbol : Symbol
 {
