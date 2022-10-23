@@ -63,6 +63,7 @@ pipeline {
             xunit (
                 tools: [ xUnitDotNet(pattern: '**/test_result.xml') ]
             )
+			cleanWs();
         }
 	}
 }

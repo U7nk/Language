@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Company />
+        <Product />
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Language.Analysis.CodeGeneration\Language.Analysis.CodeGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="ClassLibrary1.csproj.DotSettings" />
+    </ItemGroup>
+
+</Project>

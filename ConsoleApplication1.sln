@@ -1,22 +1,22 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C# Express 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary1", "ClassLibrary1\ClassLibrary1.csproj", "{90AB2AEE-8050-463D-B755-57337159CF58}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Language.Analysis", "Language.Analysis\Language.Analysis.csproj", "{90AB2AEE-8050-463D-B755-57337159CF58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject1", "TestProject1\TestProject1.csproj", "{E1DD50F5-A707-41C3-8107-AB9A3AE4D632}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Language.Analysis.Tests", "Language.Analysis.Tests\Language.Analysis.Tests.csproj", "{E1DD50F5-A707-41C3-8107-AB9A3AE4D632}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{42DD1E69-5920-4FAF-A4AC-87BF9DBE08CE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8925AA5E-E28A-4855-9BC4-8EA84B303CDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "compiler", "compiler\compiler.csproj", "{D61F00D0-E506-4CE8-BFF6-31AB29B27861}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Language.Compiler", "Language.Compiler\Language.Compiler.csproj", "{D61F00D0-E506-4CE8-BFF6-31AB29B27861}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{3E77C4F0-5013-4C8C-8CFF-5F1DC6CAB91A}"
 	ProjectSection(SolutionItems) = preProject
 		samples\hello-world.ln = samples\hello-world.ln
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGen", "CodeGen\CodeGen.csproj", "{AC62CA46-5260-4991-A6CA-6999284DF3B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Language.Analysis.CodeGeneration", "Language.Analysis.CodeGeneration\Language.Analysis.CodeGeneration.csproj", "{AC62CA46-5260-4991-A6CA-6999284DF3B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
