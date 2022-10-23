@@ -39,6 +39,7 @@ pipeline {
 					catch(exc){
 						setBuildStatus("Build failed", "FAILURE");
 						setTestsStatus("Tests skipped", "FAILURE");
+						throw exc;
 					}
 				}
 			}	
@@ -53,6 +54,7 @@ pipeline {
 					}
 					catch(exc){
 						setTestsStatus("Tests failed", "FAILURE");
+						throw exc;
 					}
 				}
             }
