@@ -100,7 +100,7 @@ public class EvaluatorTests
             x = 5;
         }
         x;
-      """, 5)]
+      """ , 5)]
     [InlineData(
         $$"""
         var x = 10; 
@@ -109,9 +109,9 @@ public class EvaluatorTests
             x = 5;
         }
         x;
-      """, 10)]
+      """ , 10)]
     [InlineData(
-      $$"""
+        $$"""
          var a = 0; 
          var b = 1;
          while a < 5 
@@ -120,7 +120,7 @@ public class EvaluatorTests
            b = b + 1; 
          }
          a + b;
-      """, 11)]
+      """ , 11)]
     [InlineData(
         $$"""
          var b = 1; 
@@ -130,7 +130,7 @@ public class EvaluatorTests
             b = i;
          } 
          b;
-      """, 3)]
+      """ , 3)]
     [InlineData(
         $$"""
          var b = 1; 
@@ -139,7 +139,7 @@ public class EvaluatorTests
             b = i;
          } 
          b;
-      """, 3)]
+      """ , 3)]
     [InlineData(
         $$"""
             var result = 0;
@@ -148,12 +148,12 @@ public class EvaluatorTests
             else 
                 result = 2;
             result;
-        """, 2)]
+        """ , 2)]
     [InlineData(
         $$"""
         var result = 0;
         result;
-        """, 0)]
+        """ , 0)]
     [InlineData(
         $$"""
         var result = 0;
@@ -162,7 +162,7 @@ public class EvaluatorTests
             result = result + i;
         }
         result;
-        """, 4950)]
+        """ , 4950)]
     [InlineData("let hi = \"hellow\" + \" world\" + \" \"; hi;", "hellow world ")]
     [InlineData("let boo : string = \"hellow world \"; boo;", "hellow world ")]
     [InlineData(
@@ -178,7 +178,7 @@ public class EvaluatorTests
             return result;
         }
         count();
-        """, 4950)]
+        """ , 4950)]
     [InlineData(
         $$"""
         var i = 0; 
@@ -189,7 +189,7 @@ public class EvaluatorTests
                 continue;
         }
         i;
-        """, 5)]
+        """ , 5)]
     [InlineData(
         $$"""
         var i = 0;
@@ -198,7 +198,7 @@ public class EvaluatorTests
             i = i + 1; 
         } 
         i;
-        """, 0)]
+        """ , 0)]
     [InlineData(
         $$"""
         var pp = new Program();
@@ -207,16 +207,16 @@ public class EvaluatorTests
         {
             return 10;
         }
-        """, 10)]
-    public async Task Evaluator_Evaluates(string expression, object expectedValue)
+        """ , 10)]
+    public void Evaluator_Evaluates(string expression, object expectedValue)
     {
-        await AssertValueWithTimeout(expression, expectedValue, isScript: true);
+        AssertValue(expression, expectedValue, isScript: true);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesWithProgramDeclaration()
+    public void EvaluatorEvaluatesWithProgramDeclaration()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 function main()
@@ -229,14 +229,14 @@ public class EvaluatorTests
                     return 10;
                 }
             }
-            """,
+            """ ,
             expectedValue: 10, isScript: false);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesWithFieldsDeclaration()
+    public void EvaluatorEvaluatesWithFieldsDeclaration()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 Fieldo : int;
@@ -253,14 +253,14 @@ public class EvaluatorTests
                     this.Fieldo = 10;
                 }
             }
-            """,
+            """ ,
             expectedValue: 10, isScript: false);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesReturnThis()
+    public void EvaluatorEvaluatesReturnThis()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 Fieldo : int;
@@ -276,21 +276,20 @@ public class EvaluatorTests
                     return this;
                 }
             }
-            """,
+            """ ,
             result =>
             {
                 var resultObject = Assert.IsType<Dictionary<string, object>>(result);
-                var field = Assert.Single(resultObject); 
+                var field = Assert.Single(resultObject);
                 field.Key.Should().Be("Fieldo");
                 field.Value.Should().Be(10);
-                
             }, isScript: false);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesMethodsAccessChain()
+    public void EvaluatorEvaluatesMethodsAccessChain()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 Fieldo : int;
@@ -311,15 +310,15 @@ public class EvaluatorTests
                     return this.Fieldo;
                 }
             }
-            """,
+            """ ,
             result => result.Should().Be(10),
             isScript: false);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesMethodsFieldsAccessChain()
+    public void EvaluatorEvaluatesMethodsFieldsAccessChain()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 Fieldo : int;
@@ -349,15 +348,15 @@ public class EvaluatorTests
                     return this.Fieldo;
                 }
             }
-            """,
+            """ ,
             result => result.Should().Be(10),
             isScript: false);
     }
-    
+
     [Fact]
-    public async Task EvaluatorEvaluatesFieldsAssignmentAccessChain()
+    public void EvaluatorEvaluatesFieldsAssignmentAccessChain()
     {
-        await AssertValueWithTimeout($$"""
+        AssertValue($$"""
             class Program
             {
                 Fieldo : Program;
@@ -375,7 +374,7 @@ public class EvaluatorTests
                     return this.IntField;
                 }
             }
-            """,
+            """ ,
             result => result.Should().Be(15),
             isScript: false);
     }
@@ -385,43 +384,44 @@ public class EvaluatorTests
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
 
-        var compilation =  isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
+        var compilation = isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
         var variables = new Dictionary<VariableSymbol, object?>();
         var evaluation = compilation.Evaluate(variables);
 
         evaluation.Diagnostics.ToList().Should().BeEmpty();
         return evaluation.Result;
     }
-    static async Task AssertValueWithTimeout(string expression, object expectedValue, bool isScript)
+
+    static void AssertValue(string expression, object expectedValue, bool isScript)
     {
-        Action action = () => EvaluateValue(expression, isScript).Should().Be(expectedValue);
-        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
-    }
-    static async Task AssertValueWithTimeout(string expression, Action<object?> resultAssertion, bool isScript)
-    {
-        var action = () => resultAssertion(EvaluateValue(expression, isScript));
-        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
+        EvaluateValue(expression, isScript).Should().Be(expectedValue);
     }
 
-    
-    [Fact]
-    public async Task Evaluator_TypeClause_Reports_NoImplicitConversion()
+    static void AssertValue(string expression, Action<object?> resultAssertion, bool isScript)
     {
-        var text = 
+        resultAssertion(EvaluateValue(expression, isScript));
+    }
+
+    [Fact]
+    public void Evaluator_TypeClause_Reports_NoImplicitConversion()
+    {
+        var text =
             $$"""
             {
                 let a : string = [10 + 15];
             } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
+
     [Fact]
-    public async Task Evaluator_Report_InvalidStatements()
+    public void Evaluator_Report_InvalidStatements()
     {
-        var text = 
+        var text =
             $$"""
             {
                 let a = 5;
@@ -429,19 +429,20 @@ public class EvaluatorTests
                 [a;]
                 [a + a;]
             } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Only assignment, and call expressions can be used as a statement.",
             $"Only assignment, and call expressions can be used as a statement.",
             $"Only assignment, and call expressions can be used as a statement.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_IfStatement_Reports_CannotConvert()
+    public void Evaluator_IfStatement_Reports_CannotConvert()
     {
-        var text = 
+        var text =
             $$"""
                 {
                     var a = 10;
@@ -450,17 +451,18 @@ public class EvaluatorTests
                         a = 5;
                     } 
                 } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_WhileStatement_Reports_CannotConvert()
+    public void Evaluator_WhileStatement_Reports_CannotConvert()
     {
-        var text = 
+        var text =
             $$"""
                 {
                     var a = 10;
@@ -469,17 +471,18 @@ public class EvaluatorTests
                         a = 5;
                     } 
                 } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_ForStatement_Reports_CannotConvert()
+    public void Evaluator_ForStatement_Reports_CannotConvert()
     {
-        var text = 
+        var text =
             $$"""
                 {
                     var a = 10;
@@ -488,17 +491,18 @@ public class EvaluatorTests
                         a = 5;
                     } 
                 } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_ForStatement_Reports_Mutation_NoImplicitConversion()
+    public void Evaluator_ForStatement_Reports_Mutation_NoImplicitConversion()
     {
-        var text = 
+        var text =
             $$"""
                 {
                     var a = 10;
@@ -507,130 +511,138 @@ public class EvaluatorTests
                         a = 5;
                     } 
                 } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
+    public void Evaluator_OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
     {
-        var text = 
+        var text =
             $$"""
                 {[[)]][]
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             "error: Unexpected token <CloseParenthesisToken> expected <IdentifierToken>.",
             "error: Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "error: Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
 
 
     [Fact]
-    public async Task Evaluator_VariableDeclaration_Reports_Redeclaration()
+    public void Evaluator_VariableDeclaration_Reports_Redeclaration()
     {
-        var text = 
+        var text =
             $$"""
                 {
                     var a = 10;
                     [var a] = 10;
                 } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             "Variable 'a' is already declared.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_Reports_NoError_For_Inserted_Token()
+    public void Evaluator_Reports_NoError_For_Inserted_Token()
     {
         var text = "";
         var diagnostics = Array.Empty<string>();
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_ForStatement_Reports_Iterator_Redeclaration()
+    public void Evaluator_ForStatement_Reports_Iterator_Redeclaration()
     {
-        var text = 
+        var text =
             $$"""
             for (var i = 1; i < 4; i = i + 1)
             {
                 [var i] = 5;
             }
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             "Variable 'i' is already declared.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_NameExpression_Reports_UndefinedVariable()
+    public void Evaluator_NameExpression_Reports_UndefinedVariable()
     {
-        var text = 
+        var text =
             $$"""
             {
                 var a = [b];
             } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             "'b' is undefined.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_AssignedExpression_Reports_CannotAssignVariable()
+    public void Evaluator_AssignedExpression_Reports_CannotAssignVariable()
     {
-         var text = 
-             $$"""
+        var text =
+            $$"""
              {
                  let a = 10;
                  [a =] 50;
              } 
-             """;
-         var diagnostics = new[] {
+             """ ;
+        var diagnostics = new[]
+        {
             "'a' is readonly and cannot be assigned to.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_TypeClause_Reports_UndefinedType()
+    public void Evaluator_TypeClause_Reports_UndefinedType()
     {
-        var text = 
+        var text =
             $$"""
             {
                 var a : [blab] = 10;
             } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Type 'blab' is undefined.",
         };
-        
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
-    
+
     [Fact]
-    public async Task Evaluator_AssignedExpression_Reports_CannotConvertVariable()
+    public void Evaluator_AssignedExpression_Reports_CannotConvertVariable()
     {
-        var text = 
+        var text =
             $$"""
             {
                 var a = 10;
                 a = [false];
             } 
-            """;
-        var diagnostics = new[] {
+            """ ;
+        var diagnostics = new[]
+        {
             $"Cannot convert '{TypeSymbol.Bool}' to '{TypeSymbol.Int}'.",
         };
-        await AssertDiagnosticsWithTimeout(text, diagnostics);
+        AssertDiagnosticsWithTimeout(text, diagnostics);
     }
 
     static void AssertDiagnostics(string text, string[] diagnosticsText)
@@ -647,21 +659,21 @@ public class EvaluatorTests
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        foreach(var i in 0..diagnosticsText.Length)
+        foreach (var i in 0..diagnosticsText.Length)
         {
             var expectedMessage = diagnosticsText[i];
             var actualMessage = diagnostics[i].Message;
             actualMessage.Should().Be(expectedMessage, "Diagnostic messages do not match");
-            
-            
+
+
             var expectedSpan = annotatedText.Spans[i];
             var actualSpan = diagnostics[i].TextLocation.Span;
             actualSpan.Should().BeOfType<TextSpan>().And.Be(expectedSpan, "Diagnostic spans do not match");
         }
     }
-    static async Task AssertDiagnosticsWithTimeout(string text, string[] diagnosticsText)
+
+    static void AssertDiagnosticsWithTimeout(string text, string[] diagnosticsText)
     {
-        var action = new Action(() => AssertDiagnostics(text, diagnosticsText));
-        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
+        AssertDiagnostics(text, diagnosticsText);
     }
 }
