@@ -208,15 +208,15 @@ public class EvaluatorTests
             return 10;
         }
         """, 10)]
-    public void Evaluator_Evaluates(string expression, object expectedValue)
+    public async Task Evaluator_Evaluates(string expression, object expectedValue)
     {
-        AssertValue(expression, expectedValue, isScript: true);
+        await AssertValueWithTimeout(expression, expectedValue, isScript: true);
     }
     
     [Fact]
-    public void EvaluatorEvaluatesWithProgramDeclaration()
+    public async Task EvaluatorEvaluatesWithProgramDeclaration()
     {
-        AssertValue($$"""
+        await AssertValueWithTimeout($$"""
             class Program
             {
                 function main() 
@@ -234,9 +234,9 @@ public class EvaluatorTests
     }
     
     [Fact]
-    public void EvaluatorEvaluatesWithFieldsDeclaration()
+    public async Task EvaluatorEvaluatesWithFieldsDeclaration()
     {
-        AssertValue($$"""
+        await AssertValueWithTimeout($$"""
             class Program
             {
                 Fieldo : int;
@@ -269,10 +269,15 @@ public class EvaluatorTests
         evaluation.Diagnostics.ToList().Should().BeEmpty();
         evaluation.Result.Should().Be(expectedValue);
     }
+    static async Task AssertValueWithTimeout(string expression, object expectedValue, bool isScript)
+    {
+        var action = ()=> AssertValue(expression, expectedValue, isScript);
+        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
+    }
 
     
     [Fact]
-    public void Evaluator_TypeClause_Reports_NoImplicitConversion()
+    public async Task Evaluator_TypeClause_Reports_NoImplicitConversion()
     {
         var text = 
             $$"""
@@ -283,10 +288,10 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     [Fact]
-    public void Evaluator_Report_InvalidStatements()
+    public async Task Evaluator_Report_InvalidStatements()
     {
         var text = 
             $$"""
@@ -302,11 +307,11 @@ public class EvaluatorTests
             $"Only assignment, and call expressions can be used as a statement.",
             $"Only assignment, and call expressions can be used as a statement.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_IfStatement_Reports_CannotConvert()
+    public async Task Evaluator_IfStatement_Reports_CannotConvert()
     {
         var text = 
             $$"""
@@ -321,11 +326,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_WhileStatement_Reports_CannotConvert()
+    public async Task Evaluator_WhileStatement_Reports_CannotConvert()
     {
         var text = 
             $$"""
@@ -340,11 +345,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_ForStatement_Reports_CannotConvert()
+    public async Task Evaluator_ForStatement_Reports_CannotConvert()
     {
         var text = 
             $$"""
@@ -359,11 +364,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_ForStatement_Reports_Mutation_NoImplicitConversion()
+    public async Task Evaluator_ForStatement_Reports_Mutation_NoImplicitConversion()
     {
         var text = 
             $$"""
@@ -378,11 +383,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
+    public async Task Evaluator_OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
     {
         var text = 
             $$"""
@@ -393,12 +398,12 @@ public class EvaluatorTests
             "error: Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "error: Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
 
 
     [Fact]
-    public void Evaluator_VariableDeclaration_Reports_Redeclaration()
+    public async Task Evaluator_VariableDeclaration_Reports_Redeclaration()
     {
         var text = 
             $$"""
@@ -410,19 +415,19 @@ public class EvaluatorTests
         var diagnostics = new[] {
             "Variable 'a' is already declared.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_Reports_NoError_For_Inserted_Token()
+    public async Task Evaluator_Reports_NoError_For_Inserted_Token()
     {
         var text = "";
         var diagnostics = Array.Empty<string>();
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_ForStatement_Reports_Iterator_Redeclaration()
+    public async Task Evaluator_ForStatement_Reports_Iterator_Redeclaration()
     {
         var text = 
             $$"""
@@ -434,11 +439,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             "Variable 'i' is already declared.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_NameExpression_Reports_UndefinedVariable()
+    public async Task Evaluator_NameExpression_Reports_UndefinedVariable()
     {
         var text = 
             $$"""
@@ -449,11 +454,11 @@ public class EvaluatorTests
         var diagnostics = new[] {
             "'b' is undefined.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_AssignedExpression_Reports_CannotAssignVariable()
+    public async Task Evaluator_AssignedExpression_Reports_CannotAssignVariable()
     {
          var text = 
              $$"""
@@ -465,11 +470,11 @@ public class EvaluatorTests
          var diagnostics = new[] {
             "'a' is readonly and cannot be assigned to.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_TypeClause_Reports_UndefinedType()
+    public async Task Evaluator_TypeClause_Reports_UndefinedType()
     {
         var text = 
             $$"""
@@ -480,11 +485,12 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Type 'blab' is undefined.",
         };
-        AssertDiagnostics(text, diagnostics);
+        
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
     
     [Fact]
-    public void Evaluator_AssignedExpression_Reports_CannotConvertVariable()
+    public async Task Evaluator_AssignedExpression_Reports_CannotConvertVariable()
     {
         var text = 
             $$"""
@@ -496,7 +502,7 @@ public class EvaluatorTests
         var diagnostics = new[] {
             $"Cannot convert '{TypeSymbol.Bool}' to '{TypeSymbol.Int}'.",
         };
-        AssertDiagnostics(text, diagnostics);
+        await AssertDiagnosticsWithTimeout(text, diagnostics);
     }
 
     static void AssertDiagnostics(string text, string[] diagnosticsText)
@@ -524,5 +530,10 @@ public class EvaluatorTests
             var actualSpan = diagnostics[i].TextLocation.Span;
             actualSpan.Should().BeOfType<TextSpan>().And.Be(expectedSpan, "Diagnostic spans do not match");
         }
+    }
+    static async Task AssertDiagnosticsWithTimeout(string text, string[] diagnosticsText)
+    {
+        var action = new Action(() => AssertDiagnostics(text, diagnosticsText));
+        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
     }
 }

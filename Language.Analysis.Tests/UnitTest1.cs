@@ -17,11 +17,17 @@ public class UnitTest1
     }
     
     [Fact]
-    public void Evaluate()
+    public async Task Evaluate()
     {
-        _output.WriteLine("Result: " + Build($$"""
-            return; 
-            """));
+        Action action = () =>
+        {
+            _output.WriteLine("Result: " + Build(
+                                            $$""" 
+                                                return; 
+                                            """));
+        };
+        
+        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
     }
 
     object Build(string input)

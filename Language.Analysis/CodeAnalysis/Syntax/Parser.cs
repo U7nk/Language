@@ -18,7 +18,7 @@ public class Parser
     public Parser(SyntaxTree syntaxTree)
     {
         var lexer = new Lexer(syntaxTree);
-        SyntaxToken token;
+        SyntaxToken token = null!;
         var tokens = new List<SyntaxToken>();
         do
         {

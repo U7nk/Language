@@ -31,6 +31,7 @@ pipeline {
         stage('Build') {
 			steps{
 				script{
+					cleanWs();
 					try{
 						setBuildStatus("Build running", "PENDING");
 						sh 'dotnet build'
