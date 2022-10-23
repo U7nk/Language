@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis;
 
@@ -114,37 +115,61 @@ internal class Evaluator
                 EvaluateUnaryExpression((BoundUnaryExpression)node),
             BoundNodeKind.BinaryExpression =>
                 EvaluateBinaryExpression((BoundBinaryExpression)node),
-            BoundNodeKind.MethodCallExpression =>
-                EvaluateCallExpression((BoundMethodCallExpression)node),
             BoundNodeKind.ConversionExpression =>
                 EvaluateConversionExpression((BoundConversionExpression)node),
             BoundNodeKind.ThisExpression =>
                 EvaluateThisExpression((BoundThisExpression)node),
             BoundNodeKind.ObjectCreationExpression =>
                 EvaluateObjectCreationExpression((BoundObjectCreationExpression)node),
-            BoundNodeKind.FieldExpression =>
-                EvaluateFieldExpression((BoundFieldExpression)node),
-            BoundNodeKind.FieldAssignmentExpression =>
-                EvaluateFieldAssignmentExpression((BoundFieldAssignmentExpression)node),
-            _ =>
+            BoundNodeKind.MemberAccessExpression =>
+                EvaluateMemberAccessExpression((BoundMemberAccessExpression)node),
+            BoundNodeKind.MemberAssignmentExpression =>
+                EvaluateMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
+            _ => /* default */
                 throw new($"Unexpected node  {node.Kind}")
         };
     }
 
-    object EvaluateFieldAssignmentExpression(BoundFieldAssignmentExpression node)
+    object EvaluateMemberAssignmentExpression(BoundMemberAssignmentExpression node)
     {
-        var instance = (Dictionary<string, object>?)EvaluateExpression(node.ObjectAccess);
-        instance.Unwrap();
-        var value = EvaluateExpression(node.Initializer).Unwrap();
-        instance[node.Field.Name] = value;
-        return value;
+        // should return object.
+        // objects is represented as Dictionary<string, object>
+        var instance = EvaluateExpression(node.MemberAccess.Left)
+            .Unwrap<Dictionary<string, object>>();
+        var value = EvaluateExpression(node.RightValue).Unwrap();
+        
+        var member = node.MemberAccess.Member.Unwrap<BoundFieldAccessExpression>();
+        return instance[member.FieldSymbol.Name] = value;
     }
-
-    object? EvaluateFieldExpression(BoundFieldExpression node)
+    
+    object? EvaluateMemberAccessExpression(BoundMemberAccessExpression node)
     {
-        var thisInstance = GetThisInstance();
-        var fieldInstance = thisInstance[node.Field.Name];
-        return fieldInstance;
+        // should return object.
+        // objects is represented as Dictionary<string, object>
+        var leftValue = EvaluateExpression(node.Left)
+            .Unwrap<Dictionary<string, object>>();
+        if (node.Member is BoundMethodCallExpression methodCall)
+        {
+            var parameters = methodCall.FunctionSymbol.Parameters;
+            _stacks.Push(new Dictionary<VariableSymbol, object?>());
+            var locals = _stacks.Peek();
+            foreach (var i in 0..methodCall.Arguments.Length)
+            {
+                locals.Add(parameters[i], EvaluateExpression(methodCall.Arguments[i]));
+            }
+            Assign(new VariableSymbol("this", node.Left.Type, true), leftValue);
+            var methodBody = node.Left.Type.MethodTable[methodCall.FunctionSymbol].Unwrap();
+            var result = EvaluateStatement(methodBody);
+            _stacks.Pop();
+            return result;
+        }
+        if (node.Member is BoundFieldAccessExpression fieldAccess)
+        {
+            var field = fieldAccess.FieldSymbol;
+            return leftValue[field.Name];
+        }
+        
+        throw new Exception("Unexpected member access");
     }
 
     object EvaluateObjectCreationExpression(BoundObjectCreationExpression node)
@@ -157,7 +182,9 @@ internal class Evaluator
         var instance = new Dictionary<string, object>();
         foreach (var field in typeSymbol.FieldTable)
         {
-            instance.Add(field.Name, EvaluateDefaultValueObjectCreation(field.Type));
+            //                   BUG: we should use Rust like Option<T> instead of null
+            //                        compiler should check that all fields are initialized
+            instance.Add(field.Name, null!);
         }
         
         return instance;
@@ -188,93 +215,8 @@ internal class Evaluator
         
     }
 
-    object? EvaluateCallExpression(BoundMethodCallExpression node)
-    {
-        var nodeArguments = node.Arguments
-            // skip "this" arg
-            .Skip(1)
-            .ToList();
-        var thisArg = node.Arguments[0];
-        var evaluatedArguments = node.Arguments
-            // skip "this" arg
-            .Skip(1)
-            .Select(EvaluateExpression).ToList();
-        var thisEvaluatedArg = EvaluateExpression(node.Arguments[0]);
-        
-        if (Equals(node.FunctionSymbol, BuiltInFunctions.Input))
-        {
-            return Console.ReadLine();
-        }
-
-        if (Equals(node.FunctionSymbol, BuiltInFunctions.Print))
-        {
-            var value = evaluatedArguments[0];
-            Console.WriteLine(value);
-            return null;
-        }
-
-        _stacks.Push(new Dictionary<VariableSymbol, object?>());
-        foreach(var i in 0..nodeArguments.Count)
-        {
-            var parameter = node.FunctionSymbol.Parameters[i];
-            var value = evaluatedArguments[i];
-            Assign(parameter, value);
-        }
-        
-        // add "this" arg
-        Assign(new VariableSymbol("this", thisArg.Type, true), thisEvaluatedArg);
-        
-        var statement = thisArg.Type.MethodTable[node.FunctionSymbol].Unwrap();
-        var result = EvaluateStatement(statement);
-        _stacks.Pop();
-        return result;
-    }
-
-    T NullCheckConvert<T>(object? obj)
-    {
-        if (obj is null)
-            throw new Exception("Null reference exception");
-
-        return (T)obj;
-    }
-
-    object? EvaluateMethodCallBinaryExpression(BoundBinaryExpression b)
-    {
-        var lValue = EvaluateExpression(b.Left);
-        var methodCallExpr = (BoundMethodCallExpression)b.Right; 
-        b.Left.Type.MethodTable.TryGetValue(methodCallExpr.FunctionSymbol, out var method);
-        if (method is null)
-            throw new Exception($"Method {methodCallExpr.FunctionSymbol.Name} not found on type {b.Left.Type.Name}");
-            
-            
-        var arguments = methodCallExpr.Arguments
-            // skip "this" arg
-            .Skip(1)
-            .Select(EvaluateExpression)
-            .ToList();
-        
-        _stacks.Push(new Dictionary<VariableSymbol, object?>());
-        Assign(new VariableSymbol("this", b.Left.Type, true), lValue);
-        
-        foreach(var i in 0..arguments.Count)
-        {
-            var parameter = methodCallExpr.FunctionSymbol.Parameters[i];
-            var value = arguments[i];
-            Assign(parameter, value);
-        }
-        
-        var result = EvaluateStatement(method);
-        _stacks.Pop();
-        return result;
-    }
-    
     object? EvaluateBinaryExpression(BoundBinaryExpression b)
     {
-        if (b.Op.Kind == BoundBinaryOperatorKind.MethodCall)
-        {
-            return EvaluateMethodCallBinaryExpression(b);
-        }
-        
         var left = EvaluateExpression(b.Left);
         var right = EvaluateExpression(b.Right);
         
@@ -282,8 +224,8 @@ internal class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Int))
             {
-                var intRight = NullCheckConvert<int>(right);
-                var intLeft = NullCheckConvert<int>(left);
+                var intRight = right.Unwrap<int>();
+                var intLeft = left.Unwrap<int>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => intLeft + intRight,
@@ -310,8 +252,8 @@ internal class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.String))
             {
-                var stringRight = NullCheckConvert<string>(right);
-                var stringLeft = NullCheckConvert<string>(left);
+                var stringRight = right.Unwrap<string>();
+                var stringLeft = left.Unwrap<string>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => stringLeft + stringRight,
@@ -327,8 +269,8 @@ internal class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Bool))
             {
-                var boolRight = NullCheckConvert<bool>(right);
-                var boolLeft = NullCheckConvert<bool>(left);
+                var boolRight = right.Unwrap<bool>();
+                var boolLeft = left.Unwrap<bool>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Equality => boolLeft == boolRight,
@@ -353,7 +295,7 @@ internal class Evaluator
         var operand = EvaluateExpression(unary.Operand);
         if (Equals(unary.Type, TypeSymbol.Int))
         {
-            var intOperand = NullCheckConvert<int>(operand);
+            var intOperand = operand.Unwrap<int>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.Negation => -intOperand,
@@ -365,7 +307,7 @@ internal class Evaluator
 
         if (Equals(unary.Type, TypeSymbol.Bool))
         {
-            var boolOperand = NullCheckConvert<bool>(operand);
+            var boolOperand = operand.Unwrap<bool>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.LogicalNegation => !boolOperand,
@@ -397,11 +339,5 @@ internal class Evaluator
     { 
         var currentStack = _stacks.Peek();
         currentStack[variableSymbol] = value;
-    }
-
-    Dictionary<string, object> GetThisInstance()
-    {
-        var thisKey = _stacks.Peek().Keys.Single(x => x.Name == "this");
-        return (Dictionary<string, object>)_stacks.Peek()[thisKey].Unwrap();
     }
 }

@@ -3,17 +3,17 @@ using Language.Analysis.CodeAnalysis.Symbols;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
-public class FunctionBinderLookup
+public class FunctionBinderLookup : BaseBinderLookup
 {
     public TypeSymbol CurrentType { get; }
     public FunctionSymbol CurrentFunction { get; }
-    public ImmutableArray<TypeSymbol> AvailableTypes { get; }
-    
 
-    public FunctionBinderLookup(TypeSymbol currentType, ImmutableArray<TypeSymbol> availableTypes, FunctionSymbol currentFunction)
+    public FunctionBinderLookup(
+        TypeSymbol currentType,
+        ImmutableArray<TypeSymbol> availableTypes,
+        FunctionSymbol currentFunction) : base(availableTypes)
     {
         CurrentType = currentType;
-        AvailableTypes = availableTypes;
         CurrentFunction = currentFunction;
     }
 }

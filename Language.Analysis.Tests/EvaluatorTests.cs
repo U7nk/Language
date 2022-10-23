@@ -219,9 +219,9 @@ public class EvaluatorTests
         await AssertValueWithTimeout($$"""
             class Program
             {
-                function main() 
+                function main()
                 {
-                    return this.ten();
+                    this.ten();
                 }
                 
                 function ten() : int
@@ -256,8 +256,131 @@ public class EvaluatorTests
             """,
             expectedValue: 10, isScript: false);
     }
+    
+    [Fact]
+    public async Task EvaluatorEvaluatesReturnThis()
+    {
+        await AssertValueWithTimeout($$"""
+            class Program
+            {
+                Fieldo : int;
+                
+                function main() 
+                {
+                    this.GetProgram();
+                }
+                
+                function GetProgram() : Program
+                {
+                    this.Fieldo = 10;
+                    return this;
+                }
+            }
+            """,
+            result =>
+            {
+                var resultObject = Assert.IsType<Dictionary<string, object>>(result);
+                var field = Assert.Single(resultObject); 
+                field.Key.Should().Be("Fieldo");
+                field.Value.Should().Be(10);
+                
+            }, isScript: false);
+    }
+    
+    [Fact]
+    public async Task EvaluatorEvaluatesMethodsAccessChain()
+    {
+        await AssertValueWithTimeout($$"""
+            class Program
+            {
+                Fieldo : int;
+                
+                function main() 
+                {
+                    this.GetProgram().GetProgram().GetProgram().GetProgram().GetProgram().GetFieldo();
+                }
+                
+                function GetProgram() : Program
+                {
+                    this.Fieldo = 10;
+                    return this;
+                }
+                
+                function GetFieldo() : int
+                {
+                    return this.Fieldo;
+                }
+            }
+            """,
+            result => result.Should().Be(10),
+            isScript: false);
+    }
+    
+    [Fact]
+    public async Task EvaluatorEvaluatesMethodsFieldsAccessChain()
+    {
+        await AssertValueWithTimeout($$"""
+            class Program
+            {
+                Fieldo : int;
+                ProgramField : Program;
+                
+                function main() 
+                {
+                    this.ProgramField = this;
+                    this.Fieldo = 10;
+                    this.GetProgram()
+                            .ProgramField
+                            .GetProgram() 
+                            .ProgramField
+                            .ProgramField
+                            .GetProgram()
+                            .ProgramField
+                            .GetFieldo();
+                }
+                
+                function GetProgram() : Program
+                { 
+                    return this;
+                }
+                
+                function GetFieldo() : int
+                {
+                    return this.Fieldo;
+                }
+            }
+            """,
+            result => result.Should().Be(10),
+            isScript: false);
+    }
+    
+    [Fact]
+    public async Task EvaluatorEvaluatesFieldsAssignmentAccessChain()
+    {
+        await AssertValueWithTimeout($$"""
+            class Program
+            {
+                Fieldo : Program;
+                IntField : int;
+                
+                function main() 
+                { 
+                    this.Fieldo = this;
+                    this.Fieldo.Fieldo.Fieldo.IntField = 15;
+                    var a = this.Fieldo.Fieldo.Fieldo.IntField;
+                }
+                
+                function IntField() : int
+                {
+                    return this.IntField;
+                }
+            }
+            """,
+            result => result.Should().Be(15),
+            isScript: false);
+    }
 
-    static void AssertValue(string expression, object expectedValue, bool isScript)
+    static object? EvaluateValue(string expression, bool isScript)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
@@ -267,11 +390,16 @@ public class EvaluatorTests
         var evaluation = compilation.Evaluate(variables);
 
         evaluation.Diagnostics.ToList().Should().BeEmpty();
-        evaluation.Result.Should().Be(expectedValue);
+        return evaluation.Result;
     }
     static async Task AssertValueWithTimeout(string expression, object expectedValue, bool isScript)
     {
-        var action = ()=> AssertValue(expression, expectedValue, isScript);
+        Action action = () => EvaluateValue(expression, isScript).Should().Be(expectedValue);
+        await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
+    }
+    static async Task AssertValueWithTimeout(string expression, Action<object?> resultAssertion, bool isScript)
+    {
+        var action = () => resultAssertion(EvaluateValue(expression, isScript));
         await action.ApplyTimeout(TimeSpan.FromSeconds(180)).Invoke();
     }
 

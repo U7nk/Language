@@ -8,11 +8,13 @@ public class MethodCallExpressionSyntax : ExpressionSyntax
     public SyntaxToken CloseParenthesis { get; }
     public override SyntaxKind Kind => SyntaxKind.MethodCallExpression;
 
-    public MethodCallExpressionSyntax(SyntaxTree syntaxTree,
-        SyntaxToken identifier, SyntaxToken openParenthesis,
-        SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesis) 
-        : base(syntaxTree)
+    public MethodCallExpressionSyntax(SyntaxTree syntaxTree, 
+        SyntaxToken identifier, 
+        SyntaxToken openParenthesis,
+        SeparatedSyntaxList<ExpressionSyntax> arguments,
+        SyntaxToken closeParenthesis) : base(syntaxTree)
     {
+        
         Identifier = identifier;
         OpenParenthesis = openParenthesis;
         Arguments = arguments;

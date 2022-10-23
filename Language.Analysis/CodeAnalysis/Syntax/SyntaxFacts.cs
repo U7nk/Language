@@ -29,9 +29,6 @@ internal static class SyntaxFacts
     {
         switch (syntaxKind)
         {
-            case SyntaxKind.DotToken:
-                return 7;
-            
             case SyntaxKind.StarToken:
             case SyntaxKind.SlashToken:
                 return 5;

@@ -18,26 +18,32 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.ConversionExpression => RewriteConversionExpression((BoundConversionExpression)node),
             BoundNodeKind.ThisExpression => RewriteThisExpression((BoundThisExpression)node),
             BoundNodeKind.ObjectCreationExpression => RewriteObjectCreationExpression((BoundObjectCreationExpression)node),
-            BoundNodeKind.FieldExpression => RewriteFieldExpression((BoundFieldExpression)node),
-            BoundNodeKind.FieldAssignmentExpression => RewriteFieldAssignmentExpression((BoundFieldAssignmentExpression)node),
+            BoundNodeKind.MemberAccessExpression => RewriteMemberAccessExpression((BoundMemberAccessExpression)node),
+            BoundNodeKind.MemberAssignmentExpression => RewriteMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
             BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
     }
 
-    protected virtual BoundExpression RewriteFieldAssignmentExpression(BoundFieldAssignmentExpression node)
+    protected virtual BoundExpression RewriteMemberAssignmentExpression(BoundMemberAssignmentExpression node)
     {
-        var objectAccess = RewriteExpression(node.ObjectAccess);
-        var initializer = RewriteExpression(node.Initializer);
-        if (objectAccess == node.ObjectAccess && initializer == node.Initializer)
+        var member = RewriteMemberAccessExpression(node.MemberAccess)
+            .Unwrap<BoundMemberAccessExpression>();
+        
+        var rightValue = RewriteExpression(node.RightValue);
+        if (member == node.MemberAccess && rightValue == node.RightValue)
             return node;
         
-        return new BoundFieldAssignmentExpression(objectAccess, node.Field, initializer);
+        return new BoundMemberAssignmentExpression(member, rightValue);
     }
 
-    protected virtual BoundExpression RewriteFieldExpression(BoundFieldExpression node)
+    protected virtual BoundExpression RewriteMemberAccessExpression(BoundMemberAccessExpression node)
     {
-        return node;
+        var left = RewriteExpression(node.Left);
+        if (left == node.Left)
+            return node;
+        
+        return new BoundMemberAccessExpression(node.Left, node.Member);
     }
 
     protected virtual BoundExpression RewriteObjectCreationExpression(BoundObjectCreationExpression node)

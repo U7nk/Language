@@ -71,9 +71,10 @@ public class HelloSourceGenerator : ISourceGenerator
                 ctor.Parameters
                     .Select(x => SymbolEqualityComparer.Default.Equals(x.Type, syntaxTreeType) ? "this" : x.Name)
                     .ToList());
-            
+
+            var methodName = child.Name.Substring(0, child.Name.LastIndexOf("Syntax", StringComparison.Ordinal));
             var method = $$$"""
-                    public {{{child.ToDisplayString()}}} Bind{{{child.Name}}}({{{parametersWithoutSyntaxTreeSource}}})
+                    public {{{child.ToDisplayString()}}} New{{{methodName}}}({{{parametersWithoutSyntaxTreeSource}}})
                     {
                        return new {{{child.ToDisplayString()}}}({{{argumentsSource}}});
                     }

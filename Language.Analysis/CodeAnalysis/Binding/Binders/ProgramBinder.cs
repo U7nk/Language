@@ -69,10 +69,10 @@ sealed class ProgramBinder
         
 
         DiagnoseGlobalStatementsUsage();
+        
         var globalStatements = _syntaxTrees
             .Only<GlobalStatementSyntax>()
             .ToList();
-
         DiagnoseMainFunctionAndGlobalStatementsUsage(globalStatements);
 
         var topFunctionsSymbols = _scope.GetDeclaredFunctions()

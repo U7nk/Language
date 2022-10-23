@@ -25,6 +25,7 @@ internal enum BoundNodeKind
     ConversionExpression,
     ThisExpression,
     ObjectCreationExpression,
-    FieldExpression,
-    FieldAssignmentExpression
+    MemberAccessExpression,
+    MemberAssignmentExpression,
+    FieldAccessExpression
 }

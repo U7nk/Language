@@ -71,10 +71,11 @@ public enum SyntaxKind
     AssignmentExpression,
     NameExpression,
     MethodCallExpression,
-    ThisExpression,
     ObjectCreationExpression,
-    FieldAssignmentExpression,
-    
+    MemberAccessExpression,
+    MemberAssignmentExpression,
+    ThisExpression,
+
     // statements
     BlockStatement,
     ExpressionStatement,
@@ -87,5 +88,5 @@ public enum SyntaxKind
     ContinueStatement,
     BreakStatement,
     ReturnStatement,
- 
+
 }

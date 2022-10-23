@@ -72,24 +72,4 @@ internal class BoundBinaryOperator
 
         return null;
     }
-    
-    internal static BoundBinaryOperator? BindMethodCall(TypeSymbol type, FunctionSymbol function)
-    {
-        if (type.MethodTable.ContainsKey(function))
-        {
-            return new BoundBinaryOperator(BoundBinaryOperatorKind.MethodCall, SyntaxKind.DotToken, function.ReturnType);
-        }
-
-        return null;
-    }
-    
-    internal static BoundBinaryOperator? BindFieldAccess(TypeSymbol type, FieldSymbol field)
-    {
-        if (type.FieldTable.Contains(field))
-        {
-            return new BoundBinaryOperator(BoundBinaryOperatorKind.FieldAccess, SyntaxKind.DotToken, field.Type);
-        }
-
-        return null;
-    }
 }

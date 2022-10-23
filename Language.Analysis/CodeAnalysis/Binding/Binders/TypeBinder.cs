@@ -8,11 +8,11 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 sealed class TypeBinder
 {
-    readonly TypeBinderLookup? _lookup;
+    readonly TypeBinderLookup _lookup;
     readonly BoundScope _scope;
     readonly bool _isScript;
 
-    public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup? lookup)
+    public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup lookup)
     {
         _scope = scope;
         _isScript = isScript;
@@ -23,8 +23,7 @@ sealed class TypeBinder
     {
         var diagnostics = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
-        _lookup.Unwrap();
-        
+
         foreach (var (functionSymbol, _) in _lookup.CurrentType.MethodTable)
         {
             typeScope.TryDeclareFunction(functionSymbol);
@@ -34,7 +33,7 @@ sealed class TypeBinder
             typeScope.TryDeclareField(fieldSymbol);
         }
         
-        foreach (var functionSymbol in _lookup.Unwrap().CurrentType.MethodTable.Symbols)
+        foreach (var functionSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
             if (functionSymbol.Declaration is null
                 && (functionSymbol.Name == SyntaxFacts.MainFunctionName || functionSymbol.Name == SyntaxFacts.ScriptMainFunctionName)
@@ -56,6 +55,8 @@ sealed class TypeBinder
             {
                 diagnostics.ReportAllPathsMustReturn(functionSymbol.Declaration.Unwrap().Identifier.Location);
             }
+            
+            functionBinder.Diagnostics.AddRangeTo(diagnostics);
 
             _lookup.CurrentType.MethodTable.Declare(functionSymbol, loweredBody);
         }

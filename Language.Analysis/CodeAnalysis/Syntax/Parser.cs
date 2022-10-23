@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Text;
 
@@ -182,7 +183,7 @@ public class Parser
         var identifier = Match(SyntaxKind.IdentifierToken);
         var typeClause = ParseTypeClause();
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
-        return _syntaxTree.BindFieldDeclarationSyntax(identifier, typeClause, semicolonToken);
+        return _syntaxTree.NewFieldDeclaration(identifier, typeClause, semicolonToken);
     }
     FunctionDeclarationSyntax ParseFunctionDeclaration()
     {
@@ -383,7 +384,7 @@ public class Parser
     {
         var colon = Match(SyntaxKind.ColonToken);
         var type = Match(SyntaxKind.IdentifierToken);
-        return _syntaxTree.BindTypeClauseSyntax(colon, type);
+        return _syntaxTree.NewTypeClause(colon, type);
     }
 
     BlockStatementSyntax ParseBlockStatement()
@@ -414,7 +415,7 @@ public class Parser
     {
         var expression = ParseExpression();
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
-        return _syntaxTree.BindExpressionStatementSyntax(expression, semicolonToken);
+        return _syntaxTree.NewExpressionStatement(expression, semicolonToken);
     }
 
     ExpressionSyntax ParseExpression()
@@ -425,22 +426,59 @@ public class Parser
             return ParseAssignmentExpression();
         }
 
+        if (Current.Kind is SyntaxKind.IdentifierToken or SyntaxKind.ThisKeyword 
+            && Peek(1).Kind is SyntaxKind.DotToken)
+        {
+            var memberAccess = ParseMemberAccessExpression();
+            if (Current.Kind is SyntaxKind.EqualsToken)
+            {
+                var equals = Match(SyntaxKind.EqualsToken);
+                var right = ParseExpression();
+                return _syntaxTree.NewMemberAssignmentExpression(memberAccess, right);
+            }
+
+            return memberAccess;
+        }
+
         if (Current.Kind is SyntaxKind.NewKeyword)
         {
             return ParseObjectCreationExpression();
         }
         
         var binary =  ParseBinaryExpression();
-        if (Current.Kind is SyntaxKind.EqualsToken && binary is BinaryExpressionSyntax b)
-        {
-            var equals = Match(SyntaxKind.EqualsToken);
-            var right = ParseExpression();
-            return _syntaxTree.BindFieldAssignmentExpressionSyntax(
-                b.Left, b.Right.As<NameExpressionSyntax>().IdentifierToken,
-                equals, right);
-        }
 
         return binary;
+    }
+
+    MemberAccessExpressionSyntax ParseMemberAccessExpression()
+    {
+        MemberAccessExpressionSyntax? memberAccess = null;
+        var left = ParsePrimaryExpression();
+        while (Current.Kind is SyntaxKind.DotToken)
+        {
+            var dot = Match(SyntaxKind.DotToken);
+            var name = Match(SyntaxKind.IdentifierToken);
+            ExpressionSyntax right;
+            if (Current.Kind is SyntaxKind.OpenParenthesisToken)
+            {
+                var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
+                var arguments = ParseArguments();
+                var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
+                right = new MethodCallExpressionSyntax(_syntaxTree, name, openParenthesis, arguments, closeParenthesis);
+            }
+            else
+            {
+                right = new NameExpressionSyntax(_syntaxTree, name);
+            }
+            
+            memberAccess = _syntaxTree.NewMemberAccessExpression(left, dot, right);
+            left = memberAccess;
+        }
+        Debug.Assert(memberAccess != null,
+            "Member access should not be null. " +
+            "Because this method should only called when we know there is a member access");
+        
+        return memberAccess;
     }
 
     ObjectCreationExpressionSyntax ParseObjectCreationExpression()
@@ -450,12 +488,12 @@ public class Parser
         var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
         var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
         
-        return _syntaxTree.BindObjectCreationExpressionSyntax(
+        return _syntaxTree.NewObjectCreationExpression(
             newKeyword, identifier,
             openParenthesis, closeParenthesis);
     }
 
-    ExpressionSyntax ParseAssignmentExpression()
+    AssignmentExpressionSyntax ParseAssignmentExpression()
     {
         // a + b + 5
         // is left associative
@@ -466,7 +504,7 @@ public class Parser
         //  a   b
         //
         // a = b = 5
-        // is right associative
+        // assignment is right associative
         //      =
         //     / \
         //    a   =
@@ -476,7 +514,7 @@ public class Parser
         var identifier = Match(SyntaxKind.IdentifierToken);
         var equalsToken = Match(SyntaxKind.EqualsToken);
         var right = ParseExpression();
-        return new AssignmentExpressionSyntax(_syntaxTree, identifier, equalsToken, right);
+        return _syntaxTree.NewAssignmentExpression(identifier, equalsToken, right);
     }
 
     ExpressionSyntax ParsePrimaryExpression()
@@ -492,7 +530,7 @@ public class Parser
             SyntaxKind.StringToken =>
                 ParseStringLiteralExpression(),
             _ /*default*/ =>
-                ParseNameOrCallExpression()
+                ParseNameOrThisExpression()
         };
     }
 
@@ -502,31 +540,13 @@ public class Parser
         return new LiteralExpressionSyntax(_syntaxTree,token);
     }
 
-    ExpressionSyntax ParseNameOrCallExpression()
+    ExpressionSyntax ParseNameOrThisExpression()
     {
-        if (Current.Kind == SyntaxKind.IdentifierToken
-            && Peek(1).Kind == SyntaxKind.OpenParenthesisToken)
-        {
-            return ParseCallExpression();
-        }
-
         if (Current.Kind is SyntaxKind.ThisKeyword)
-        {
-            return ParseThisExpression();
-        }
-        
-        return ParseNameExpression();
-    }
+            return new ThisExpressionSyntax(_syntaxTree, Match(SyntaxKind.ThisKeyword));
 
-    ThisExpressionSyntax ParseThisExpression() => new(_syntaxTree, Match(SyntaxKind.ThisKeyword));
-
-    ExpressionSyntax ParseCallExpression()
-    {
-        var identifier = Match(SyntaxKind.IdentifierToken);
-        var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
-        var arguments = ParseArguments();
-        var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
-        return new MethodCallExpressionSyntax(_syntaxTree, identifier, openParenthesis, arguments, closeParenthesis);
+        var token = Match(SyntaxKind.IdentifierToken);
+        return new NameExpressionSyntax(_syntaxTree, token);
     }
 
     SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
@@ -568,10 +588,5 @@ public class Parser
         var token = Match(isTrue ? SyntaxKind.TrueKeyword : SyntaxKind.FalseKeyword);
         return new LiteralExpressionSyntax(_syntaxTree, token, isTrue);
     }
-
-    ExpressionSyntax ParseNameExpression()
-    {
-        var token = Match(SyntaxKind.IdentifierToken);
-        return new NameExpressionSyntax(_syntaxTree, token);
-    }
+    
 }

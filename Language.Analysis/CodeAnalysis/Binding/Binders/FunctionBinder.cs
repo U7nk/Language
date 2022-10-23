@@ -15,14 +15,13 @@ sealed class FunctionBinder
     BoundScope _scope;
     readonly DiagnosticBag _diagnostics = new();
     readonly bool _isScript;
-    readonly SingleInitialized<FunctionSymbol> _function = new();
-    readonly FunctionBinderLookup? _lookup;
+    readonly FunctionBinderLookup _lookup;
     
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
-    public FunctionBinder(BoundScope scope, bool isScript, FunctionBinderLookup? lookup)
+    public FunctionBinder(BoundScope scope, bool isScript, FunctionBinderLookup lookup)
     {
         _scope = scope;
         _isScript = isScript;
@@ -44,6 +43,8 @@ sealed class FunctionBinder
                 var isAllowedExpression = es.Expression.Kind
                     is BoundNodeKind.AssignmentExpression
                     or BoundNodeKind.MethodCallExpression
+                    or BoundNodeKind.MemberAccessExpression
+                    or BoundNodeKind.MemberAssignmentExpression
                     or BoundNodeKind.ErrorExpression;
                 if (!isAllowedExpression)
                 {
@@ -80,41 +81,38 @@ sealed class FunctionBinder
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
     }
-
+    
     BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
     {
         var expression = syntax.Expression is null
             ? null
             : BindExpression(syntax.Expression);
 
-        if (!_function.IsInitialized)
-            _diagnostics.ReportInvalidReturn(syntax.ReturnKeyword.Location);
+
+        if (Equals(_lookup.CurrentFunction.ReturnType, TypeSymbol.Void))
+        {
+            if (expression is not null)
+                _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Location);
+        }
         else
         {
-            if (Equals(_function.Value.ReturnType, TypeSymbol.Void))
+            if (expression is null)
             {
-                if (expression is not null)
-                    _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Location);
+                if (_isScript)
+                    expression = new BoundLiteralExpression("null", TypeSymbol.String);
+                else
+                {
+                    _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location,
+                        _lookup.CurrentFunction.ReturnType);
+                }
             }
             else
             {
-                if (expression is null)
-                {
-                    if (_isScript) 
-                        expression = new BoundLiteralExpression("null", TypeSymbol.String);
-                    else
-                    {
-                        _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location,
-                            _function.Value.ReturnType);
-                    }
-                }
-                else
-                {
-                    Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
-                    expression = BindConversion(expression, _function.Value.ReturnType, syntax.Expression.Location);
-                }
+                Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
+                expression = BindConversion(expression, _lookup.CurrentFunction.ReturnType, syntax.Expression.Location);
             }
         }
+        
 
         return new BoundReturnStatement(expression);
     }
@@ -284,43 +282,70 @@ sealed class FunctionBinder
                 return BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
             case SyntaxKind.NameExpression:
                 return BindNameExpression((NameExpressionSyntax)syntax);
+            case SyntaxKind.ThisExpression:
+                return BindThisExpression((ThisExpressionSyntax)syntax);
             case SyntaxKind.MethodCallExpression:
                 return BindCallExpression((MethodCallExpressionSyntax)syntax);
             case SyntaxKind.AssignmentExpression:
                 return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
-            case SyntaxKind.ThisExpression:
-                return BindThisExpression((ThisExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
                 return BindObjectCreationExpression((ObjectCreationExpressionSyntax)syntax);
-            case SyntaxKind.FieldAssignmentExpression:
-                return BindFieldAssignmentExpression((FieldAssignmentExpressionSyntax)syntax);
+            case SyntaxKind.MemberAccessExpression:
+                return BindMemberAccessExpression((MemberAccessExpressionSyntax)syntax);
+            case SyntaxKind.MemberAssignmentExpression:
+                return BindMemberAssignmentExpression((MemberAssignmentExpressionSyntax)syntax);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
     }
 
-    BoundExpression BindFieldAssignmentExpression(FieldAssignmentExpressionSyntax syntax)
+    BoundExpression BindThisExpression(ThisExpressionSyntax syntax) 
+        => new BoundThisExpression(_lookup.CurrentType);
+
+    BoundExpression BindMemberAssignmentExpression(MemberAssignmentExpressionSyntax syntax)
     {
-        _lookup.Unwrap();
-        var objectAccess = BindExpression(syntax.ObjectAccess);
-        var fieldName = syntax.FieldIdentifier.Text;
-        var initializer = BindExpression(syntax.Initializer);
-        
-        var type = _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == objectAccess.Type.Name);
-        if (type is null)
-        {
-            _diagnostics.ReportUndefinedType(syntax.FieldIdentifier.Location, syntax.FieldIdentifier.Text);
+        var member = BindMemberAccessExpression(syntax.MemberAccess);
+        if (member is BoundErrorExpression)
             return new BoundErrorExpression();
-        }
         
-        var field = type.FieldTable.Symbols.SingleOrDefault(x=> x.Name == fieldName);
-        if (field is null)
-        {
-            _diagnostics.ReportUndefinedField(syntax.FieldIdentifier.Location, fieldName);
-            return new BoundErrorExpression();
-        }
-        return new BoundFieldAssignmentExpression(objectAccess, field, initializer);
+        var rightValue = BindExpression(syntax.Initializer, member.Type);
+        return new BoundMemberAssignmentExpression((BoundMemberAccessExpression)member, rightValue);
     }
+
+    BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax)
+    {
+        var left = BindExpression(syntax.Left);
+        if (syntax.Right.Kind is SyntaxKind.MethodCallExpression)
+        {
+            var methodCall = (MethodCallExpressionSyntax)syntax.Right;
+            var method = left.Type.MethodTable.Keys.SingleOrDefault(x=> x.Name == methodCall.Identifier.Text);
+            if (method is null)
+            {
+                _diagnostics.ReportUndefinedMethod(methodCall.Identifier, left.Type);
+                return new BoundErrorExpression();
+            }
+            var arguments = methodCall.Arguments.Select(x=> BindExpression(x))
+                .ToImmutableArray();
+            
+            var boundMethodCall = new BoundMethodCallExpression(method, arguments);
+            return new BoundMemberAccessExpression(left, boundMethodCall);
+        }
+        if (syntax.Right.Kind is SyntaxKind.NameExpression)
+        {
+            var nameExpression = (NameExpressionSyntax)syntax.Right;
+            var field = left.Type.FieldTable.SingleOrDefault(x => x.Name == nameExpression.IdentifierToken.Text);
+            if (field is null)
+            {
+                _diagnostics.ReportUndefinedFieldAccess(nameExpression.IdentifierToken, left.Type);
+                return new BoundErrorExpression();
+            }
+            var fieldAccess = new BoundFieldAccessExpression(field);
+            return new BoundMemberAccessExpression(left, fieldAccess);
+        }
+        
+        throw new Exception($"Unexpected syntax {syntax.Right.Kind}");
+    }
+
 
     BoundExpression BindObjectCreationExpression(ObjectCreationExpressionSyntax syntax)
     {
@@ -344,9 +369,6 @@ sealed class FunctionBinder
 
         return new BoundObjectCreationExpression(matchingTypes.Single());
     }
-
-    BoundExpression BindThisExpression(ThisExpressionSyntax syntax) 
-        => new BoundThisExpression(_lookup.Unwrap().CurrentType);
 
     BoundExpression BindCallExpression(MethodCallExpressionSyntax syntax)
     {
@@ -439,6 +461,7 @@ sealed class FunctionBinder
 
     BoundExpression BindNameExpression(NameExpressionSyntax syntax)
     {
+        
         var name = syntax.IdentifierToken.Text;
 
         if (name == string.Empty)
@@ -451,10 +474,6 @@ sealed class FunctionBinder
         if (_scope.TryLookupVariable(name, out var variable))
         {
             return new BoundVariableExpression(variable);
-        }
-        if (_scope.TryLookupField(name, out var field))
-        {
-            return new BoundFieldExpression(field);
         }
         
         _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
@@ -488,63 +507,20 @@ sealed class FunctionBinder
     BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax)
     {
         var left = BindExpression(syntax.Left);
-        
-        // bug: 
-        // if method call is binary expression, then we can have void method call
-        // and BindExpression(right) will return BoundErrorExpression
-        // because in other binary expressions like +, -, *, /  void is not allowed for operands
-        // so condition var leftCanBeVoid = syntax.Right is MethodCallExpressionSyntax is not correct
-        // we should create additional syntax node for method call
-        // so method call expression is not appear here
-        var leftCanBeVoid = syntax.Right is MethodCallExpressionSyntax;
-        var right = BindExpression(syntax.Right, leftCanBeVoid);
+        var right = BindExpression(syntax.Right);
 
         if (Equals(left.Type, TypeSymbol.Error) || Equals(right.Type, TypeSymbol.Error))
             return new BoundErrorExpression();
-
-        if (syntax.OperatorToken.Kind == SyntaxKind.DotToken)
-        {
-            if (syntax.Right.Kind is SyntaxKind.MethodCallExpression)
-            {
-                var methodCallOperator =
-                    BoundBinaryOperator.BindMethodCall(left.Type, ((BoundMethodCallExpression)right).FunctionSymbol);
-                if (methodCallOperator is null)
-                {
-                    _diagnostics.ReportUndefinedMethodCall(syntax.Right.Location,
-                        ((BoundMethodCallExpression)right).FunctionSymbol.Name, left.Type);
-                    return new BoundErrorExpression();
-                }
-
-                return new BoundBinaryExpression(left, methodCallOperator, right);
-            }
-
-            if (syntax.Right.Kind is SyntaxKind.NameExpression)
-            {
-                var fieldAccessOperator = BoundBinaryOperator.BindFieldAccess(left.Type, ((BoundFieldExpression)right).Field);
-                if (fieldAccessOperator is null)
-                {
-                    _diagnostics.ReportUndefinedFieldAccess(syntax.Right.Location,
-                        ((BoundFieldExpression)right).Field.Name, left.Type);
-                    return new BoundErrorExpression();
-                }
-
-                return new BoundBinaryExpression(left, fieldAccessOperator, right);
-            }
-        }
-        else
-        {
-            var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
-            if (binaryOperator is null)
-            {
-                _diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
-                    left.Type, right.Type);
-                return new BoundErrorExpression();
-            }
-
-            return new BoundBinaryExpression(left, binaryOperator, right);
-        }
         
-        throw new Exception($"Unexpected binary expression {syntax}");
+        var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
+        if (binaryOperator is null)
+        {
+            _diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
+                left.Type, right.Type);
+            return new BoundErrorExpression();
+        }
+
+        return new BoundBinaryExpression(left, binaryOperator, right);
     }
 
     BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)

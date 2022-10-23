@@ -230,15 +230,21 @@ public class DiagnosticBag : List<Diagnostic>
         Report(fieldLocation, message);
     }
 
-    public void ReportUndefinedFieldAccess(TextLocation fieldLocation, string fieldName, TypeSymbol typeWhereFieldLocated)
+    public void ReportUndefinedFieldAccess(SyntaxToken fieldIdentifier, TypeSymbol type)
     {
-        var message = $"Field '{fieldName}' is undefined for type '{typeWhereFieldLocated}'.";
-        Report(fieldLocation, message);
+        var message = $"Field '{fieldIdentifier.Text}' is undefined for type '{type}'.";
+        Report(fieldIdentifier.Location, message);
     }
 
-    public void ReportUndefinedField(TextLocation fieldIdentifierLocation, string fieldName)
+    public void ReportUndefinedMember(SyntaxToken memberIdentifierLocation, TypeSymbol type)
     {
-        var message = $"Field '{fieldName}' is undefined.";
-        Report(fieldIdentifierLocation, message);
+        var message = $"Member '{memberIdentifierLocation.Text}' is undefined on type {type}.";
+        Report(memberIdentifierLocation.Location, message);
+    }
+
+    public void ReportUndefinedMethod(SyntaxToken methodCallIdentifier, TypeSymbol leftType)
+    {
+        var message = $"Method '{methodCallIdentifier.Text}' is undefined on type {leftType}.";
+        Report(methodCallIdentifier.Location, message);
     }
 }

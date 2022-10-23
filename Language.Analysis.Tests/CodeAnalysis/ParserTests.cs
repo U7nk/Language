@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Language;
+using Language.Analysis;
 using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace TestProject1.CodeAnalysis;
@@ -14,8 +15,8 @@ public class ParserTests
         {
             var op1Precedence = op1.GetBinaryOperatorPrecedence();
             var op2Precedence = op2.GetBinaryOperatorPrecedence();
-            var op1Text = SyntaxFacts.GetText(op1);
-            var op2Text = SyntaxFacts.GetText(op2);
+            var op1Text = SyntaxFacts.GetText(op1).Unwrap();
+            var op2Text = SyntaxFacts.GetText(op2).Unwrap();
             var text = $"a {op1Text} b {op2Text} c";
             var expression = ParseExpression(text);
 
@@ -75,8 +76,8 @@ public class ParserTests
         {
             var unaryPrecedence = unaryKind.GetUnaryOperatorPrecedence();
             var binaryPrecedence = binaryKind.GetBinaryOperatorPrecedence();
-            var unaryText = SyntaxFacts.GetText(unaryKind);
-            var binaryText = SyntaxFacts.GetText(binaryKind);
+            var unaryText = SyntaxFacts.GetText(unaryKind).Unwrap();
+            var binaryText = SyntaxFacts.GetText(binaryKind).Unwrap();
             var text = $"{unaryText} a {binaryText} b";
             var expression = ParseExpression(text);
 

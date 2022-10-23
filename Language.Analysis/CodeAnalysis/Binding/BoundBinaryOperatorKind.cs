@@ -17,7 +17,4 @@ internal enum BoundBinaryOperatorKind
     BitwiseAnd,
     BitwiseOr,
     BitwiseXor,
-    
-    MethodCall,
-    FieldAccess,
 }
