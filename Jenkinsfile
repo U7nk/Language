@@ -60,10 +60,16 @@ pipeline {
     }
 	post {
 		always{
-            xunit (
-                tools: [ xUnitDotNet(pattern: '**/test_result.xml') ]
-            )
-			cleanWs();
+			script{
+				try{
+					xunit (
+						tools: [ xUnitDotNet(pattern: '**/test_result.xml') ]
+					)
+				}
+				catch(exc){
+				}
+				cleanWs();
+			}
         }
 	}
 }
