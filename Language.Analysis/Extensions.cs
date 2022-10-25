@@ -135,13 +135,14 @@ internal static class Extensions
         }
     }
 
-    internal static T[] Slice<T>(this T[] collection, int fromIncluding, int toExcluding = -1)
+    internal static T[] Slice<T>(this T[] collection, int fromIncluding, int? toExcluding = null)
     {
-        if (toExcluding == -1)
+        if (toExcluding is null)
         {
             toExcluding = collection.Length;
         }
-        var res = new T[toExcluding - fromIncluding];
+        
+        var res = new T[toExcluding.Value - fromIncluding];
         var counter = 0;
         foreach(var i in 0..collection.Length)
         {
@@ -154,13 +155,13 @@ internal static class Extensions
         return res;
     }
 
-    internal static IList<T> Slice<T>(this IList<T> collection, int fromIncluding, int toExcluding = -1)
+    internal static IList<T> Slice<T>(this IList<T> collection, int fromIncluding, int? toExcluding = null)
     {
-        if (toExcluding == -1)
+        if (toExcluding is null)
         {
             toExcluding = collection.Count;
         }
-        var res = new List<T>(toExcluding - fromIncluding);
+        var res = new List<T>(toExcluding.Value - fromIncluding);
         for (int i = 0; i < collection.Count; i++)
         {
             if (i < fromIncluding || i >= toExcluding)
@@ -173,33 +174,29 @@ internal static class Extensions
     }
     
 
-    public static bool CanBeConvertedTo<T>(this Type givenType, Type type) => 
+    public static bool CanBeConvertedTo(this Type givenType, Type type) => 
         type.IsAssignableFrom(givenType);
-
+    public static bool CanBeConvertedTo<T>(this Type givenType) => 
+        typeof(T).IsAssignableFrom(givenType);
+    
     public static bool InRange(this int value, int left, int right)
     {
         if (left <= value && right >= value)
             return true;
         return false;
-    } 
-    public static bool CanBeConvertedTo<T>(this Type givenType) => 
-        typeof(T).IsAssignableFrom(givenType);
-    
-
-    public static ConditionalAdd<T> If<T>(this T obj, bool condition)
-    {
-        return new ConditionalAdd<T>(obj);
     }
+
+    public static ConditionalAdd<T> If<T>(this T obj, bool condition) => new ConditionalAdd<T>(obj);
 }
 internal class ConditionalAdd<T>
 {
-    public bool IfState { get; set; }
-    public bool Condition { get; set; }
-    public List<Action> TrueActions { get; }
-    public T Obj;
+    bool IfState { get; set; }
+    bool Condition { get; set; }
+    List<Action> TrueActions { get; }
+    readonly T _obj;
     public ConditionalAdd(T obj)
     {
-        this.Obj = obj;
+        this._obj = obj;
         TrueActions = new List<Action>();
     }
     public ConditionalAdd<T> If(bool condition)
@@ -214,7 +211,7 @@ internal class ConditionalAdd<T>
         {
             if (Condition == true)
             {
-                list.Add(Obj);
+                list.Add(_obj);
                 return this;
             }
         }
@@ -222,7 +219,7 @@ internal class ConditionalAdd<T>
         {
             if (Condition == false)
             {
-                list.Add(Obj);
+                list.Add(_obj);
                 return this;
             }
         }
