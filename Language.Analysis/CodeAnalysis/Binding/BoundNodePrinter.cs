@@ -9,16 +9,16 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 static class BoundNodePrinter
 {
-    public static void WriteTo(this FunctionSymbol functionSymbol, TextWriter writer)
+    public static void WriteTo(this MethodSymbol methodSymbol, TextWriter writer)
     {
         writer.Write(SyntaxFacts.GetText(SyntaxKind.FunctionKeyword));
         writer.Write(" ");
-        writer.Write(functionSymbol.Name);
+        writer.Write(methodSymbol.Name);
         writer.Write("(");
-        foreach (var parameter in functionSymbol.Parameters)
+        foreach (var parameter in methodSymbol.Parameters)
         {
             writer.Write(parameter.Name);
-            if (!Equals(parameter, functionSymbol.Parameters.Last()))
+            if (!Equals(parameter, methodSymbol.Parameters.Last()))
             {
                 writer.Write(", ");
             }
@@ -27,7 +27,7 @@ static class BoundNodePrinter
         writer.Write(" ");
         writer.Write(SyntaxFacts.GetText(SyntaxKind.ColonToken));
         writer.Write(" ");
-        writer.Write(functionSymbol.ReturnType);
+        writer.Write(methodSymbol.ReturnType);
     }
     
     public static void WriteTo(this TypeSymbol functionSymbol, TextWriter writer)
@@ -220,7 +220,7 @@ static class BoundNodePrinter
 
     static void WriteCallExpression(BoundMethodCallExpression node, IndentedTextWriter writer)
     {
-        writer.Write(node.FunctionSymbol.Name);
+        writer.Write(node.MethodSymbol.Name);
         writer.Write("(");
         var isFirst = true;
         foreach (var arg in node.Arguments)

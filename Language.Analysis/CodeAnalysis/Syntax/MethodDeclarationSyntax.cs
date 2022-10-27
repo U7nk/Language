@@ -2,9 +2,9 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 
 
 
-public class FunctionDeclarationSyntax : SyntaxNode, ITopMemberSyntax, IClassMemberSyntax
+public class MethodDeclarationSyntax : SyntaxNode, ITopMemberSyntax, IClassMemberSyntax
 {
-    public FunctionDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken functionKeyword, SyntaxToken identifier,
+    public MethodDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken functionKeyword, SyntaxToken identifier,
         SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters,
         SyntaxToken closeParenthesisToken, TypeClauseSyntax? returnType,
         BlockStatementSyntax body) 
@@ -27,5 +27,5 @@ public class FunctionDeclarationSyntax : SyntaxNode, ITopMemberSyntax, IClassMem
     public TypeClauseSyntax? ReturnType { get; }
     public BlockStatementSyntax Body { get; }
     
-    public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
+    public override SyntaxKind Kind => SyntaxKind.MethodDeclaration;
 }

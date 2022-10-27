@@ -5,7 +5,7 @@ namespace TestProject1.DiagnosticsTests;
 public class SymbolScopes
 {
     [Fact]
-    public void FunctionCannotHaveNameOfType()
+    public void MethodCannotHaveNameOfType()
     {
         var text =
             $$"""
@@ -48,7 +48,7 @@ public class SymbolScopes
         const string text = $$"""
             class Program
             {
-                function Foo(a : int, [a] : int) {
+                function Foo([a] : int, [a] : int) {
                     
                 }
             }
@@ -56,6 +56,7 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
@@ -107,7 +108,7 @@ public class SymbolScopes
     {
         var text =
             $$"""
-            var a : int; 
+            var [a] : int; 
             {
                 var [a] : int;
             } 
@@ -115,6 +116,7 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
+            DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
@@ -126,7 +128,7 @@ public class SymbolScopes
     
     
     [Fact]
-    public void FunctionCannotHaveSameNameAsType()
+    public void MethodCannotHaveSameNameAsType()
     {
         var text =
             $$"""
@@ -146,7 +148,7 @@ public class SymbolScopes
     }
 
     [Fact]
-    public void FunctionCannotHaveNameOfField()
+    public void MethodCannotHaveNameOfField()
     {
         var text =
             $$"""
@@ -167,7 +169,7 @@ public class SymbolScopes
     }
     
     [Fact]
-    public void FunctionCannotHaveNameOfFunction()
+    public void MethodCannotHaveNameOfFunction()
     {
         var text =
             $$"""
@@ -209,7 +211,7 @@ public class SymbolScopes
     }
     
     [Fact]
-    public void FieldCannotHaveNameOfFunction()
+    public void FieldCannotHaveNameOfMethod()
     {
         var text =
             $$"""
@@ -249,7 +251,7 @@ public class SymbolScopes
     }
     
     [Fact]
-    public void VariableCanShadowFunction()
+    public void VariableCanShadowMethod()
     {
         var text =
             $$"""

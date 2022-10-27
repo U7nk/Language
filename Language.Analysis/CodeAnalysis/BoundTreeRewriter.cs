@@ -80,7 +80,7 @@ internal abstract class BoundTreeRewriter
         if (!changed)
             return node;
         
-        return new BoundMethodCallExpression(node.FunctionSymbol, statements.ToImmutable());
+        return new BoundMethodCallExpression(node.MethodSymbol, statements.ToImmutable());
     }
 
     protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node)

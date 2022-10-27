@@ -3,16 +3,16 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
-public class FunctionSymbol : MemberSymbol
+public class MethodSymbol : MemberSymbol
 {
     public ImmutableArray<ParameterSymbol> Parameters { get; }
-    public TypeSymbol ReturnType => this.Type;
-    public FunctionDeclarationSyntax? Declaration { get; }
-    public override SymbolKind Kind => SymbolKind.Function;
+    public TypeSymbol ReturnType => Type;
+    public MethodDeclarationSyntax? Declaration { get; }
+    public override SymbolKind Kind => SymbolKind.Method;
 
-    public FunctionSymbol(string name,
+    public MethodSymbol(string name,
         ImmutableArray<ParameterSymbol> parameters,
-        TypeSymbol returnType, FunctionDeclarationSyntax? declaration)
+        TypeSymbol returnType, MethodDeclarationSyntax? declaration)
         : base(name, returnType)
     {
         Parameters = parameters;

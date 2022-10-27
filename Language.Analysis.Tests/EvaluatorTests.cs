@@ -234,7 +234,7 @@ public class EvaluatorTests
     }
     
     [Fact]
-    public void EvaluatorTopLevelStatementFunctionsCanBeCalledWithoutMembers()
+    public void EvaluatorTopLevelStatementMethodsCanBeCalledWithoutMembers()
     {
         AssertValue($$"""
             function ten() : int

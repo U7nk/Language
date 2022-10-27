@@ -26,7 +26,7 @@ sealed class TypeBinder
 
         foreach (var (functionSymbol, _) in _lookup.CurrentType.MethodTable)
         {
-            typeScope.TryDeclareFunction(functionSymbol)
+            typeScope.TryDeclareMethod(functionSymbol)
                 .ThrowIfFalse();
         }
         
@@ -39,7 +39,7 @@ sealed class TypeBinder
         foreach (var functionSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
             if (functionSymbol.Declaration is null
-                && (functionSymbol.Name == SyntaxFacts.MainFunctionName || functionSymbol.Name == SyntaxFacts.ScriptMainFunctionName)
+                && (functionSymbol.Name == SyntaxFacts.MainMethodName || functionSymbol.Name == SyntaxFacts.ScriptMainMethodName)
                 && _lookup.CurrentType.Name == SyntaxFacts.StartTypeName)
             {
                 // function generated from global statements
@@ -47,11 +47,11 @@ sealed class TypeBinder
                 continue;
             }
             
-            var functionBinder = new FunctionBinder(typeScope, _isScript, new FunctionBinderLookup(
+            var functionBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
                 _lookup.CurrentType,
                 _lookup.AvailableTypes,
                 functionSymbol));
-            var body = functionBinder.BindFunctionBody(functionSymbol);
+            var body = functionBinder.BindMethodBody(functionSymbol);
             var loweredBody = Lowerer.Lower(body);
             if (!Equals(functionSymbol.ReturnType, TypeSymbol.Void)
                 && !ControlFlowGraph.AllPathsReturn(loweredBody))

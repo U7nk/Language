@@ -137,7 +137,7 @@ public class Parser
             return ParseClassDeclaration();
         
         if (Current.Kind == SyntaxKind.FunctionKeyword)
-            return ParseFunctionDeclaration();
+            return ParseMethodDeclaration();
 
         return ParseGlobalStatement();
     }
@@ -152,7 +152,7 @@ public class Parser
         return new ClassDeclarationSyntax(
                     _syntaxTree, classKeyword,
                     identifier, openBraceToken,
-                    members.OfType<FunctionDeclarationSyntax>().ToImmutableArray(),
+                    members.OfType<MethodDeclarationSyntax>().ToImmutableArray(),
                     members.OfType<FieldDeclarationSyntax>().ToImmutableArray(),
                     closeBraceToken);
     }
@@ -165,7 +165,7 @@ public class Parser
             switch (Current.Kind)
             {
                 case SyntaxKind.FunctionKeyword:
-                    members.Add(ParseFunctionDeclaration());
+                    members.Add(ParseMethodDeclaration());
                     continue;
                 case SyntaxKind.IdentifierToken:
                     members.Add(ParseFieldDeclaration());
@@ -185,7 +185,7 @@ public class Parser
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
         return _syntaxTree.NewFieldDeclaration(identifier, typeClause, semicolonToken);
     }
-    FunctionDeclarationSyntax ParseFunctionDeclaration()
+    MethodDeclarationSyntax ParseMethodDeclaration()
     {
         var functionKeyword = Match(SyntaxKind.FunctionKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
@@ -194,7 +194,7 @@ public class Parser
         var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
         var type = ParseOptionalTypeClause();
         var body = ParseBlockStatement();
-        return new FunctionDeclarationSyntax(
+        return new MethodDeclarationSyntax(
                     _syntaxTree, functionKeyword, identifier, openParenthesisToken,
                     parameters, closeParenthesisToken, type, body);
     }

@@ -26,14 +26,14 @@ sealed class TypeMembersSignaturesBinder
         
         var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
-        foreach (var function in classDeclaration.Functions)
+        foreach (var function in classDeclaration.Methods)
         {
-            var functionBinder = new FunctionSignatureBinder(new BaseBinderLookup(_lookup.AvailableTypes), typeScope);
-            functionBinder.BindFunctionSignature(function)
+            var functionBinder = new MethodSignatureBinder(new BaseBinderLookup(_lookup.AvailableTypes), typeScope);
+            functionBinder.BindMethodSignature(function)
                 .AddRangeTo(diagnostics);
         }
         
-        foreach (var declaredFunction in typeScope.GetDeclaredFunctions())
+        foreach (var declaredFunction in typeScope.GetDeclaredMethods())
         {
             currentType.MethodTable.Add(declaredFunction, null);
         }

@@ -10,30 +10,30 @@ using Language.Analysis.CodeAnalysis.Text;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-sealed class FunctionBinder
+sealed class MethodBinder
 {
     BoundScope _scope;
     readonly DiagnosticBag _diagnostics = new();
     readonly bool _isScript;
-    readonly FunctionBinderLookup _lookup;
+    readonly MethodBinderLookup _lookup;
     
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
-    public FunctionBinder(BoundScope scope, bool isScript, FunctionBinderLookup lookup)
+    public MethodBinder(BoundScope scope, bool isScript, MethodBinderLookup lookup)
     {
         _scope = scope;
         _isScript = isScript;
         _lookup = lookup;
     }
 
-    public BoundBlockStatement BindFunctionBody(FunctionSymbol functionSymbol)
+    public BoundBlockStatement BindMethodBody(MethodSymbol methodSymbol)
     {
         _scope = new(_scope);
-        functionSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
+        methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
         
-        var result = BindBlockStatement(functionSymbol.Declaration.Unwrap().Body);
+        var result = BindBlockStatement(methodSymbol.Declaration.Unwrap().Body);
         
         _scope = _scope.Parent ?? throw new InvalidOperationException();
         
@@ -98,10 +98,10 @@ sealed class FunctionBinder
             : BindExpression(syntax.Expression);
 
 
-        if (Equals(_lookup.CurrentFunction.ReturnType, TypeSymbol.Void))
+        if (Equals(_lookup.CurrentMethod.ReturnType, TypeSymbol.Void))
         {
             if (expression is not null)
-                _diagnostics.ReportReturnStatementIsInvalidForVoidFunction(syntax.Location);
+                _diagnostics.ReportReturnStatementIsInvalidForVoidMethod(syntax.Location);
         }
         else
         {
@@ -111,14 +111,14 @@ sealed class FunctionBinder
                     expression = new BoundLiteralExpression("null", TypeSymbol.String);
                 else
                 {
-                    _diagnostics.ReportReturnStatementIsInvalidForNonVoidFunction(syntax.Location,
-                        _lookup.CurrentFunction.ReturnType);
+                    _diagnostics.ReportReturnStatementIsInvalidForNonVoidMethod(syntax.Location,
+                        _lookup.CurrentMethod.ReturnType);
                 }
             }
             else
             {
                 Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
-                expression = BindConversion(expression, _lookup.CurrentFunction.ReturnType, syntax.Expression.Location);
+                expression = BindConversion(expression, _lookup.CurrentMethod.ReturnType, syntax.Expression.Location);
             }
         }
         
@@ -288,8 +288,6 @@ sealed class FunctionBinder
                 return BindNameExpression((NameExpressionSyntax)syntax);
             case SyntaxKind.ThisExpression:
                 return BindThisExpression((ThisExpressionSyntax)syntax);
-            case SyntaxKind.MethodCallExpression:
-                return BindCallExpression((MethodCallExpressionSyntax)syntax);
             case SyntaxKind.AssignmentExpression:
                 return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
@@ -372,39 +370,6 @@ sealed class FunctionBinder
         }
 
         return new BoundObjectCreationExpression(matchingTypes.Single());
-    }
-
-    BoundExpression BindCallExpression(MethodCallExpressionSyntax syntax)
-    {
-        _lookup.Unwrap();
-        if (syntax.Arguments.Count == 1
-            && _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == syntax.Identifier.Text) is { } type)
-        {
-            return BindConversion(syntax.Arguments[0], type, allowExplicitConversion: true);
-        }
-
-        if (!_scope.TryLookupFunction(syntax.Identifier.Text, out var function))
-        {
-            _diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
-            return new BoundErrorExpression();
-        }
-        
-        if (function.Parameters.Length != syntax.Arguments.Count)
-        {
-            _diagnostics.ReportParameterCountMismatch(
-                syntax.Identifier.Location,
-                syntax.Identifier.Text,
-                function.Parameters.Length,
-                syntax.Arguments.Count);
-            return new BoundErrorExpression();
-        }
-
-        var arguments = syntax.Arguments
-            .Select((x, i) => BindExpression(x, function.Parameters[i].Type))
-            .ToList();
-        
-        arguments.Insert(0, new BoundThisExpression(_lookup.Unwrap().CurrentType));
-        return new BoundMethodCallExpression(function, arguments.ToImmutableArray());
     }
 
     BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicitConversion = false)

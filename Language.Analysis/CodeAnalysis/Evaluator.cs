@@ -24,7 +24,7 @@ internal class Evaluator
 
     public object? Evaluate()
     {
-        var function = _program.MainFunction ?? _program.ScriptMainFunction;
+        var function = _program.MainMethod ?? _program.ScriptMainMethod;
         if (function is null)
             return null;
         
@@ -150,7 +150,7 @@ internal class Evaluator
             .Unwrap<Dictionary<string, object>>();
         if (node.Member is BoundMethodCallExpression methodCall)
         {
-            var parameters = methodCall.FunctionSymbol.Parameters;
+            var parameters = methodCall.MethodSymbol.Parameters;
             _stacks.Push(new Dictionary<VariableSymbol, object?>());
             var locals = _stacks.Peek();
             foreach (var i in 0..methodCall.Arguments.Length)
@@ -158,7 +158,7 @@ internal class Evaluator
                 locals.Add(parameters[i], EvaluateExpression(methodCall.Arguments[i]));
             }
             Assign(new VariableSymbol("this", node.Left.Type, true), leftValue);
-            var methodBody = node.Left.Type.MethodTable[methodCall.FunctionSymbol].Unwrap();
+            var methodBody = node.Left.Type.MethodTable[methodCall.MethodSymbol].Unwrap();
             var result = EvaluateStatement(methodBody);
             _stacks.Pop();
             return result;

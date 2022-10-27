@@ -7,8 +7,8 @@ internal static class SyntaxFacts
 {
 
     public static string StartTypeName => "Program";
-    public static string MainFunctionName => "main";
-    public static string ScriptMainFunctionName => "$main";
+    public static string MainMethodName => "main";
+    public static string ScriptMainMethodName => "$main";
     
     public static int GetUnaryOperatorPrecedence(this SyntaxKind syntaxKind)
     {

@@ -8,12 +8,12 @@ namespace Language.Analysis.CodeAnalysis;
 /// <summary>
 /// Function symbol -> Lowered function body
 /// </summary>
-public class MethodTable : Dictionary<FunctionSymbol, BoundBlockStatement?>
+public class MethodTable : Dictionary<MethodSymbol, BoundBlockStatement?>
 {
-    public IEnumerable<FunctionSymbol> Symbols => Keys;
+    public IEnumerable<MethodSymbol> Symbols => Keys;
     public IEnumerable<BoundBlockStatement?> Bodies => Values;
     
-    public void Declare(FunctionSymbol symbol, BoundBlockStatement? body)
+    public void Declare(MethodSymbol symbol, BoundBlockStatement? body)
     {
         if (ContainsKey(symbol))
         {

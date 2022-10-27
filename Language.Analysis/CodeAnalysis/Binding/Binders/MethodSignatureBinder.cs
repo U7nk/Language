@@ -6,28 +6,28 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-sealed class FunctionSignatureBinder 
+sealed class MethodSignatureBinder 
 {
     readonly DiagnosticBag _diagnostics = new();
     readonly BaseBinderLookup _lookup;
     readonly BoundScope _scope;
 
-    public FunctionSignatureBinder(BaseBinderLookup lookup, BoundScope scope)
+    public MethodSignatureBinder(BaseBinderLookup lookup, BoundScope scope)
     {
         _lookup = lookup;
         _scope = scope;
     }
 
-    public ImmutableArray<Diagnostic> BindFunctionSignature(FunctionDeclarationSyntax function)
+    public ImmutableArray<Diagnostic> BindMethodSignature(MethodDeclarationSyntax method)
     {
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
         var seenParameters = new HashSet<string>();
-        foreach (var parameter in function.Parameters)
+        foreach (var parameter in method.Parameters)
         {
             var parameterName = parameter.Identifier.Text;
             if (!seenParameters.Add(parameterName))
             {
-                _diagnostics.ReportParameterAlreadyDeclared(parameter.Location, parameterName);
+                _diagnostics.ReportParameterAlreadyDeclared(parameter.Identifier.Location, parameterName);
             }
 
             var parameterType = BinderHelp.BindTypeClause(parameter.Type, _diagnostics, _lookup);
@@ -40,13 +40,13 @@ sealed class FunctionSignatureBinder
             parameters.Add(new ParameterSymbol(parameterName, parameterType));
         }
 
-        var returnType = BinderHelp.BindTypeClause(function.ReturnType, _diagnostics, _lookup) ?? TypeSymbol.Void;
+        var returnType = BinderHelp.BindTypeClause(method.ReturnType, _diagnostics, _lookup) ?? TypeSymbol.Void;
 
         var functionSymbol =
-            new FunctionSymbol(function.Identifier.Text, parameters.ToImmutable(), returnType, function);
-        if (!_scope.TryDeclareFunction(functionSymbol))
+            new MethodSymbol(method.Identifier.Text, parameters.ToImmutable(), returnType, method);
+        if (!_scope.TryDeclareMethod(functionSymbol))
         {
-            _diagnostics.ReportFunctionAlreadyDeclared(function.Identifier.Location, function.Identifier.Text);
+            _diagnostics.ReportMethodAlreadyDeclared(method.Identifier.Location, method.Identifier.Text);
         }
 
         return _diagnostics.ToImmutableArray();

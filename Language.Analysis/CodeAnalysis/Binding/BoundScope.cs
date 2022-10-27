@@ -66,54 +66,54 @@ public class BoundScope
             .OfType<VariableSymbol>()
             .ToImmutableArray();
 
-    public bool TryDeclareFunction(FunctionSymbol function)
+    public bool TryDeclareMethod(MethodSymbol method)
     {
-        if (Parent?.TryLookupFunction(function.Name, out _) is true)
+        if (Parent?.TryLookupMethod(method.Name, out _) is true)
             return false;
         
-        if (_symbols.TryGetValue(function.Name, out var sameNamers))
+        if (_symbols.TryGetValue(method.Name, out var sameNamers))
         {
             var functionsAndFieldsAndTypes = sameNamers.Where(
                 x => x.Kind 
-                    is SymbolKind.Function 
+                    is SymbolKind.Method 
                     or SymbolKind.Field 
                     or SymbolKind.Type);
             
             if (functionsAndFieldsAndTypes.Any())
                 return false;
             
-            sameNamers.Add(function);
+            sameNamers.Add(method);
         }
         else
         {
-            _symbols.Add(function.Name,new List<Symbol>{ function });    
+            _symbols.Add(method.Name,new List<Symbol>{ method });    
         }
         return true;
     }
-    public bool TryLookupFunction(string name, [NotNullWhen(true)] out FunctionSymbol? function)
+    public bool TryLookupMethod(string name, [NotNullWhen(true)] out MethodSymbol? function)
     {
         function = null;
         
         if (_symbols.TryGetValue(name, out var sameNamers))
         {
-            var functions = sameNamers.Where(x => x.Kind == SymbolKind.Function).ToList();
+            var functions = sameNamers.Where(x => x.Kind == SymbolKind.Method).ToList();
             Debug.Assert(functions.Count <= 1);
             if (functions.Any())
             {
-                function = (FunctionSymbol)functions.First();
+                function = (MethodSymbol)functions.First();
                 return true;
             }
         }
 
         // ReSharper disable once ConvertIfStatementToReturnStatement
         if (Parent != null)
-            return Parent.TryLookupFunction(name, out function);
+            return Parent.TryLookupMethod(name, out function);
         
         return false;
     }
-    public ImmutableArray<FunctionSymbol> GetDeclaredFunctions() 
+    public ImmutableArray<MethodSymbol> GetDeclaredMethods() 
         => _symbols.Values.SelectMany(x => x)
-            .OfType<FunctionSymbol>()
+            .OfType<MethodSymbol>()
             .ToImmutableArray();
 
     public bool TryDeclareType(TypeSymbol typeSymbol)
@@ -125,7 +125,7 @@ public class BoundScope
         {
             var functionsAndFieldsAndTypes = sameNamers.Where(
                 x => x.Kind 
-                    is SymbolKind.Function 
+                    is SymbolKind.Method 
                     or SymbolKind.Field 
                     or SymbolKind.Type);
             
@@ -175,7 +175,7 @@ public class BoundScope
         {
             var functionsAndFieldsAndTypes = sameNamers.Where(
                 x => x.Kind 
-                    is SymbolKind.Function 
+                    is SymbolKind.Method 
                     or SymbolKind.Field 
                     or SymbolKind.Type);
             

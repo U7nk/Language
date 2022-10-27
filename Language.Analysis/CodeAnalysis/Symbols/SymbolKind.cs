@@ -5,6 +5,6 @@ public enum SymbolKind
     Variable,
     Type,
     Parameter,
-    Function,
+    Method,
     Field
 }

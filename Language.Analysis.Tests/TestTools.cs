@@ -99,7 +99,7 @@ public class TestTools
             return content;
         }
 
-        if (context is ContextType.Function)
+        if (context is ContextType.Method)
         {
 
             var function = $$"""
@@ -114,7 +114,7 @@ public class TestTools
             return function;
         }
 
-        if (context is ContextType.TopLevelFunction)
+        if (context is ContextType.TopLevelMethod)
         {
             var function = $$"""
                 function topLevelFunction()
@@ -131,9 +131,9 @@ public class TestTools
 
     public enum ContextType
     {
-        TopLevelFunction,
+        TopLevelMethod,
         TopLevelStatement,
-        Function,
+        Method,
     }
 
     public static IEnumerable<object[]> AllContextTypesForStatements()

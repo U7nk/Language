@@ -5,15 +5,15 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundMethodCallExpression : BoundExpression
 {
-    public FunctionSymbol FunctionSymbol { get; }
+    public MethodSymbol MethodSymbol { get; }
     public ImmutableArray<BoundExpression> Arguments { get; }
 
-    public BoundMethodCallExpression(FunctionSymbol functionSymbol, ImmutableArray<BoundExpression> arguments)
+    public BoundMethodCallExpression(MethodSymbol methodSymbol, ImmutableArray<BoundExpression> arguments)
     {
-        FunctionSymbol = functionSymbol;
+        MethodSymbol = methodSymbol;
         Arguments = arguments;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.MethodCallExpression;
-    internal override TypeSymbol Type => FunctionSymbol.ReturnType;
+    internal override TypeSymbol Type => MethodSymbol.ReturnType;
 }

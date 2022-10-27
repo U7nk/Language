@@ -84,10 +84,10 @@ public sealed class Compilation
 
     public void EmitTree(IndentedTextWriter writer)
     {
-        if (GlobalScope.MainFunction is not null)
-            EmitTree(GlobalScope.MainFunction, writer);
-        else if (GlobalScope.ScriptMainFunction is not null)
-            EmitTree(GlobalScope.ScriptMainFunction, writer);
+        if (GlobalScope.MainMethod is not null)
+            EmitTree(GlobalScope.MainMethod, writer);
+        else if (GlobalScope.ScriptMainMethod is not null)
+            EmitTree(GlobalScope.ScriptMainMethod, writer);
 
         foreach (var type in GlobalScope.Types)
         {
@@ -111,18 +111,18 @@ public sealed class Compilation
         writer.Write("}");
     }
     
-    public void EmitTree(FunctionSymbol function, TextWriter writer)
+    public void EmitTree(MethodSymbol method, TextWriter writer)
     {
         var program = GetProgram();
-        function.WriteTo(writer);
+        method.WriteTo(writer);
         writer.WriteLine();
-        var type = program.Types.SingleOrDefault(x => x.MethodTable.ContainsKey(function));
+        var type = program.Types.SingleOrDefault(x => x.MethodTable.ContainsKey(method));
         if (type is null)
         {
             return;
         }
         
-        type.MethodTable[function].Unwrap().WriteTo(writer);
+        type.MethodTable[method].Unwrap().WriteTo(writer);
     }
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, 

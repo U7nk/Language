@@ -101,21 +101,13 @@ public class DiagnosticBag : List<Diagnostic>
         Report(textLocation, message, UNTERMINATED_STRING_CODE);
     }
 
-    public const string UNDEFINED_FUNCTION_CODE = "[0012:Error]";
-
-    public void ReportUndefinedFunction(TextLocation location, string identifierText)
-    {
-        var message = $"Function '{identifierText}' is undefined.";
-        Report(location, message, UNDEFINED_FUNCTION_CODE);
-    }
-
     public const string PARAMETER_COUNT_MISMATCH_CODE = "[0013:Error]";
 
     public void ReportParameterCountMismatch(TextLocation location, string identifierText, int parametersLength,
         int argumentsCount)
     {
         var message =
-            $"Function '{identifierText}' requires {parametersLength} arguments but was given {argumentsCount}.";
+            $"Method '{identifierText}' requires {parametersLength} arguments but was given {argumentsCount}.";
         Report(location, message, PARAMETER_COUNT_MISMATCH_CODE);
     }
 
@@ -159,12 +151,12 @@ public class DiagnosticBag : List<Diagnostic>
         Report(location, message, PARAMETER_ALREADY_DECLARED_CODE);
     }
 
-    public const string FUNCTION_ALREADY_DECLARED_CODE = "[0019:Error]";
+    public const string METHOD_ALREADY_DECLARED_CODE = "[0019:Error]";
 
-    public void ReportFunctionAlreadyDeclared(TextLocation location, string identifierText)
+    public void ReportMethodAlreadyDeclared(TextLocation location, string identifierText)
     {
-        var message = $"Function '{identifierText}' is already declared.";
-        Report(location, message, FUNCTION_ALREADY_DECLARED_CODE);
+        var message = $"Method '{identifierText}' is already declared.";
+        Report(location, message, METHOD_ALREADY_DECLARED_CODE);
     }
 
     public const string INVALID_BREAK_OR_CONTINUE_CODE = "[0020:Error]";
@@ -175,27 +167,27 @@ public class DiagnosticBag : List<Diagnostic>
         Report(breakKeyword.Location, message, INVALID_BREAK_OR_CONTINUE_CODE);
     }
 
-    public const string RETURN_STATEMENT_IS_INVALID_FOR_VOID_FUNCTION_CODE = "[0021:Error]";
+    public const string RETURN_STATEMENT_IS_INVALID_FOR_VOID_METHOD_CODE = "[0021:Error]";
 
-    public void ReportReturnStatementIsInvalidForVoidFunction(TextLocation location)
+    public void ReportReturnStatementIsInvalidForVoidMethod(TextLocation location)
     {
-        var message = $"Return statement is invalid for {TypeSymbol.Void} function.";
-        Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_VOID_FUNCTION_CODE);
+        var message = $"Return statement is invalid for {TypeSymbol.Void} method.";
+        Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_VOID_METHOD_CODE);
     }
 
-    public const string RETURN_STATEMENT_IS_INVALID_FOR_NON_VOID_FUNCTION_CODE = "[0022:Error]";
+    public const string RETURN_STATEMENT_IS_INVALID_FOR_NON_VOID_METHOD_CODE = "[0022:Error]";
 
-    public void ReportReturnStatementIsInvalidForNonVoidFunction(TextLocation location, TypeSymbol functionReturnType)
+    public void ReportReturnStatementIsInvalidForNonVoidMethod(TextLocation location, TypeSymbol methodReturnType)
     {
-        var message = $"return should have value for function with return type of {functionReturnType}.";
-        Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_NON_VOID_FUNCTION_CODE);
+        var message = $"return should have value for method with return type of {methodReturnType}.";
+        Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_NON_VOID_METHOD_CODE);
     }
 
     public const string INVALID_RETURN_CODE = "[0023:Error]";
 
     public void ReportInvalidReturn(TextLocation location)
     {
-        var message = $"Return statement should be inside a function.";
+        var message = $"Return statement should be inside a method.";
         Report(location, message, INVALID_RETURN_CODE);
     }
 
@@ -223,12 +215,12 @@ public class DiagnosticBag : List<Diagnostic>
         Report(identifierLocation, message, MAIN_CANNOT_BE_USED_WITH_GLOBAL_STATEMENTS_CODE);
     }
 
-    public const string MULTIPLE_MAIN_FUNCTIONS_CODE = "[0027:Error]";
+    public const string MULTIPLE_MAIN_METHODS_CODE = "[0027:Error]";
 
-    public void ReportMultipleMainFunctions(TextLocation identifierLocation)
+    public void ReportMultipleMainmethods(TextLocation identifierLocation)
     {
-        var message = "Multiple main functions found.";
-        Report(identifierLocation, message, MULTIPLE_MAIN_FUNCTIONS_CODE);
+        var message = "Multiple main methods found.";
+        Report(identifierLocation, message, MULTIPLE_MAIN_METHODS_CODE);
     }
 
     public const string PARAMETER_SHOULD_HAVE_TYPE_EXPLICITLY_DEFINED_CODE = "[0028:Error]";
@@ -243,7 +235,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
     {
-        var message = $"main function must have correct signature(return type {TypeSymbol.Void} and 0 parameters).";
+        var message = $"main method must have correct signature(return type {TypeSymbol.Void} and 0 parameters).";
         Report(identifierLocation, message, MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE);
     }
 
@@ -265,9 +257,9 @@ public class DiagnosticBag : List<Diagnostic>
 
     public const string UNDEFINED_METHOD_CALL_CODE = "[0032:Error]";
 
-    public void ReportUndefinedMethodCall(TextLocation rightLocation, string functionSymbolName, TypeSymbol leftType)
+    public void ReportUndefinedMethodCall(TextLocation rightLocation, string methodSymbolName, TypeSymbol leftType)
     {
-        var message = $"Function '{functionSymbolName}' is undefined for type '{leftType}'.";
+        var message = $"method '{methodSymbolName}' is undefined for type '{leftType}'.";
         Report(rightLocation, message, UNDEFINED_METHOD_CALL_CODE);
     }
 
@@ -281,12 +273,12 @@ public class DiagnosticBag : List<Diagnostic>
         Report(typeIdentifierLocation, message, AMBIGUOUS_TYPE_CODE);
     }
 
-    public const string NO_MAIN_FUNCTION_ALLOWED_IN_SCRIPT_MODE_CODE = "[0034:Error]";
+    public const string NO_MAIN_METHOD_ALLOWED_IN_SCRIPT_MODE_CODE = "[0034:Error]";
 
-    public void ReportNoMainFunctionAllowedInScriptMode(TextLocation mainIdentifierLocation)
+    public void ReportNoMainMethodAllowedInScriptMode(TextLocation mainIdentifierLocation)
     {
-        var message = $"No main function allowed in script mode. Use global statements instead.";
-        Report(mainIdentifierLocation, message, NO_MAIN_FUNCTION_ALLOWED_IN_SCRIPT_MODE_CODE);
+        var message = $"No main method allowed in script mode. Use global statements instead.";
+        Report(mainIdentifierLocation, message, NO_MAIN_METHOD_ALLOWED_IN_SCRIPT_MODE_CODE);
     }
 
     public const string CLASS_WITH_THAT_NAME_IS_ALREADY_DECLARED_CODE = "[0035:Error]";

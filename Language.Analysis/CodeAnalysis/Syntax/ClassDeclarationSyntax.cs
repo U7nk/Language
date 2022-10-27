@@ -7,13 +7,13 @@ public class ClassDeclarationSyntax : SyntaxNode, ITopMemberSyntax
     public ClassDeclarationSyntax(
         SyntaxTree syntaxTree, SyntaxToken classKeyword,
         SyntaxToken identifier, SyntaxToken openBraceToken,
-        ImmutableArray<FunctionDeclarationSyntax> functions, ImmutableArray<FieldDeclarationSyntax> fields,
+        ImmutableArray<MethodDeclarationSyntax> methods, ImmutableArray<FieldDeclarationSyntax> fields,
         SyntaxToken closeBraceToken) : base(syntaxTree)
     {
         ClassKeyword = classKeyword;
         Identifier = identifier;
         OpenBraceToken = openBraceToken;
-        Functions = functions;
+        Methods = methods;
         CloseBraceToken = closeBraceToken;
         Fields = fields;
     }
@@ -21,7 +21,7 @@ public class ClassDeclarationSyntax : SyntaxNode, ITopMemberSyntax
     public SyntaxToken ClassKeyword { get; }
     public SyntaxToken Identifier { get; }
     public SyntaxToken OpenBraceToken { get; }
-    public ImmutableArray<FunctionDeclarationSyntax> Functions { get; }
+    public ImmutableArray<MethodDeclarationSyntax> Methods { get; }
     public ImmutableArray<FieldDeclarationSyntax> Fields { get; }
     public SyntaxToken CloseBraceToken { get; }
     public override SyntaxKind Kind => SyntaxKind.ClassDeclaration;

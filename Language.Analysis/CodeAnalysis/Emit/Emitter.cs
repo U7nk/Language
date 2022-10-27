@@ -116,7 +116,7 @@ public class Bytecode
 
 enum InstructionKind
 {
-    FunctionCallPlaceholder,
+    MethodCallPlaceholder,
     Instruction,
     LabelPlaceholder,
     ConditionalGotoPlaceholder,
@@ -141,13 +141,13 @@ class Instruction
     }
 }
 
-class FunctionCallPlaceholder : Instruction
+class MethodCallPlaceholder : Instruction
 {
-    public FunctionSymbol Function { get; }
+    public MethodSymbol Method { get; }
 
-    public FunctionCallPlaceholder(FunctionSymbol function) : base(-1, InstructionKind.FunctionCallPlaceholder)
+    public MethodCallPlaceholder(MethodSymbol method) : base(-1, InstructionKind.MethodCallPlaceholder)
     {
-        Function = function;
+        Method = method;
     }
 }
 
@@ -184,46 +184,46 @@ class GotoPlaceholder : Instruction
 
 class Linker
 {
-    readonly List<Instruction> _mainFunction;
-    readonly Dictionary<FunctionSymbol, List<Instruction>> _functionBodies;
-    readonly Dictionary<FunctionSymbol, int> _functionAddresses = new();
+    readonly List<Instruction> _mainMethod;
+    readonly Dictionary<MethodSymbol, List<Instruction>> _methodBodies;
+    readonly Dictionary<MethodSymbol, int> _methodAddresses = new();
     readonly Dictionary<LabelSymbol, int> _labelAddresses = new();
     readonly List<Instruction> _gotoAddresses = new();
-    readonly List<Instruction> _functionCallAdresses = new();
+    readonly List<Instruction> _methodCallAdresses = new();
     int _counter = 0;
     
-    public Linker(List<Instruction> mainFunction, Dictionary<FunctionSymbol, List<Instruction>> functionBodies)
+    public Linker(List<Instruction> mainMethod, Dictionary<MethodSymbol, List<Instruction>> methodBodies)
     {
-        _mainFunction = mainFunction;
-        _functionBodies = functionBodies;
+        _mainMethod = mainMethod;
+        _methodBodies = methodBodies;
     }
 
     public List<Instruction> Link()
     {
         var instructions = new List<Instruction>();
-        instructions.AddRange(_mainFunction);
+        instructions.AddRange(_mainMethod);
         
         REPEAT_FIRST_LOOP:
         foreach (var instruction in instructions)
         {
-            if (instruction.Kind == InstructionKind.FunctionCallPlaceholder)
+            if (instruction.Kind == InstructionKind.MethodCallPlaceholder)
             {
-                var functionCallPlaceholder = (FunctionCallPlaceholder)instruction;
-                var function = functionCallPlaceholder.Function;
-                var functionBody = _functionBodies[function];
+                var functionCallPlaceholder = (MethodCallPlaceholder)instruction;
+                var function = functionCallPlaceholder.Method;
+                var functionBody = _methodBodies[function];
                 
                 var functionAddress = instructions.Count;
-                if (!_functionAddresses.ContainsKey(function))
+                if (!_methodAddresses.ContainsKey(function))
                 {
-                    _functionAddresses.Add(function, functionAddress);
+                    _methodAddresses.Add(function, functionAddress);
                     instructions.AddRange(functionBody);
                 }
                 
                 var placeholderIndex = instructions.IndexOf(functionCallPlaceholder);
-                UpdateAddresses(placeholderIndex, InstructionKind.FunctionCallPlaceholder);
+                UpdateAddresses(placeholderIndex, InstructionKind.MethodCallPlaceholder);
                 instructions.Remove(functionCallPlaceholder);
-                var functionCallAddress = new Instruction(_functionAddresses[function]); 
-                _functionCallAdresses.Add(functionCallAddress);
+                var functionCallAddress = new Instruction(_methodAddresses[function]); 
+                _methodCallAdresses.Add(functionCallAddress);
                 var callInstructions = new List<Instruction>
                 {
                     new(Bytecode.CALL),
@@ -285,11 +285,11 @@ class Linker
 
     void UpdateAddresses(int position, int offset)
     {
-        foreach (var functionSymbol in _functionAddresses.Keys)
+        foreach (var functionSymbol in _methodAddresses.Keys)
         {
-            if (_functionAddresses[functionSymbol] > position)
+            if (_methodAddresses[functionSymbol] > position)
             {
-                _functionAddresses[functionSymbol] += offset;
+                _methodAddresses[functionSymbol] += offset;
             }
         }
 
@@ -309,7 +309,7 @@ class Linker
             }
         }
         
-        foreach (var functionCallAddress in _functionCallAdresses)
+        foreach (var functionCallAddress in _methodCallAdresses)
         {
             if (functionCallAddress.Opcode > position)
             {
@@ -322,7 +322,7 @@ class Linker
         if (kind == InstructionKind.Instruction)
             throw new Exception("Cannot update addresses for instruction");
         
-        if (kind == InstructionKind.FunctionCallPlaceholder)
+        if (kind == InstructionKind.MethodCallPlaceholder)
         {
             UpdateAddresses(position, offset: 2);
         }
@@ -525,11 +525,11 @@ class BytecodePrettyPrinter
 }
 class Emitter
 {
-    Dictionary<FunctionSymbol, int> _functionOffsets = new();
-    Dictionary<FunctionSymbol, int> _functionParameters = new();
-    Dictionary<FunctionCallPlaceholder, int> _functionCallMarkers = new();
-    Dictionary<FunctionSymbol, List<Instruction>> _functionBodies = new();
-    List<Instruction> _mainFunction = new();
+    Dictionary<MethodSymbol, int> _methodOffsets = new();
+    Dictionary<MethodSymbol, int> _methodParameters = new();
+    Dictionary<MethodCallPlaceholder, int> _methodCallMarkers = new();
+    Dictionary<MethodSymbol, List<Instruction>> _methodBodies = new();
+    List<Instruction> _mainMethod = new();
     FileStream _writer;
     BoundProgram _program;
     readonly Stack<Dictionary<VariableSymbol, int>> _stack = new();
@@ -541,17 +541,17 @@ class Emitter
         string outputPath)
     {
         _program = program;
-        var mainFunction = _program.MainFunction ?? _program.ScriptMainFunction;
+        var mainFunction = _program.MainMethod ?? _program.ScriptMainMethod;
         Debug.Assert(mainFunction != null, nameof(mainFunction) + " != null");
         
-        _functionOffsets.Add(mainFunction, 0);
-        _functionParameters.Add(mainFunction, 0);
+        _methodOffsets.Add(mainFunction, 0);
+        _methodParameters.Add(mainFunction, 0);
 
-        _mainFunction = EmitMainFunction(mainFunction);
+        _mainMethod = EmitMainMethod(mainFunction);
         
-        EmitOtherFunctionBodies(exceptMainFunction: mainFunction);
+        EmitOtherMethodBodies(exceptMainMethod: mainFunction);
 
-        var linker = new Linker(_mainFunction, _functionBodies);
+        var linker = new Linker(_mainMethod, _methodBodies);
         var programInstructions = linker.Link();
 
         var stringWriter = new StringWriter();
@@ -573,7 +573,7 @@ class Emitter
         return ImmutableArray<Diagnostic>.Empty;
     }
 
-    void EmitOtherFunctionBodies(FunctionSymbol exceptMainFunction)
+    void EmitOtherMethodBodies(MethodSymbol exceptMainMethod)
     {
         //BUG
         // foreach (var (functionSymbol, functionBody) in _program.Types.Exclude(x => Equals(x.Key, exceptMainFunction)))
@@ -592,7 +592,7 @@ class Emitter
         throw new NotImplementedException();
     }
 
-    List<Instruction> EmitMainFunction(FunctionSymbol programMainFunction)
+    List<Instruction> EmitMainMethod(MethodSymbol programMainMethod)
     {
         var instructions = new List<Instruction>();
         throw new NotImplementedException();
@@ -912,7 +912,7 @@ class Emitter
     List<Instruction> EmitCallExpression(BoundMethodCallExpression statement)
     {
         var instructions = new List<Instruction>();
-        if (statement.FunctionSymbol.Name == "print")
+        if (statement.MethodSymbol.Name == "print")
         {
             var arg = statement.Arguments.Single();
             instructions.AddRange(EmitExpression(arg));
@@ -925,15 +925,15 @@ class Emitter
                 instructions.AddRange(EmitExpression(arg));
             }
 
-            if (_functionOffsets.ContainsKey(statement.FunctionSymbol))
+            if (_methodOffsets.ContainsKey(statement.MethodSymbol))
             {
                 _writer.WriteByte(Bytecode.CALL);
-                _writer.WriteByte((byte)_functionOffsets[statement.FunctionSymbol]);
-                _writer.WriteByte((byte)_functionParameters[statement.FunctionSymbol]);
+                _writer.WriteByte((byte)_methodOffsets[statement.MethodSymbol]);
+                _writer.WriteByte((byte)_methodParameters[statement.MethodSymbol]);
             }
             else
             {
-                var callPlaceHolder = new FunctionCallPlaceholder(statement.FunctionSymbol);
+                var callPlaceHolder = new MethodCallPlaceholder(statement.MethodSymbol);
                 instructions.Add(callPlaceHolder);
             }
         }
