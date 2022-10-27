@@ -1,13 +1,14 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 class BoundMemberAssignmentExpression : BoundExpression
 {
-    public BoundMemberAccessExpression MemberAccess { get; }
+    public BoundExpression MemberAccess { get; }
     public BoundExpression RightValue { get; }
 
-    public BoundMemberAssignmentExpression(BoundMemberAccessExpression memberAccess, BoundExpression rightValue)
+    public BoundMemberAssignmentExpression(BoundExpression memberAccess, BoundExpression rightValue)
     {
         MemberAccess = memberAccess;
         RightValue = rightValue;

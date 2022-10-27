@@ -190,7 +190,7 @@ public class SymbolScopes
 
         TestTools.AssertDiagnostics(text, diagnostics);
     }
-
+    
     [Fact]
     public void FieldCannotHaveNameOfField()
     {
@@ -201,7 +201,7 @@ public class SymbolScopes
                 [field] : int;
             } 
             """ ;
-        
+
         var diagnostics = new[]
         {
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE

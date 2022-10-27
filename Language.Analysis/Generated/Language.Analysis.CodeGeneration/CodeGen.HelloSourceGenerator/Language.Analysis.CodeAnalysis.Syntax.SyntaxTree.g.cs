@@ -123,9 +123,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.MethodCallExpressionSyntax(this,identifier,openParenthesis,arguments,closeParenthesis);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax NewMemberAssignmentExpression(Language.Analysis.CodeAnalysis.Syntax.MemberAccessExpressionSyntax memberAccess,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax initializer)
+    public Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax NewMemberAssignmentExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax memberAccess,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken equalsToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax initializer)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax(this,memberAccess,initializer);
+       return new Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax(this,memberAccess,equalsToken,initializer);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.MemberAccessExpressionSyntax NewMemberAccessExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax left,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken dot,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax right)

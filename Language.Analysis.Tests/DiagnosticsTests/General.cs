@@ -155,11 +155,9 @@ public class General
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
-    [Theory]
-    [MemberData(
-        nameof(TestTools.AllContextTypesForStatements),
-        MemberType = typeof(TestTools))]
-    public void OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop(TestTools.ContextType contextType)
+    [Fact]
+    
+    public void OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
     {
         var text =
             $$"""
@@ -171,8 +169,7 @@ public class General
             "Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
-        TestTools.AssertDiagnosticsWithMessages(
-            TestTools.StatementsInContext(text, contextType), diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(text, diagnostics);
     }
 
 
@@ -185,7 +182,7 @@ public class General
         var text =
             $$"""  
             var a = 10;
-            [var a] = 10;
+            var [a] = 10;
             """;
         var diagnostics = new[]
         {
@@ -254,7 +251,7 @@ public class General
         var text =
             $$"""
              let a = 10;
-             [a =] 50; 
+             [a] = 50; 
              """ ;
         var diagnostics = new[]
         {
@@ -315,7 +312,7 @@ public class General
     {
         var text =
             $$"""
-            this.Field;
+            [this.Field;]
             """ ;
         var diagnostics = new[]
         {

@@ -43,7 +43,7 @@ public class UnitTest1
             .ToList()
             .ForEach(x => _output.WriteLine(x));
         
-        var variables = new Dictionary<VariableSymbol, object?>();
+        var variables = new Dictionary<VariableSymbol, ObjectInstance?>();
         var evaluation = compilation.Evaluate(variables);
         if (evaluation.Diagnostics.Any())
         {

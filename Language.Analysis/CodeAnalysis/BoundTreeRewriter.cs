@@ -20,16 +20,20 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.ObjectCreationExpression => RewriteObjectCreationExpression((BoundObjectCreationExpression)node),
             BoundNodeKind.MemberAccessExpression => RewriteMemberAccessExpression((BoundMemberAccessExpression)node),
             BoundNodeKind.MemberAssignmentExpression => RewriteMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
+            BoundNodeKind.FieldAccessExpression => RewriteFieldAccessExpression((BoundFieldAccessExpression)node),
             BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
     }
 
+    protected virtual BoundExpression RewriteFieldAccessExpression(BoundFieldAccessExpression node)
+    {
+        return node;
+    }
+    
     protected virtual BoundExpression RewriteMemberAssignmentExpression(BoundMemberAssignmentExpression node)
     {
-        var member = RewriteMemberAccessExpression(node.MemberAccess)
-            .Unwrap<BoundMemberAccessExpression>();
-        
+        var member = RewriteExpression(node.MemberAccess);
         var rightValue = RewriteExpression(node.RightValue);
         if (member == node.MemberAccess && rightValue == node.RightValue)
             return node;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -16,7 +17,7 @@ sealed class MethodBinder
     readonly DiagnosticBag _diagnostics = new();
     readonly bool _isScript;
     readonly MethodBinderLookup _lookup;
-    
+
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
@@ -32,11 +33,11 @@ sealed class MethodBinder
     {
         _scope = new(_scope);
         methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
-        
+
         var result = BindBlockStatement(methodSymbol.Declaration.Unwrap().Body);
-        
+
         _scope = _scope.Parent ?? throw new InvalidOperationException();
-        
+
         return result;
     }
 
@@ -53,9 +54,16 @@ sealed class MethodBinder
             var isAllowedExpression = es.Expression.Kind
                 is BoundNodeKind.AssignmentExpression
                 or BoundNodeKind.MethodCallExpression
-                or BoundNodeKind.MemberAccessExpression
                 or BoundNodeKind.MemberAssignmentExpression
                 or BoundNodeKind.ErrorExpression;
+            if (!isAllowedExpression && es.Expression.Kind is BoundNodeKind.MemberAccessExpression)
+            {
+                var memberAccess = (BoundMemberAccessExpression)es.Expression;
+                if (memberAccess.Member.Kind is BoundNodeKind.FieldAccessExpression) 
+                    isAllowedExpression = false;
+                else
+                    isAllowedExpression = true;
+            }
             if (!isAllowedExpression)
             {
                 _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
@@ -64,6 +72,7 @@ sealed class MethodBinder
 
         return result;
     }
+
     BoundStatement BindStatementInternal(StatementSyntax syntax)
     {
         switch (syntax.Kind)
@@ -90,7 +99,7 @@ sealed class MethodBinder
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
     }
-    
+
     BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
     {
         var expression = syntax.Expression is null
@@ -121,7 +130,7 @@ sealed class MethodBinder
                 expression = BindConversion(expression, _lookup.CurrentMethod.ReturnType, syntax.Expression.Location);
             }
         }
-        
+
 
         return new BoundReturnStatement(expression);
     }
@@ -216,14 +225,14 @@ sealed class MethodBinder
         return new BoundVariableDeclarationStatement(variable, initializer);
     }
 
-    
+
     TypeSymbol? BindTypeClause(TypeClauseSyntax? typeClause)
     {
         if (typeClause is null)
             return null;
 
         _lookup.Unwrap();
-        var type = _lookup.AvailableTypes.SingleOrDefault(x=> x.Name == typeClause.Identifier.Text);
+        var type = _lookup.AvailableTypes.SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
 
@@ -246,7 +255,7 @@ sealed class MethodBinder
     BoundBlockStatement BindBlockStatement(BlockStatementSyntax syntax)
     {
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        
+
         foreach (var statementSyntax in syntax.Statements)
         {
             var statement = BindStatement(statementSyntax);
@@ -296,56 +305,99 @@ sealed class MethodBinder
                 return BindMemberAccessExpression((MemberAccessExpressionSyntax)syntax);
             case SyntaxKind.MemberAssignmentExpression:
                 return BindMemberAssignmentExpression((MemberAssignmentExpressionSyntax)syntax);
+            case SyntaxKind.MethodCallExpression:
+                return BindMethodCallExpression((MethodCallExpressionSyntax)syntax, _lookup.CurrentType);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
     }
 
-    BoundExpression BindThisExpression(ThisExpressionSyntax syntax) 
+    BoundExpression BindThisExpression(ThisExpressionSyntax syntax)
         => new BoundThisExpression(_lookup.CurrentType);
 
     BoundExpression BindMemberAssignmentExpression(MemberAssignmentExpressionSyntax syntax)
     {
-        var member = BindMemberAccessExpression(syntax.MemberAccess);
+        
+        BoundExpression member;
+        if (syntax.MemberAccess.Kind is SyntaxKind.NameExpression)
+        {
+            var nameExpression = (NameExpressionSyntax)syntax.MemberAccess;
+            member = BindNameExpression(nameExpression);
+            if (member.Kind is BoundNodeKind.VariableExpression)
+            {
+                var variableExpression = (BoundVariableExpression)member;
+                if (variableExpression.Variable.IsReadonly)
+                {
+                    _diagnostics.ReportCannotAssignToReadonly(nameExpression.IdentifierToken);
+                }
+            }
+        }
+        else
+        {
+            member = BindMemberAccessExpression(syntax.MemberAccess);   
+        }
+        
         if (member is BoundErrorExpression)
             return new BoundErrorExpression();
-        
+
         var rightValue = BindExpression(syntax.Initializer, member.Type);
-        return new BoundMemberAssignmentExpression((BoundMemberAccessExpression)member, rightValue);
+        return new BoundMemberAssignmentExpression(member, rightValue);
     }
 
-    BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax)
+    BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type)
     {
-        var left = BindExpression(syntax.Left);
-        if (syntax.Right.Kind is SyntaxKind.MethodCallExpression)
+        var method = type.MethodTable.Keys.SingleOrDefault(x => x.Name == syntax.Identifier.Text);
+        if (method is null)
         {
-            var methodCall = (MethodCallExpressionSyntax)syntax.Right;
-            var method = left.Type.MethodTable.Keys.SingleOrDefault(x=> x.Name == methodCall.Identifier.Text);
-            if (method is null)
-            {
-                _diagnostics.ReportUndefinedMethod(methodCall.Identifier, left.Type);
-                return new BoundErrorExpression();
-            }
-            var arguments = methodCall.Arguments.Select(x=> BindExpression(x))
-                .ToImmutableArray();
-            
-            var boundMethodCall = new BoundMethodCallExpression(method, arguments);
-            return new BoundMemberAccessExpression(left, boundMethodCall);
+            _diagnostics.ReportUndefinedMethod(syntax.Identifier, type);
+            return new BoundErrorExpression();
         }
-        if (syntax.Right.Kind is SyntaxKind.NameExpression)
+
+        var arguments = syntax.Arguments.Select(x => BindExpression(x))
+            .ToImmutableArray();
+
+        var boundMethodCall = new BoundMethodCallExpression(method, arguments);
+
+        return boundMethodCall;
+    }
+
+    BoundExpression BindMemberAccessExpression(ExpressionSyntax syntax)
+    {
+        if (syntax.Kind is SyntaxKind.NameExpression)
+            return BindNameExpression((NameExpressionSyntax)syntax);
+
+        if (syntax.Kind is SyntaxKind.MethodCallExpression)
+            return BindMethodCallExpression((MethodCallExpressionSyntax)syntax, _lookup.CurrentType);
+
+        Debug.Assert(
+            syntax.Kind is SyntaxKind.MemberAccessExpression,
+            $"(syntax.Kind is SyntaxKind.MemberAccessExpression) in {SourceTextMeta.GetCurrentInvokeLocation()}");
+
+        var memberAccess = (MemberAccessExpressionSyntax)syntax;
+        var left = BindExpression(memberAccess.Left);
+        if (memberAccess.Right.Kind is SyntaxKind.MethodCallExpression)
         {
-            var nameExpression = (NameExpressionSyntax)syntax.Right;
+            var methodCall = BindMethodCallExpression((MethodCallExpressionSyntax)memberAccess.Right, left.Type);
+            
+            return new BoundMemberAccessExpression(left, methodCall);
+        }
+
+        if (memberAccess.Right.Kind is SyntaxKind.NameExpression)
+        {
+            var nameExpression = (NameExpressionSyntax)memberAccess.Right;
+            
             var field = left.Type.FieldTable.SingleOrDefault(x => x.Name == nameExpression.IdentifierToken.Text);
             if (field is null)
             {
                 _diagnostics.ReportUndefinedFieldAccess(nameExpression.IdentifierToken, left.Type);
                 return new BoundErrorExpression();
             }
+
             var fieldAccess = new BoundFieldAccessExpression(field);
             return new BoundMemberAccessExpression(left, fieldAccess);
         }
-        
-        throw new Exception($"Unexpected syntax {syntax.Right.Kind}");
+
+        throw new Exception($"Unexpected syntax {memberAccess.Right.Kind}");
     }
 
 
@@ -405,6 +457,7 @@ sealed class MethodBinder
 
     BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
     {
+        
         var boundExpression = BindExpression(syntax.Expression);
         var name = syntax.IdentifierToken.Text;
 
@@ -416,11 +469,7 @@ sealed class MethodBinder
 
         if (variable.IsReadonly)
         {
-            var span = TextSpan.FromBounds(syntax.IdentifierToken.Span.Start, syntax.EqualsToken.Span.End);
-            var location = new TextLocation(syntax.SyntaxTree.SourceText, span);
-            _diagnostics.ReportCannotAssignToReadonly(
-                location,
-                name);
+            _diagnostics.ReportCannotAssignToReadonly(syntax.IdentifierToken);
         }
 
         boundExpression = BindConversion(boundExpression, variable.Type, syntax.Expression.Location);
@@ -428,9 +477,8 @@ sealed class MethodBinder
         return new BoundAssignmentExpression(variable, boundExpression);
     }
 
-    BoundExpression BindNameExpression(NameExpressionSyntax syntax)
+    BoundExpression BindNameExpression(NameExpressionSyntax syntax, TypeSymbol? type = null)
     {
-        
         var name = syntax.IdentifierToken.Text;
 
         if (name == string.Empty)
@@ -440,9 +488,29 @@ sealed class MethodBinder
             return new BoundErrorExpression();
         }
 
+        if (type is { })
+        {
+            var field = type.FieldTable.SingleOrDefault(x => x.Name == name);
+            if (field is null)
+            {
+                _diagnostics.ReportUndefinedFieldAccess(syntax.IdentifierToken, type);
+                return new BoundErrorExpression();
+            }
+
+            return new BoundFieldAccessExpression(field);
+        }
+        
+        _ = _scope.TryLookupField(name, out var fieldSymbol);
+
         if (_scope.TryLookupVariable(name, out var variable))
         {
+            // TODO: warn that variable is shadowing a field
             return new BoundVariableExpression(variable);
+        }
+
+        if (fieldSymbol is { })
+        {
+            return new BoundFieldAccessExpression(fieldSymbol);
         }
 
         _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
@@ -472,7 +540,7 @@ sealed class MethodBinder
 
         return new BoundUnaryExpression(unaryOperator, operand);
     }
-    
+
     BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax)
     {
         var left = BindExpression(syntax.Left);
@@ -480,7 +548,7 @@ sealed class MethodBinder
 
         if (Equals(left.Type, TypeSymbol.Error) || Equals(right.Type, TypeSymbol.Error))
             return new BoundErrorExpression();
-        
+
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
         if (binaryOperator is null)
         {

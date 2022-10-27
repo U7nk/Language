@@ -61,7 +61,6 @@ public class EvaluatorTests
     [InlineData("false ^ false;", false)]
     [InlineData("false ^ true;", true)]
     [InlineData("true ^ true;", false)]
-    [InlineData("true & false;", false)]
     [InlineData("12 == 1;", false)]
     [InlineData("12 == 12;", true)]
     [InlineData("12 != 12;", false)]
@@ -293,10 +292,10 @@ public class EvaluatorTests
             """ ,
             result =>
             {
-                var resultObject = Assert.IsType<Dictionary<string, object>>(result);
-                var field = Assert.Single(resultObject);
+                var resultObject = Assert.IsType<ObjectInstance>(result);
+                var field = Assert.Single(resultObject.Fields);
                 field.Key.Should().Be("Fieldo");
-                field.Value.Should().Be(10);
+                field.Value.Unwrap().LiteralValue.Should().Be(10);
             }, isScript: false);
     }
 
@@ -325,7 +324,12 @@ public class EvaluatorTests
                 }
             }
             """ ,
-            result => result.Should().Be(10),
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(TypeSymbol.Int);
+                result.LiteralValue.Should().Be(10);
+            },
             isScript: false);
     }
 
@@ -363,7 +367,12 @@ public class EvaluatorTests
                 }
             }
             """ ,
-            result => result.Should().Be(10),
+            result =>
+            {
+                result.Should().NotBeNull();
+                result.Unwrap().Type.Should().Be(TypeSymbol.Int);
+                result.LiteralValue.Should().Be(10);
+            },
             isScript: false);
     }
 
@@ -389,7 +398,12 @@ public class EvaluatorTests
                 }
             }
             """ ,
-            result => result.Should().Be(15),
+            result =>
+            {
+                result.Should().NotBeNull();
+                result.Unwrap().Type.Should().Be(TypeSymbol.Int);
+                result.Unwrap().LiteralValue.Should().Be(15);
+            },
             isScript: false);
     }
     
@@ -427,8 +441,13 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.Should().Be(10); },
-            isScript: true);
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(TypeSymbol.Int);
+                result.LiteralValue.Should().Be(10);
+            },
+            isScript: false);
     }
     
     [Fact]
@@ -452,8 +471,13 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.Should().Be(10); },
-            isScript: true);
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(TypeSymbol.Int);
+                result.LiteralValue.Should().Be(10);
+            },
+            isScript: false);
     }
     
     [Fact]
@@ -506,14 +530,38 @@ public class EvaluatorTests
             isScript: true);
     }
     
+    [Fact]
+    public void EvaluatorEvaluatesFieldAssignmentWithoutThis()
+    {
+        var source = $$"""
+            class Program
+            {
+                Field : int;
+                function main()
+                {
+                    Field = 10;  
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(TypeSymbol.Int);
+                result.LiteralValue.Should().Be(10);
+            },
+            isScript: false);
+    }
+    
 
-    static object? EvaluateValue(string expression, bool isScript)
+    static ObjectInstance? EvaluateValue(string expression, bool isScript)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         syntaxTree.Diagnostics.Should().BeEmpty();
 
         var compilation = isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
-        var variables = new Dictionary<VariableSymbol, object?>();
+        var variables = new Dictionary<VariableSymbol, ObjectInstance?>();
         var evaluation = compilation.Evaluate(variables);
 
         evaluation.Diagnostics.ToList().Should().BeEmpty();
@@ -522,10 +570,10 @@ public class EvaluatorTests
 
     static void AssertValue(string expression, object expectedValue, bool isScript)
     {
-        EvaluateValue(expression, isScript).Should().Be(expectedValue);
+        EvaluateValue(expression, isScript).Unwrap().LiteralValue.Should().Be(expectedValue);
     }
 
-    static void AssertValue(string expression, Action<object?> resultAssertion, bool isScript)
+    static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript)
     {
         resultAssertion(EvaluateValue(expression, isScript));
     }

@@ -58,7 +58,7 @@ public sealed class Compilation
         return ProgramBinder.BindProgram(IsScript, previous, GlobalScope);
     }
 
-    public EvaluationResult Evaluate(Dictionary<VariableSymbol, object?> variables)
+    public EvaluationResult Evaluate(Dictionary<VariableSymbol, ObjectInstance?> variables)
     {
         var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
         var program = GetProgram();

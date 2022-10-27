@@ -79,10 +79,10 @@ public class DiagnosticBag : List<Diagnostic>
 
     public const string CANNOT_ASSIGN_TO_READONLY_CODE = "[0009:Error]";
 
-    public void ReportCannotAssignToReadonly(TextLocation location, string name)
+    public void ReportCannotAssignToReadonly(SyntaxToken identifierToken)
     {
-        var message = $"'{name}' is readonly and cannot be assigned to.";
-        Report(location, message, CANNOT_ASSIGN_TO_READONLY_CODE);
+        var message = $"'{identifierToken.Text}' is readonly and cannot be assigned to.";
+        Report(identifierToken.Location, message, CANNOT_ASSIGN_TO_READONLY_CODE);
     }
 
     public const string VARIABLE_DOES_NOT_EXISTS_IN_CURRENT_SCOPE_CODE = "[0010:Error]";

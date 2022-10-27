@@ -15,7 +15,7 @@ public class TestTools
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
         var compilation = Compilation.Create(syntaxTree);
-        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
 
         var actualDiagnosticTexts = diagnostics
@@ -50,7 +50,7 @@ public class TestTools
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
         var compilation = Compilation.Create(syntaxTree);
-        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
         
         var diagnosticsTexts = diagnostics
@@ -105,6 +105,8 @@ public class TestTools
             var function = $$"""
                 class Program
                 {
+                    Field : int;
+                    
                     function main()
                     {
                         {{ content.ReplaceLineEndings("\n        ") }} 
@@ -121,7 +123,7 @@ public class TestTools
                 {
                     {{ content.ReplaceLineEndings("\n    ") }} 
                 }
-                topLevelFunction();
+                topLevelMethod();
                 """ ;
             return function;
         }
