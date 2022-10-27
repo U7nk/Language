@@ -407,6 +407,105 @@ public class EvaluatorTests
             _ => { },
             isScript: true);
     }
+    
+    [Fact]
+    public void EvaluatorEvaluatesMethodCallInsideClassWithoutThis()
+    {
+        var source = $$"""
+            class Program
+            {
+                function main() 
+                {
+                    ten();
+                }
+                
+                function ten() : int
+                {
+                    return 10;
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result => { result.Should().Be(10); },
+            isScript: true);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesFieldAccessInsideClassWithoutThis()
+    {
+        var source = $$"""
+            class Program
+            {
+                Field : int;
+                function main()
+                {
+                    Field = 10; 
+                    this.ten(Field);
+                }
+                
+                function ten(input : int) : int
+                {
+                    return 10;
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result => { result.Should().Be(10); },
+            isScript: true);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesStaticMethodCall()
+    {
+        var source = $$"""
+            class Program
+            {
+                Field : int;
+                function main()
+                {
+                    Field = 10; 
+                    Program.ten(Field);
+                }
+                
+                static function ten(input : int) : int
+                {
+                    return 10;
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result => { result.Should().Be(10); },
+            isScript: true);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesStaticMethodCallInsideClassWithoutThis()
+    {
+        var source = $$"""
+            class Program
+            {
+                Field : int;
+                function main()
+                {
+                    Field = 10; 
+                    ten(Field);
+                }
+                
+                static function ten(input : int) : int
+                {
+                    return 10;
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result => { result.Should().Be(10); },
+            isScript: true);
+    }
+    
 
     static object? EvaluateValue(string expression, bool isScript)
     {

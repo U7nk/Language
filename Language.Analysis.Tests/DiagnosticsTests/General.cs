@@ -307,5 +307,43 @@ public class General
 
         TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
+    
+    [Fact]
+    public void FieldAccessExpressionStatementInvalid()
+    {
+        var text =
+            $$"""
+            this.Field;
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+        };
+
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), diagnostics);
+    }
+    
+    [Fact]
+    public void StaticMethodInsideClassCannotBeCalledWithThis()
+    {
+        var text =
+            $$"""
+            class Program
+            {
+                static function Main()
+                {
+                    this.[staticMethod]();
+                }
+                static function staticMethod() {
+                
+                } 
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics);
+    }
 
 }

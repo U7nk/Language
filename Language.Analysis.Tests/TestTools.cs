@@ -105,7 +105,7 @@ public class TestTools
             var function = $$"""
                 class Program
                 {
-                    function Main()
+                    function main()
                     {
                         {{ content.ReplaceLineEndings("\n        ") }} 
                     }
@@ -117,7 +117,7 @@ public class TestTools
         if (context is ContextType.TopLevelMethod)
         {
             var function = $$"""
-                function topLevelFunction()
+                function topLevelMethod()
                 {
                     {{ content.ReplaceLineEndings("\n    ") }} 
                 }
@@ -131,8 +131,41 @@ public class TestTools
 
     public enum ContextType
     {
+        /// <summary>
+        /// <example>
+        /// <code>
+        /// function topLevelMethod()
+        /// {
+        ///     <b>*input statements*</b>
+        /// }
+        /// </code>
+        /// </example>
+        /// </summary>
         TopLevelMethod,
+        
+        /// <summary>
+        /// <example>
+        /// <code>
+        /// <b>*input statements*</b>
+        /// </code>
+        /// </example>
+        /// </summary>
         TopLevelStatement,
+        /// <summary>
+        /// <example>
+        /// <code>
+        /// class Program
+        /// {
+        ///     Field : int;
+        /// 
+        ///     function main()
+        ///     {
+        ///         <b>*input statements*</b>
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        /// </summary>
         Method,
     }
 
