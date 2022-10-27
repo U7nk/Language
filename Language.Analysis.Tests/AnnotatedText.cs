@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using Language.Analysis;
 using Language.Analysis.CodeAnalysis.Text;
 
 namespace TestProject1;

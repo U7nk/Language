@@ -10,7 +10,7 @@ namespace TestProject1;
 
 public class TestTools
 {
-    static void AssertDiagnostics(string text, string[] diagnosticsText)
+    public static void AssertDiagnosticsWithMessages(string text, string[] expectedDiagnosticTexts)
     {
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
@@ -18,15 +18,23 @@ public class TestTools
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
 
-        diagnostics.Length.Should().Be(diagnosticsText.Length);
-
+        var actualDiagnosticTexts = diagnostics
+            .Select(d => AnnotatedTextFromDiagnostic(d) + "\n" + d.Code + d.Message)
+            .ToArray();
+        if (diagnostics.Length != expectedDiagnosticTexts.Length)
+        {
+            Assert.Fail($"Expected {expectedDiagnosticTexts.Length} diagnostics, but got {diagnostics.Length}.\n" +
+                        $"Expected: \n{string.Join(",\n", expectedDiagnosticTexts)}\n" +
+                        $"Actual: \n{string.Join(",\n", actualDiagnosticTexts)}");
+            diagnostics.Length.Should().Be(expectedDiagnosticTexts.Length);
+        }
         diagnostics.Length.Should().Be(
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        foreach (var i in 0..diagnosticsText.Length)
+        foreach (var i in 0..expectedDiagnosticTexts.Length)
         {
-            var expectedMessage = diagnosticsText[i];
+            var expectedMessage = expectedDiagnosticTexts[i];
             var actualMessage = diagnostics[i].Message;
             actualMessage.Should().Be(expectedMessage, "Diagnostic messages do not match");
 
@@ -37,8 +45,102 @@ public class TestTools
         }
     }
 
-    internal static void AssertDiagnosticsWithTimeout(string text, string[] diagnosticsText)
+    public static void AssertDiagnostics(string text, string[] diagnosticsCodes)
     {
-        AssertDiagnostics(text, diagnosticsText);
+        var annotatedText = AnnotatedText.Parse(text);
+        var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
+        var compilation = Compilation.Create(syntaxTree);
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, object?>());
+        var diagnostics = result.Diagnostics.ToImmutableArray();
+        
+        var diagnosticsTexts = diagnostics
+            .Select(d => AnnotatedTextFromDiagnostic(d) + "\n" + d.Code + d.Message)
+            .ToArray();
+        if (diagnostics.Length != diagnosticsCodes.Length)
+        {
+            Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
+                        $"Expected: \n{string.Join(",\n", diagnosticsCodes)}\n" +
+                        $"Actual: \n{string.Join(",\n", diagnosticsTexts)}");
+            diagnostics.Length.Should().Be(diagnosticsCodes.Length);
+        }
+
+        diagnostics.Length.Should().Be(
+            annotatedText.Spans.Length,
+            "Must mark as many spans as there expected diagnostics");
+
+        foreach (var i in 0..diagnosticsCodes.Length)
+        {
+            var expectedCode = diagnosticsCodes[i];
+            var actualCode = diagnostics[i].Code;
+            actualCode.Should().Be(expectedCode, "Diagnostic messages do not match");
+
+
+            var expectedSpan = annotatedText.Spans[i];
+            var actualSpan = diagnostics[i].TextLocation.Span;
+            actualSpan.Should().BeOfType<TextSpan>().And.Be(expectedSpan, "Diagnostic spans do not match");
+        }
+    }
+
+    public static string AnnotatedTextFromDiagnostic(Diagnostic diagnostic)
+    {
+        var pre = diagnostic.TextLocation.Text.ToString(0, diagnostic.TextLocation.Span.Start);
+        var marked = "[" + diagnostic.TextLocation.Text.ToString(diagnostic.TextLocation.Span) + "]";
+        var post = diagnostic.TextLocation.Text.ToString(
+            diagnostic.TextLocation.Span.Start + marked.Length - 2, 
+            diagnostic.TextLocation.Text.Length - diagnostic.TextLocation.Span.Start - marked.Length + 2);
+        
+        return pre + marked + post;
+    }
+
+    public static string StatementsInContext(string content, ContextType context)
+    {
+        if (context is ContextType.TopLevelStatement)
+        {
+            return content;
+        }
+
+        if (context is ContextType.Function)
+        {
+
+            var function = $$"""
+                class Program
+                {
+                    function Main()
+                    {
+                        {{ content.ReplaceLineEndings("\n        ") }} 
+                    }
+                }
+                """ ;
+            return function;
+        }
+
+        if (context is ContextType.TopLevelFunction)
+        {
+            var function = $$"""
+                function topLevelFunction()
+                {
+                    {{ content.ReplaceLineEndings("\n    ") }} 
+                }
+                topLevelFunction();
+                """ ;
+            return function;
+        }
+        
+        throw new Exception("Unknown context");
+    }
+
+    public enum ContextType
+    {
+        TopLevelFunction,
+        TopLevelStatement,
+        Function,
+    }
+
+    public static IEnumerable<object[]> AllContextTypesForStatements()
+    {
+        foreach (var contextType in Enum.GetValues(typeof(ContextType)))
+        {
+            yield return new[] { contextType };
+        }
     }
 }

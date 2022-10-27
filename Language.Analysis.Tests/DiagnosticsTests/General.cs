@@ -8,141 +8,156 @@ namespace TestProject1.DiagnosticsTests;
 
 public class General
 {
-    [Fact]
-    public void AssignedExpression_Reports_CannotConvertVariable()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void AssignedExpression_Reports_CannotConvertVariable(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-            {
-                var a = 10;
-                a = [false];
-            } 
+            var a = 10;
+            a = [false]; 
             """ ;
         var diagnostics = new[]
         {
             $"Cannot convert '{TypeSymbol.Bool}' to '{TypeSymbol.Int}'.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text,contextType),
+            diagnostics);
     }
-    [Fact]
-    public void TypeClause_Reports_NoImplicitConversion()
+    
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void TypeClause_Reports_NoImplicitConversion(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-            {
-                let a : string = [10 + 15];
-            } 
+            let a : string = [10 + 15];
             """ ;
         var diagnostics = new[]
         {
             $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
-    [Fact]
-    public void Report_InvalidStatements()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void Report_InvalidStatements(TestTools.ContextType contextType)
     {
         var text =
             $$"""
+            let a = 5;
+            [10 * 5;]
+            [a;]
+            [a + a;]
+            """ ;
+        var diagnostics = new[]
+        {
+            "Only assignment, and call expressions can be used as a statement.",
+            "Only assignment, and call expressions can be used as a statement.",
+            "Only assignment, and call expressions can be used as a statement.",
+        };
+        TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void IfStatement_Reports_CannotConvert(TestTools.ContextType contextType)
+    {
+        var text =
+            $$"""
+            var a = 10;
+            if [10]
             {
-                let a = 5;
-                [10 * 5;]
-                [a;]
-                [a + a;]
+                a = 5;
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
+        };
+        TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text,contextType), diagnostics);
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void WhileStatement_Reports_CannotConvert(TestTools.ContextType contextType)
+    {
+        var text =
+            $$"""
+            var a = 10;
+            while [10]
+            {
+                a = 5;
             } 
             """ ;
         var diagnostics = new[]
         {
-            $"Only assignment, and call expressions can be used as a statement.",
-            $"Only assignment, and call expressions can be used as a statement.",
-            $"Only assignment, and call expressions can be used as a statement.",
+            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType),
+            diagnostics);
     }
 
-    [Fact]
-    public void IfStatement_Reports_CannotConvert()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void ForStatement_Reports_CannotConvert(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-                {
-                    var a = 10;
-                    if [10]
-                    {
-                        a = 5;
-                    } 
-                } 
+            var a = 10;
+            for (var i = 0; [10]; i = i + 1)
+            {
+                a = 5;
+            }
             """ ;
         var diagnostics = new[]
         {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
-    [Fact]
-    public void WhileStatement_Reports_CannotConvert()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void ForStatement_Reports_Mutation_NoImplicitConversion(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-                {
-                    var a = 10;
-                    while [10]
-                    {
-                        a = 5;
-                    } 
-                } 
-            """ ;
+            var a = 10;
+            for (var i = false; true; i = [1])
+            {
+                a = 5;
+            }
+            """;
         var diagnostics = new[]
         {
             $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
-    [Fact]
-    public void ForStatement_Reports_CannotConvert()
-    {
-        var text =
-            $$"""
-                {
-                    var a = 10;
-                    for (var i = 0; [10]; i = i + 1)
-                    {
-                        a = 5;
-                    } 
-                } 
-            """ ;
-        var diagnostics = new[]
-        {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
-        };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
-    }
-
-    [Fact]
-    public void ForStatement_Reports_Mutation_NoImplicitConversion()
-    {
-        var text =
-            $$"""
-                {
-                    var a = 10;
-                    for (var i = false; true; i = [1])
-                    {
-                        a = 5;
-                    } 
-                } 
-            """ ;
-        var diagnostics = new[]
-        {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
-        };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
-    }
-
-    [Fact]
-    public void OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void OpenBrace_FollowedBy_CloseParenthesise_NoInfiniteLoop(TestTools.ContextType contextType)
     {
         var text =
             $$"""
@@ -154,25 +169,29 @@ public class General
             "error: Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "error: Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
 
-    [Fact]
-    public void VariableDeclaration_Reports_Redeclaration()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void VariableDeclaration_Reports_Redeclaration(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
-                {
-                    var a = 10;
-                    [var a] = 10;
-                } 
-            """ ;
+            $$"""  
+            var a = 10;
+            [var a] = 10;
+            """;
         var diagnostics = new[]
         {
             "Variable 'a' is already declared.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType),
+            diagnostics);
     }
 
     [Fact]
@@ -180,93 +199,113 @@ public class General
     {
         var text = "";
         var diagnostics = Array.Empty<string>();
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(text, diagnostics);
     }
 
-    [Fact]
-    public void ForStatement_Reports_Iterator_Redeclaration()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void ForStatement_Reports_Iterator_Redeclaration(TestTools.ContextType contextType)
     {
         var text =
             $$"""
             for (var i = 1; i < 4; i = i + 1)
             {
-                [var i] = 5;
+                var [i] = 5;
             }
             """ ;
         var diagnostics = new[]
         {
             "Variable 'i' is already declared.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType),
+            diagnostics);
     }
-
-    [Fact]
-    public void NameExpression_Reports_UndefinedVariable()
+    
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void NameExpression_Reports_UndefinedVariable(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-            {
-                var a = [b];
-            } 
+            var a = [b];
             """ ;
         var diagnostics = new[]
         {
             "'b' is undefined.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType), 
+            diagnostics);
     }
 
-    [Fact]
-    public void AssignedExpression_Reports_CannotAssignVariable()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void AssignedExpression_Reports_CannotAssignVariable(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-             {
-                 let a = 10;
-                 [a =] 50;
-             } 
+             let a = 10;
+             [a =] 50; 
              """ ;
         var diagnostics = new[]
         {
             "'a' is readonly and cannot be assigned to.",
         };
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType), diagnostics);
     }
 
-    [Fact]
-    public void TypeClause_Reports_UndefinedType()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void TypeClause_Reports_UndefinedType(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-            {
-                var a : [blab] = 10;
-            } 
+            var a : [blab] = 10; 
             """ ;
         var diagnostics = new[]
         {
-            $"Type 'blab' is undefined.",
+            "Type 'blab' is undefined.",
         };
 
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(
+            TestTools.StatementsInContext(text, contextType),
+            diagnostics);
     }
     
-    [Fact]
-    public void FunctionCannotHaveNameOfType()
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void CannotUseUninitializedVariable(TestTools.ContextType contextType)
     {
         var text =
             $$"""
-            class TypeName {
-                [TypeName] : int;
-                
-            } 
+            var a : int;
+            var b = [a];
+            var b = [a];
+            if ([a] == 15){
+                b = -[a];
+            }
             """ ;
-        
         var diagnostics = new[]
         {
-            "Class member cannot have the same name as the class.",
+            DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
+            DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
+            DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
+            DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
         };
 
-        TestTools.AssertDiagnosticsWithTimeout(text, diagnostics);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
-    
+
 }

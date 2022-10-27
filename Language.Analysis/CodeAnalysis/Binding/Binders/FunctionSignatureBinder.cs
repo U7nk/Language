@@ -28,7 +28,6 @@ sealed class FunctionSignatureBinder
             if (!seenParameters.Add(parameterName))
             {
                 _diagnostics.ReportParameterAlreadyDeclared(parameter.Location, parameterName);
-                continue;
             }
 
             var parameterType = BinderHelp.BindTypeClause(parameter.Type, _diagnostics, _lookup);

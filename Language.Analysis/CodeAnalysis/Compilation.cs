@@ -61,13 +61,14 @@ public sealed class Compilation
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, object?> variables)
     {
         var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
-        var diagnostics = parseDiagnostics.Concat(GlobalScope.Diagnostics).ToImmutableArray();
+        var program = GetProgram();
+        var diagnostics = parseDiagnostics
+            .Concat(GlobalScope.Diagnostics)
+            .Concat(program.Diagnostics)
+            .ToImmutableArray();
+        
         if (diagnostics.Any())
             return new EvaluationResult(diagnostics, null);
-
-        var program = GetProgram();
-        if (program.Diagnostics.Any())
-            return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
 
         // var cfgPath = "control_flow.dot";
         // var cfg = ControlFlowGraph.Create(

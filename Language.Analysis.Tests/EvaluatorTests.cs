@@ -232,6 +232,20 @@ public class EvaluatorTests
             """ ,
             expectedValue: 10, isScript: false);
     }
+    
+    [Fact]
+    public void EvaluatorTopLevelStatementFunctionsCanBeCalledWithoutMembers()
+    {
+        AssertValue($$"""
+            function ten() : int
+            {
+                return 10;
+            }
+            ten();
+            """ ,
+            expectedValue: 10, 
+            isScript: false);
+    }
 
     [Fact]
     public void EvaluatorEvaluatesWithFieldsDeclaration()
@@ -377,6 +391,21 @@ public class EvaluatorTests
             """ ,
             result => result.Should().Be(15),
             isScript: false);
+    }
+    
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void EvaluatorEvaluatesVariableDeclaration(TestTools.ContextType contextType)
+    {
+        var source = $$"""
+            var a : int;
+            """;
+        AssertValue(
+            TestTools.StatementsInContext(source, contextType),
+            _ => { },
+            isScript: true);
     }
 
     static object? EvaluateValue(string expression, bool isScript)

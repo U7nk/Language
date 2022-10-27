@@ -28,8 +28,17 @@ sealed class FunctionBinder
         _lookup = lookup;
     }
 
-    public BoundBlockStatement BindFunctionBody(FunctionSymbol functionSymbol) 
-        => BindBlockStatement(functionSymbol.Declaration.Unwrap().Body);
+    public BoundBlockStatement BindFunctionBody(FunctionSymbol functionSymbol)
+    {
+        _scope = new(_scope);
+        functionSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
+        
+        var result = BindBlockStatement(functionSymbol.Declaration.Unwrap().Body);
+        
+        _scope = _scope.Parent ?? throw new InvalidOperationException();
+        
+        return result;
+    }
 
     public BoundStatement BindGlobalStatement(StatementSyntax syntax) => BindStatement(syntax, isGlobal: true);
 
@@ -200,10 +209,7 @@ sealed class FunctionBinder
 
         if (!_scope.TryDeclareVariable(variable))
         {
-            var location = new TextLocation(syntax.SyntaxTree.SourceText,
-                TextSpan.FromBounds(
-                    syntax.VariableDeclaration.KeywordToken.Span.Start,
-                    syntax.VariableDeclaration.IdentifierToken.Span.End));
+            var location = syntax.VariableDeclaration.IdentifierToken.Location;
             _diagnostics.ReportVariableAlreadyDeclared(location, name);
         }
 
@@ -240,14 +246,12 @@ sealed class FunctionBinder
     BoundBlockStatement BindBlockStatement(BlockStatementSyntax syntax)
     {
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        _scope = new(_scope);
+        
         foreach (var statementSyntax in syntax.Statements)
         {
             var statement = BindStatement(statementSyntax);
             statement.AddTo(statements);
         }
-
-        _scope = _scope.Parent ?? throw new InvalidOperationException();
 
         return new(statements.ToImmutable());
     }
@@ -475,7 +479,7 @@ sealed class FunctionBinder
         {
             return new BoundVariableExpression(variable);
         }
-        
+
         _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
         return new BoundErrorExpression();
     }

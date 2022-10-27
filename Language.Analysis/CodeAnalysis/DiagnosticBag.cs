@@ -336,4 +336,19 @@ public class DiagnosticBag : List<Diagnostic>
         var message = "Class member cannot have the same name as the class.";
         Report(memberIdentifier.Location, message, CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE);
     }
+    
+    public const string CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE = "[0041:Error]";
+
+    public void ReportClassMemberWithThatNameAlreadyDeclared(SyntaxToken memberIdentifier)
+    {
+        var message = $"Class member with name '{memberIdentifier.Text}' is already declared.";
+        Report(memberIdentifier.Location, message, CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE);
+    }
+    
+    public const string REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE = "[0042:Error]";
+    public void ReportCannotUseUninitializedVariable(SyntaxToken identifier)
+    {
+        var message = $"Cannot use uninitialized variable '{identifier.Text}'.";
+        Report(identifier.Location, message, REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE);
+    }
 }

@@ -26,11 +26,14 @@ sealed class TypeBinder
 
         foreach (var (functionSymbol, _) in _lookup.CurrentType.MethodTable)
         {
-            typeScope.TryDeclareFunction(functionSymbol);
+            typeScope.TryDeclareFunction(functionSymbol)
+                .ThrowIfFalse();
         }
+        
         foreach (var fieldSymbol in _lookup.CurrentType.FieldTable)
         {
-            typeScope.TryDeclareField(fieldSymbol);
+            typeScope.TryDeclareField(fieldSymbol)
+                .ThrowIfFalse();
         }
         
         foreach (var functionSymbol in _lookup.CurrentType.MethodTable.Symbols)

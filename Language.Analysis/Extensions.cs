@@ -185,7 +185,31 @@ internal static class Extensions
             return true;
         return false;
     }
+    
+    public static bool ThrowIfFalse(
+        [DoesNotReturnIf(false)] this bool condition, 
+        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")
+    {
+        if (condition == false)
+        {
+            throw new Exception($"Condition {conditionExpression} is {false}. But it should be {true}");
+        }
 
+        return condition;
+    }
+    
+    public static bool ThrowIfTrue(
+        [DoesNotReturnIf(true)] this bool condition, 
+        [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")
+    {
+        if (condition)
+        {
+            throw new Exception($"Condition {conditionExpression} is {true}. But it should be {false}");
+        }
+
+        return condition;
+    }
+    
     public static ConditionalAdd<T> If<T>(this T obj, bool condition) => new ConditionalAdd<T>(obj);
 }
 internal class ConditionalAdd<T>
