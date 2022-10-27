@@ -165,9 +165,9 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            "error: Unexpected token <CloseParenthesisToken> expected <IdentifierToken>.",
-            "error: Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
-            "error: Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
+            "Unexpected token <CloseParenthesisToken> expected <IdentifierToken>.",
+            "Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
+            "Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text, contextType), diagnostics);

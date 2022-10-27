@@ -47,18 +47,18 @@ sealed class MethodBinder
         var result = BindStatementInternal(syntax);
         if (!_isScript || !isGlobal)
         {
-            if (result is BoundExpressionStatement es)
+            if (result is not BoundExpressionStatement es)
+                return result;
+
+            var isAllowedExpression = es.Expression.Kind
+                is BoundNodeKind.AssignmentExpression
+                or BoundNodeKind.MethodCallExpression
+                or BoundNodeKind.MemberAccessExpression
+                or BoundNodeKind.MemberAssignmentExpression
+                or BoundNodeKind.ErrorExpression;
+            if (!isAllowedExpression)
             {
-                var isAllowedExpression = es.Expression.Kind
-                    is BoundNodeKind.AssignmentExpression
-                    or BoundNodeKind.MethodCallExpression
-                    or BoundNodeKind.MemberAccessExpression
-                    or BoundNodeKind.MemberAssignmentExpression
-                    or BoundNodeKind.ErrorExpression;
-                if (!isAllowedExpression)
-                {
-                    _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
-                }
+                _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }
         }
 
