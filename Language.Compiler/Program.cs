@@ -1,8 +1,9 @@
-﻿using Language.Analysis.CodeAnalysis;
+﻿using compiler;
+using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Mono.Options;
 
-namespace compiler;
+namespace Language.Compiler;
 
 static class PathExtensions
 {

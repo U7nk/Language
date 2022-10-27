@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -6,6 +7,7 @@ using Language.Analysis.CodeAnalysis.Text;
 
 namespace TestProject1.DiagnosticsTests;
 
+[SuppressMessage("Usage", "xUnit1015:MemberData must reference an existing member")]
 public class General
 {
     [Theory]
