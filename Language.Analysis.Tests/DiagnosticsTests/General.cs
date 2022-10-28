@@ -208,7 +208,7 @@ public class General
     public void ForStatement_Reports_Iterator_Redeclaration(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+            """
             for (var i = 1; i < 4; i = i + 1)
             {
                 var [i] = 5;
@@ -230,7 +230,7 @@ public class General
     public void NameExpression_Reports_UndefinedVariable(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+            """
             var a = [b];
             """ ;
         var diagnostics = new[]
@@ -249,7 +249,7 @@ public class General
     public void AssignedExpression_Reports_CannotAssignVariable(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+             """
              let a = 10;
              [a] = 50; 
              """ ;
@@ -268,7 +268,7 @@ public class General
     public void TypeClause_Reports_UndefinedType(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+            """
             var a : [blab] = 10; 
             """ ;
         var diagnostics = new[]
@@ -288,10 +288,10 @@ public class General
     public void CannotUseUninitializedVariable(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+            """
             var a : int;
             var b = [a];
-            var b = [a];
+            b = [a];
             if ([a] == 15){
                 b = -[a];
             }
@@ -303,7 +303,7 @@ public class General
             DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
             DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
         };
-
+        
         TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
     
@@ -311,7 +311,7 @@ public class General
     public void FieldAccessExpressionStatementInvalid()
     {
         var text =
-            $$"""
+            """
             [this.Field;]
             """ ;
         var diagnostics = new[]

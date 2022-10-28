@@ -88,5 +88,5 @@ public enum SyntaxKind
     ContinueStatement,
     BreakStatement,
     ReturnStatement,
-
+    VariableDeclarationAssignmentStatement
 }

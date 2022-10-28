@@ -82,6 +82,7 @@ class ControlFlowGraph
                         break;
                     case BoundNodeKind.ExpressionStatement:
                     case BoundNodeKind.VariableDeclarationStatement:
+                    case BoundNodeKind.VariableDeclarationAssignmentStatement:
                         _statements.Add(statement);
                         break;
                     default:
@@ -194,6 +195,7 @@ class ControlFlowGraph
                         break;
                     case BoundNodeKind.ExpressionStatement:
                     case BoundNodeKind.VariableDeclarationStatement:
+                    case BoundNodeKind.VariableDeclarationAssignmentStatement:
                         if (isLast)
                             Connect(current, next, null);
                         break;

@@ -59,6 +59,9 @@ static class BoundNodePrinter
             case BoundNodeKind.VariableDeclarationStatement:
                 WriteVariableDeclarationStatement((BoundVariableDeclarationStatement)node, writer);
                 break;
+            case BoundNodeKind.VariableDeclarationAssignmentStatement:
+                WriteVariableDeclarationAssignmentStatement((BoundVariableDeclarationAssignmentStatement)node, writer);
+                break;
             case BoundNodeKind.IfStatement:
                 WriteIfStatement((BoundIfStatement)node, writer);
                 break;
@@ -311,6 +314,20 @@ static class BoundNodePrinter
     {
         writer.Write(node.Variable.IsReadonly ? "let " : "var ");
         writer.Write(node.Variable.Name);
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.ColonToken));
+        writer.Write(" ");
+        writer.Write(node.Variable.Type);
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.SemicolonToken));
+        writer.WriteLine();
+    }
+    
+    static void WriteVariableDeclarationAssignmentStatement(BoundVariableDeclarationAssignmentStatement node, IndentedTextWriter writer)
+    {
+        writer.Write(node.Variable.IsReadonly ? "let " : "var ");
+        writer.Write(node.Variable.Name);
+        writer.Write(SyntaxFacts.GetText(SyntaxKind.ColonToken));
+        writer.Write(" ");
+        writer.Write(node.Variable.Type);
         writer.Write(" = ");
         node.Initializer.WriteTo(writer);
         writer.WriteLine();

@@ -149,7 +149,7 @@ internal sealed class Lowerer : BoundTreeRewriter
 
         BoundStatement? statement = null;
         if (node.VariableDeclaration is not null)
-            statement = new BoundVariableDeclarationStatement(node.VariableDeclaration.Variable,
+            statement = new BoundVariableDeclarationAssignmentStatement(node.VariableDeclaration.Variable,
                 node.VariableDeclaration.Initializer);
         else
             statement = new BoundExpressionStatement(node.Expression.Unwrap());

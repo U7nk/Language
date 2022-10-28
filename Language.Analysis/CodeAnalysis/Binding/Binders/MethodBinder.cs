@@ -83,6 +83,8 @@ sealed class MethodBinder
                 return BindExpressionStatement((ExpressionStatementSyntax)syntax);
             case SyntaxKind.VariableDeclarationStatement:
                 return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
+            case SyntaxKind.VariableDeclarationAssignmentStatement:
+                return BindVariableDeclarationAssignmentStatement((VariableDeclarationAssignmentStatementSyntax)syntax);
             case SyntaxKind.IfStatement:
                 return BindIfStatement((IfStatementSyntax)syntax);
             case SyntaxKind.WhileStatement:
@@ -159,7 +161,7 @@ sealed class MethodBinder
 
     BoundStatement BindForStatement(ForStatementSyntax syntax)
     {
-        BoundVariableDeclarationStatement? variableDeclaration = null;
+        BoundVariableDeclarationAssignmentStatement? variableDeclaration = null;
         BoundExpression? expression = null;
         if (syntax.VariableDeclaration is not null)
             variableDeclaration = BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
@@ -202,30 +204,6 @@ sealed class MethodBinder
         return new BoundIfStatement(condition, thenStatement, elseStatement);
     }
 
-
-    BoundVariableDeclarationStatement BindVariableDeclarationAssignmentSyntax(
-        VariableDeclarationAssignmentSyntax syntax)
-    {
-        var isReadonly = syntax.VariableDeclaration.KeywordToken.Kind == SyntaxKind.LetKeyword;
-        var type = BindTypeClause(syntax.VariableDeclaration.TypeClause);
-        var initializer = BindExpression(syntax.Initializer);
-
-        if (type is not null)
-            initializer = BindConversion(initializer, type, syntax.Initializer.Location);
-
-        var name = syntax.VariableDeclaration.IdentifierToken.Text;
-        var variable = new VariableSymbol(name, type ?? initializer.Type, isReadonly);
-
-        if (!_scope.TryDeclareVariable(variable))
-        {
-            var location = syntax.VariableDeclaration.IdentifierToken.Location;
-            _diagnostics.ReportVariableAlreadyDeclared(location, name);
-        }
-
-        return new BoundVariableDeclarationStatement(variable, initializer);
-    }
-
-
     TypeSymbol? BindTypeClause(TypeClauseSyntax? typeClause)
     {
         if (typeClause is null)
@@ -240,16 +218,48 @@ sealed class MethodBinder
         return type;
     }
 
-    BoundVariableDeclarationStatement BindVariableDeclarationStatement(
-        VariableDeclarationStatementSyntax syntax)
-    {
-        return BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
-    }
+    BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax) 
+        => BindVariableDeclarationSyntax(syntax.VariableDeclaration, variableType: null);
 
+    BoundVariableDeclarationStatement BindVariableDeclarationSyntax(VariableDeclarationSyntax syntax, TypeSymbol? variableType)
+    {
+        (syntax.TypeClause is null && variableType is null)
+            .ThrowIfTrue();
+        
+        
+        var isReadonly = syntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
+        var type = BindTypeClause(syntax.TypeClause);
+        
+        var name = syntax.IdentifierToken.Text;
+        var variable = new VariableSymbol(name, (type ?? variableType).Unwrap(), isReadonly);
+
+        if (!_scope.TryDeclareVariable(variable))
+        {
+            var location = syntax.IdentifierToken.Location;
+            _diagnostics.ReportVariableAlreadyDeclared(location, name);
+        }
+
+        return new BoundVariableDeclarationStatement(variable);
+    }
+    
+    BoundVariableDeclarationAssignmentStatement BindVariableDeclarationAssignmentStatement(
+        VariableDeclarationAssignmentStatementSyntax syntax) 
+        => BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
     BoundExpressionStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
     {
         var expression = BindExpression(syntax.Expression, true);
         return new BoundExpressionStatement(expression);
+    }
+    
+    BoundVariableDeclarationAssignmentStatement BindVariableDeclarationAssignmentSyntax(
+        VariableDeclarationAssignmentSyntax syntax)
+    {
+        var initializer = BindExpression(syntax.Initializer);
+        var variable = BindVariableDeclarationSyntax(syntax.VariableDeclaration, initializer.Type);
+        
+        initializer = BindConversion(initializer, variable.Variable.Type, syntax.Initializer.Location);
+
+        return new BoundVariableDeclarationAssignmentStatement(variable.Variable, initializer);
     }
 
     BoundBlockStatement BindBlockStatement(BlockStatementSyntax syntax)

@@ -341,12 +341,23 @@ public class Parser
         return new ElseClauseSyntax(_syntaxTree, elseKeyword, elseStatement);
     }
 
-    VariableDeclarationStatementSyntax ParseVariableDeclarationStatement()
+    StatementSyntax ParseVariableDeclarationStatement()
     {
-        var variableDeclarationAssignment = ParseVariableDeclarationAssignmentSyntax();
-        var semicolon = Match(SyntaxKind.SemicolonToken);
-
-        return new VariableDeclarationStatementSyntax(_syntaxTree, variableDeclarationAssignment, semicolon);
+        var variableDeclaration = ParseVariableDeclarationSyntax();
+        if (Current.Kind is SyntaxKind.EqualsToken)
+        {
+            var equals = Match(SyntaxKind.EqualsToken);
+            var initializer = ParseExpression();
+            var variableDeclarationAssignment =
+                _syntaxTree.NewVariableDeclarationAssignment(variableDeclaration, equals, initializer); 
+            var semicolon = Match(SyntaxKind.SemicolonToken);
+            return _syntaxTree.NewVariableDeclarationAssignmentStatement(variableDeclarationAssignment, semicolon);    
+        }
+        else
+        {
+            var semicolon = Match(SyntaxKind.SemicolonToken);
+            return new VariableDeclarationStatementSyntax(_syntaxTree, variableDeclaration, semicolon);
+        }
     }
 
 

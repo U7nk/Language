@@ -2,11 +2,11 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class VariableDeclarationStatementSyntax : StatementSyntax
 {
-    public VariableDeclarationAssignmentSyntax VariableDeclaration { get; }
+    public VariableDeclarationSyntax VariableDeclaration { get; }
     public SyntaxToken SemicolonToken { get; }
     public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
-    public VariableDeclarationStatementSyntax(SyntaxTree syntaxTree, VariableDeclarationAssignmentSyntax variableDeclaration,
+    public VariableDeclarationStatementSyntax(SyntaxTree syntaxTree, VariableDeclarationSyntax variableDeclaration,
         SyntaxToken semicolonToken) : base(syntaxTree)
     {
         VariableDeclaration = variableDeclaration;

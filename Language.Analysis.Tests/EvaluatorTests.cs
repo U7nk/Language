@@ -419,7 +419,7 @@ public class EvaluatorTests
         AssertValue(
             TestTools.StatementsInContext(source, contextType),
             _ => { },
-            isScript: true);
+            isScript: false);
     }
     
     [Fact]

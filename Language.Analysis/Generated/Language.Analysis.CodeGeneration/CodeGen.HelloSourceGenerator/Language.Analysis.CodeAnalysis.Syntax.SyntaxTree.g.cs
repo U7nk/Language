@@ -33,9 +33,14 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.WhileStatementSyntax(this,whileKeyword,condition,body);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationStatementSyntax NewVariableDeclarationStatement(Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationAssignmentSyntax variableDeclaration,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
+    public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationStatementSyntax NewVariableDeclarationStatement(Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax variableDeclaration,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationStatementSyntax(this,variableDeclaration,semicolonToken);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationAssignmentStatementSyntax NewVariableDeclarationAssignmentStatement(Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationAssignmentSyntax variableDeclaration,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationAssignmentStatementSyntax(this,variableDeclaration,semicolonToken);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax NewBlockStatement(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.StatementSyntax> statements,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)

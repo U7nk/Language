@@ -621,8 +621,8 @@ class Emitter
         {
             case BoundNodeKind.ExpressionStatement:
                 return EmitExpressionStatement((BoundExpressionStatement)statement);
-            case BoundNodeKind.VariableDeclarationStatement:
-                return EmitVariableDeclarationStatement((BoundVariableDeclarationStatement)statement);
+            case BoundNodeKind.VariableDeclarationAssignmentStatement:
+                return EmitVariableDeclarationStatement((BoundVariableDeclarationAssignmentStatement)statement);
             case BoundNodeKind.ConditionalGotoStatement:
                 return EmitConditionalGotoStatement((BoundConditionalGotoStatement)statement);
             case BoundNodeKind.LabelStatement:
@@ -668,13 +668,13 @@ class Emitter
         return instructions;
     }
 
-    List<Instruction> EmitVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
+    List<Instruction> EmitVariableDeclarationStatement(BoundVariableDeclarationAssignmentStatement assignmentStatement)
     {
         var instructions = new List<Instruction>();
-        instructions.AddRange(EmitExpression(statement.Initializer));
+        instructions.AddRange(EmitExpression(assignmentStatement.Initializer));
         instructions.Add(new Instruction(Bytecode.STLOC));
         instructions.Add(new Instruction(_stack.Peek().Count));
-        _stack.Peek().Add(statement.Variable, _stack.Peek().Count);
+        _stack.Peek().Add(assignmentStatement.Variable, _stack.Peek().Count);
         return instructions;
     }
 

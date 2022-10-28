@@ -5,6 +5,7 @@ internal enum BoundNodeKind
     // statements 
     BlockStatement,
     ExpressionStatement,
+    VariableDeclarationAssignmentStatement,
     VariableDeclarationStatement,
     IfStatement,
     WhileStatement,
@@ -13,11 +14,15 @@ internal enum BoundNodeKind
     LabelStatement,
     ConditionalGotoStatement,
     ReturnStatement,
-
-    // expressions
+    
+    #region expressions
+    
     UnaryExpression,
     LiteralExpression,
     BinaryExpression,
+    /// <summary>
+    /// variable access expression
+    /// </summary>
     VariableExpression,
     AssignmentExpression,
     ErrorExpression,
@@ -28,4 +33,6 @@ internal enum BoundNodeKind
     MemberAccessExpression,
     MemberAssignmentExpression,
     FieldAccessExpression
+    
+    #endregion
 }

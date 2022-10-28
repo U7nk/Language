@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Binding.Binders;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
@@ -79,10 +80,19 @@ class Evaluator
                     i++;
                     break;
                 case BoundNodeKind.VariableDeclarationStatement:
-                    var gs = (BoundVariableDeclarationStatement)statement;
-                    EvaluateVariableDeclarationStatement(gs);
+                {
+                    var declarationStatement = (BoundVariableDeclarationStatement)statement;
+                    EvaluateVariableDeclarationStatement(declarationStatement);
                     i++;
                     break;
+                }
+                case BoundNodeKind.VariableDeclarationAssignmentStatement:
+                {
+                    var declarationAssignmentStatement = (BoundVariableDeclarationAssignmentStatement)statement;
+                    EvaluateVariableDeclarationAssignmentStatement(declarationAssignmentStatement);
+                    i++;
+                    break;
+                }
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
                     var condition = (bool)(EvaluateExpression(cgs.Condition).Unwrap().LiteralValue ?? throw new InvalidOperationException());
@@ -112,10 +122,17 @@ class Evaluator
         return _lastValue;
     }
 
-    void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement statement)
+    void EvaluateVariableDeclarationStatement(BoundVariableDeclarationStatement assignmentStatement)
     {
-        var value = EvaluateExpression(statement.Initializer);
-        Assign(statement.Variable, value);
+        var variable = assignmentStatement.Variable;
+        var value = EvaluateDefaultValueObjectCreation(variable.Type);
+        Assign(variable, value);
+    }
+    
+    void EvaluateVariableDeclarationAssignmentStatement(BoundVariableDeclarationAssignmentStatement assignmentStatement)
+    {
+        var value = EvaluateExpression(assignmentStatement.Initializer);
+        Assign(assignmentStatement.Variable, value);
     }
 
     void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
