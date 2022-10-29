@@ -304,4 +304,14 @@ class ControlFlowGraph
 
         return graph.End.Incoming.All(x => x.From.Statements.Last() is BoundReturnStatement);
     }
+    
+    public static bool AllVariablesInitializedBeforeUse(BoundBlockStatement body)
+    {
+        var graph = Create(body);
+        var variablesUsages = graph.Blocks.SelectMany(x => 
+                x.Statements.Where(s => 
+                    s.GetChildren(recursion:true).Any(c => c.Kind is BoundNodeKind.VariableExpression)))
+            .ToList();
+        return graph.End.Incoming.All(x => x.From.Statements.Last() is BoundReturnStatement);
+    }
 }

@@ -1,11 +1,12 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 
 internal class BoundErrorExpression : BoundExpression
 {
-    public BoundErrorExpression()
+    public BoundErrorExpression(SyntaxNode? syntax) : base(syntax)
     {
         
     }

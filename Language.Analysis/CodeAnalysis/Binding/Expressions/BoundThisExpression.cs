@@ -1,10 +1,11 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 public class BoundThisExpression : BoundExpression
 {
-    public BoundThisExpression(TypeSymbol type)
+    public BoundThisExpression(SyntaxNode syntax,TypeSymbol type) : base(syntax)
     {
         Type = type;
     }

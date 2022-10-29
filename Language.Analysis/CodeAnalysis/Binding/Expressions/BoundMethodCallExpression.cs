@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
@@ -8,7 +9,7 @@ internal class BoundMethodCallExpression : BoundExpression
     public MethodSymbol MethodSymbol { get; }
     public ImmutableArray<BoundExpression> Arguments { get; }
 
-    public BoundMethodCallExpression(MethodSymbol methodSymbol, ImmutableArray<BoundExpression> arguments)
+    public BoundMethodCallExpression(SyntaxNode syntax, MethodSymbol methodSymbol, ImmutableArray<BoundExpression> arguments) : base(syntax)
     {
         MethodSymbol = methodSymbol;
         Arguments = arguments;

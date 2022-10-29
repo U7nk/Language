@@ -1,4 +1,5 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
@@ -6,7 +7,7 @@ internal sealed class BoundVariableExpression : BoundExpression
 {
     public VariableSymbol Variable { get; }
 
-    public BoundVariableExpression(VariableSymbol variable)
+    public BoundVariableExpression(SyntaxNode syntax, VariableSymbol variable) : base(syntax)
     {
         Variable = variable;
     }

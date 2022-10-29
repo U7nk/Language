@@ -1,3 +1,5 @@
+using Language.Analysis.CodeAnalysis.Syntax;
+
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundIfStatement : BoundStatement
@@ -6,7 +8,7 @@ internal class BoundIfStatement : BoundStatement
     public BoundStatement ThenStatement { get; }
     public BoundStatement? ElseStatement { get; }
 
-    public BoundIfStatement(BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement)
+    public BoundIfStatement(SyntaxNode syntax, BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement) : base(syntax)
     {
         Condition = condition;
         ThenStatement = thenStatement;

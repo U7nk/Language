@@ -37,8 +37,8 @@ internal sealed class Lowerer : BoundTreeRewriter
             else
                 builder.Add(current);
         }
-
-        return new BoundBlockStatement(builder.ToImmutable());
+        
+        return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
     }
 
     LabelSymbol GenerateLabel(string? name = null)
@@ -58,9 +58,10 @@ internal sealed class Lowerer : BoundTreeRewriter
             // <then>
             // end:
             var label = GenerateLabel("end");
-            var conditionalGoto = new BoundConditionalGotoStatement(label, node.Condition, false);
-            var endLabelStatement = new BoundLabelStatement(label);
+            var conditionalGoto = new BoundConditionalGotoStatement(null, label, node.Condition, false);
+            var endLabelStatement = new BoundLabelStatement(null,label);
             var block = new BoundBlockStatement(
+                null,
                 ImmutableArray.Create(conditionalGoto, node.ThenStatement, endLabelStatement));
             return RewriteStatement(block);
         }
@@ -80,11 +81,11 @@ internal sealed class Lowerer : BoundTreeRewriter
             // end:
             var elseLabel = GenerateLabel("else");
             var endLabel = GenerateLabel("end");
-            var conditionalGoto = new BoundConditionalGotoStatement(elseLabel, node.Condition, false);
-            var gotoEnd = new BoundGotoStatement(endLabel);
-            var elseLabelStatement = new BoundLabelStatement(elseLabel);
-            var endLabelStatement = new BoundLabelStatement(endLabel);
-            var block = new BoundBlockStatement(
+            var conditionalGoto = new BoundConditionalGotoStatement(null,elseLabel, node.Condition, false);
+            var gotoEnd = new BoundGotoStatement(null, endLabel);
+            var elseLabelStatement = new BoundLabelStatement(null, elseLabel);
+            var endLabelStatement = new BoundLabelStatement(null, endLabel);
+            var block = new BoundBlockStatement(null,
                 ImmutableArray.Create(
                     conditionalGoto, node.ThenStatement,
                     gotoEnd, elseLabelStatement,
@@ -109,16 +110,17 @@ internal sealed class Lowerer : BoundTreeRewriter
         // break:
         
         var startLabel = GenerateLabel("loop_start");
-        var startLabelStatement = new BoundLabelStatement(startLabel);
+        var startLabelStatement = new BoundLabelStatement(null, startLabel);
         
         
         var continueLabel = node.ContinueLabel;
-        var continueLabelStatement = new BoundLabelStatement(continueLabel);
-        var gotoContinue = new BoundGotoStatement(continueLabel);
-        var gotoStartOnTrue = new BoundConditionalGotoStatement(startLabel, node.Condition, true);
-        var breakLabelStatement = new BoundLabelStatement(node.BreakLabel);
+        var continueLabelStatement = new BoundLabelStatement(null, continueLabel);
+        var gotoContinue = new BoundGotoStatement(null, continueLabel);
+        var gotoStartOnTrue = new BoundConditionalGotoStatement(null, startLabel, node.Condition, true);
+        var breakLabelStatement = new BoundLabelStatement(null, node.BreakLabel);
 
         var block = new BoundBlockStatement(
+            null,
             ImmutableArray.Create(
                 gotoContinue,
                 startLabelStatement,
@@ -148,25 +150,28 @@ internal sealed class Lowerer : BoundTreeRewriter
         // }
 
         BoundStatement? statement = null;
-        if (node.VariableDeclaration is not null)
-            statement = new BoundVariableDeclarationAssignmentStatement(node.VariableDeclaration.Variable,
-                node.VariableDeclaration.Initializer);
+        if (node.VariableDeclarationAssignment is not null)
+            statement = new BoundVariableDeclarationAssignmentStatement(
+                node.VariableDeclarationAssignment.Syntax,
+                node.VariableDeclarationAssignment.Variable,
+                node.VariableDeclarationAssignment.Initializer);
         else
-            statement = new BoundExpressionStatement(node.Expression.Unwrap());
+            statement = new BoundExpressionStatement(node.Expression.Unwrap().Syntax, node.Expression.Unwrap());
 
         var condition = node.Condition.Unwrap();
          
-        var mutation = new BoundExpressionStatement(node.Mutation.Unwrap());
-        var body = new BoundBlockStatement(ImmutableArray.Create(
-            node.Body,
-            mutation));
+        var mutation = new BoundExpressionStatement(node.Mutation.Syntax, node.Mutation.Unwrap());
+        var body = new BoundBlockStatement(
+            node.Body.Syntax, // i dont know if this is correct
+            ImmutableArray.Create(node.Body, mutation));
         var whileStatement = new BoundWhileStatement(
+            null,
             condition,
             body,
             node.BreakLabel,
             node.ContinueLabel);
 
-        var result = new BoundBlockStatement(ImmutableArray.Create(statement, whileStatement));
+        var result = new BoundBlockStatement(null, ImmutableArray.Create(statement, whileStatement));
         return RewriteStatement(result);
     }
 }

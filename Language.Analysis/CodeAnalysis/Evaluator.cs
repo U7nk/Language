@@ -53,7 +53,7 @@ class Evaluator
         
         var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
         var body = programType.MethodTable[function].Unwrap();
-        var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(programType));
+        var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(null, programType));
         Assign(new VariableSymbol("this", programType, true), programInstance);
         return EvaluateStatement(body);
     }
@@ -168,14 +168,14 @@ class Evaluator
                 EvaluateMethodCallExpression((BoundMethodCallExpression)node,
                     _stacks.Peek().Single(x => x.Key.Name == "this").Value.Unwrap().Type,
                     _stacks.Peek().Single(x => x.Key.Name == "this").Value),
-            BoundNodeKind.FieldAccessExpression =>
-                EvaluateFieldAccessExpression((BoundFieldAccessExpression)node),
+            BoundNodeKind.FieldExpression =>
+                EvaluateFieldAccessExpression((BoundFieldExpression)node),
             _ => /* default */
                 throw new($"Unexpected node  {node.Kind}")
         };
     }
 
-    ObjectInstance? EvaluateFieldAccessExpression(BoundFieldAccessExpression node)
+    ObjectInstance? EvaluateFieldAccessExpression(BoundFieldExpression node)
     {
         var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value;
         if (instance is null)
@@ -187,12 +187,12 @@ class Evaluator
         // should return object.
         // objects is represented as Dictionary<string, object>
         
-        if (node.MemberAccess.Kind is BoundNodeKind.FieldAccessExpression)
+        if (node.MemberAccess.Kind is BoundNodeKind.FieldExpression)
         {
             var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.Unwrap();
             var value = EvaluateExpression(node.RightValue).Unwrap();
         
-            var member = node.MemberAccess.Unwrap<BoundFieldAccessExpression>();
+            var member = node.MemberAccess.Unwrap<BoundFieldExpression>();
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
         else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
@@ -207,7 +207,7 @@ class Evaluator
             var instance = EvaluateExpression(memberAccess.Left).Unwrap();
             var value = EvaluateExpression(node.RightValue).Unwrap();
 
-            var member = memberAccess.Member.Unwrap<BoundFieldAccessExpression>();
+            var member = memberAccess.Member.Unwrap<BoundFieldExpression>();
 
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
@@ -241,7 +241,7 @@ class Evaluator
         if (node.Member is BoundMethodCallExpression methodCall)
             return EvaluateMethodCallExpression(methodCall, node.Left.Type, leftValue);
         
-        if (node.Member is BoundFieldAccessExpression fieldAccess)
+        if (node.Member is BoundFieldExpression fieldAccess)
         {
             var field = fieldAccess.FieldSymbol;
             return leftValue.Fields[field.Name];

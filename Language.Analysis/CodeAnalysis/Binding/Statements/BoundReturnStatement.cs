@@ -1,8 +1,10 @@
+using Language.Analysis.CodeAnalysis.Syntax;
+
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 class BoundReturnStatement : BoundStatement
 {
-    public BoundReturnStatement(BoundExpression? expression)
+    public BoundReturnStatement(SyntaxNode? syntax, BoundExpression? expression) : base(syntax)
     {
         Expression = expression;
     }

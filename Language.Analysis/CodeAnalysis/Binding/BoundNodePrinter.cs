@@ -255,12 +255,12 @@ static class BoundNodePrinter
     static void WriteForStatement(BoundForStatement node, IndentedTextWriter writer)
     {
         writer.Write("for (");
-        if (node.VariableDeclaration is not null)
+        if (node.VariableDeclarationAssignment is not null)
         {
             writer.Write("var ");
-            writer.Write(node.VariableDeclaration.Variable.Name);
+            writer.Write(node.VariableDeclarationAssignment.Variable.Name);
             writer.Write(" = ");
-            WriteTo(node.VariableDeclaration.Initializer, writer);
+            WriteTo(node.VariableDeclarationAssignment.Initializer, writer);
         }
         else
             node.Expression!.WriteTo(writer);

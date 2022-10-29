@@ -1,10 +1,11 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundConversionExpression : BoundExpression
 {
-    public BoundConversionExpression(TypeSymbol type, BoundExpression expression)
+    public BoundConversionExpression(SyntaxNode? syntax, TypeSymbol type, BoundExpression expression) : base(syntax)
     {
         Type = type;
         Expression = expression;

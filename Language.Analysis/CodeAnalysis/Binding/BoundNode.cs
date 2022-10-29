@@ -1,11 +1,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 public abstract class BoundNode
 {
+    public BoundNode(SyntaxNode? syntax)
+    {
+        Syntax = syntax;
+    }
+    
+    public SyntaxNode? Syntax { get; }
     internal abstract BoundNodeKind Kind { get; }
 
     internal IEnumerable<BoundNode> GetChildren(bool recursion = false)

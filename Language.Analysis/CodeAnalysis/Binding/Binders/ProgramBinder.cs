@@ -157,7 +157,7 @@ sealed class ProgramBinder
             _previous, _diagnostics.ToImmutableArray(),
             mainFunction, scriptMainFunction,
             _scope.GetDeclaredTypes(), _scope.GetDeclaredVariables(),
-            new BoundBlockStatement(statements.ToImmutable()));
+            new BoundBlockStatement(null, statements.ToImmutable()));
     }
 
     void DiagnoseGlobalStatementsUsage()
@@ -312,21 +312,21 @@ sealed class ProgramBinder
             {
                 Debug.Assert(expressionStatement != null, nameof(expressionStatement) + " != null");
                 statements = statements.SetItem(statements.Length - 1,
-                    new BoundReturnStatement(expressionStatement.Expression));
+                    new BoundReturnStatement(null, expressionStatement.Expression));
             }
-            else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(statements)))
+            else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(null, statements)))
             {
-                var nullValue = new BoundLiteralExpression("", TypeSymbol.String);
-                statements = statements.Add(new BoundReturnStatement(nullValue));
+                var nullValue = new BoundLiteralExpression(null, "null", TypeSymbol.String);
+                statements = statements.Add(new BoundReturnStatement(null, nullValue));
             }
 
             var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.ScriptMainMethod));
-            var properReturnBody = Lowerer.Lower(new BoundBlockStatement(statements));
+            var properReturnBody = Lowerer.Lower(new BoundBlockStatement(null, statements));
             type.MethodTable[globalScope.ScriptMainMethod] = properReturnBody;
         }
         else if (globalScope.MainMethod is not null && globalScope.Statement.Statements.Any())
         {
-            var body = Lowerer.Lower(new BoundBlockStatement(globalScope.Statement.Statements));
+            var body = Lowerer.Lower(new BoundBlockStatement(null, globalScope.Statement.Statements));
             var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.MainMethod));
             type.MethodTable[globalScope.MainMethod] = body;
         }

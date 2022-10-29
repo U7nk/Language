@@ -1,25 +1,27 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundForStatement : BoundLoopStatement
 {
     internal override BoundNodeKind Kind => BoundNodeKind.ForStatement;
-    public BoundVariableDeclarationAssignmentStatement? VariableDeclaration { get; }
+    public BoundVariableDeclarationAssignmentStatement? VariableDeclarationAssignment { get; }
     public BoundExpression? Expression { get; }
     public BoundExpression Condition { get; }
     public BoundExpression Mutation { get; }
     public BoundStatement Body { get; }
 
-    public BoundForStatement(BoundVariableDeclarationAssignmentStatement? variableDeclaration, BoundExpression? expression,
+    public BoundForStatement(SyntaxNode? syntax, BoundVariableDeclarationAssignmentStatement? variableDeclarationAssignment,
+        BoundExpression? expression,
         BoundExpression condition, BoundExpression mutation, BoundStatement body,
         LabelSymbol breakLabel, LabelSymbol continueLabel)
-        : base(breakLabel, continueLabel)
+        : base(syntax, breakLabel, continueLabel)
     {
         Condition = condition;
         Mutation = mutation;
         Body = body;
-        VariableDeclaration = variableDeclaration;
+        VariableDeclarationAssignment = variableDeclarationAssignment;
         Expression = expression;
     }
 }

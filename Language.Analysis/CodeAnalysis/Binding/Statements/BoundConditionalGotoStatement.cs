@@ -1,10 +1,11 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundConditionalGotoStatement : BoundStatement
 {
-    public BoundConditionalGotoStatement(LabelSymbol label, BoundExpression condition, bool jumpIfTrue)
+    public BoundConditionalGotoStatement(SyntaxNode? syntax, LabelSymbol label, BoundExpression condition, bool jumpIfTrue) : base(syntax)
     {
         Label = label;
         Condition = condition;

@@ -1,11 +1,12 @@
 ﻿using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 
 abstract class BoundLoopStatement : BoundStatement
 {
-    protected BoundLoopStatement(LabelSymbol breakLabel, LabelSymbol continueLabel)
+    protected BoundLoopStatement(SyntaxNode? syntax, LabelSymbol breakLabel, LabelSymbol continueLabel) : base(syntax)
     {
         BreakLabel = breakLabel;
         ContinueLabel = continueLabel;
@@ -20,8 +21,8 @@ internal sealed class BoundWhileStatement : BoundLoopStatement
 {
   internal override BoundNodeKind Kind => BoundNodeKind.WhileStatement;
   
-  public BoundWhileStatement(BoundExpression condition, BoundStatement body, LabelSymbol breakLabel, LabelSymbol continueLabel) 
-      : base(breakLabel, continueLabel)
+  public BoundWhileStatement(SyntaxNode? syntax,BoundExpression condition, BoundStatement body, LabelSymbol breakLabel, LabelSymbol continueLabel) 
+      : base(syntax, breakLabel, continueLabel)
   {
     Condition = condition;
     Body = body;

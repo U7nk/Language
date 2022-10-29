@@ -1,10 +1,11 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 public class BoundVariableDeclarationStatement : BoundStatement
 {
-    public BoundVariableDeclarationStatement(VariableSymbol variable)
+    public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable) : base(syntax)
     {
         Variable = variable;
     }

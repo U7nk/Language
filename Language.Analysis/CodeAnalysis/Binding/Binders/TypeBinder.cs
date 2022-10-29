@@ -58,6 +58,8 @@ sealed class TypeBinder
             {
                 diagnostics.ReportAllPathsMustReturn(functionSymbol.Declaration.Unwrap().Identifier.Location);
             }
+            //TODO
+            ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody);
             
             functionBinder.Diagnostics.AddRangeTo(diagnostics);
 

@@ -1,10 +1,11 @@
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundLabelStatement : BoundStatement
 {
-    public BoundLabelStatement(LabelSymbol label)
+    public BoundLabelStatement(SyntaxNode? syntax, LabelSymbol label) : base(syntax)
     {
         Label = label;
     }
