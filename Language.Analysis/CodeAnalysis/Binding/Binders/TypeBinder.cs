@@ -56,10 +56,10 @@ sealed class TypeBinder
             if (!Equals(functionSymbol.ReturnType, TypeSymbol.Void)
                 && !ControlFlowGraph.AllPathsReturn(loweredBody))
             {
-                diagnostics.ReportAllPathsMustReturn(functionSymbol.Declaration.Unwrap().Identifier.Location);
+                diagnostics.ReportAllPathsMustReturn(functionSymbol.Declaration.NullGuard().Identifier.Location);
             }
-            //TODO
-            ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody);
+            
+            ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, diagnostics);
             
             functionBinder.Diagnostics.AddRangeTo(diagnostics);
 

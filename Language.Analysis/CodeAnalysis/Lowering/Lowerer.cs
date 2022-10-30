@@ -156,11 +156,11 @@ internal sealed class Lowerer : BoundTreeRewriter
                 node.VariableDeclarationAssignment.Variable,
                 node.VariableDeclarationAssignment.Initializer);
         else
-            statement = new BoundExpressionStatement(node.Expression.Unwrap().Syntax, node.Expression.Unwrap());
+            statement = new BoundExpressionStatement(node.Expression.NullGuard().Syntax, node.Expression.NullGuard());
 
-        var condition = node.Condition.Unwrap();
+        var condition = node.Condition.NullGuard();
          
-        var mutation = new BoundExpressionStatement(node.Mutation.Syntax, node.Mutation.Unwrap());
+        var mutation = new BoundExpressionStatement(node.Mutation.Syntax, node.Mutation.NullGuard());
         var body = new BoundBlockStatement(
             node.Body.Syntax, // i dont know if this is correct
             ImmutableArray.Create(node.Body, mutation));

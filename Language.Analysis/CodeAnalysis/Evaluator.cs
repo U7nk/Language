@@ -52,7 +52,7 @@ class Evaluator
             return null;
         
         var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
-        var body = programType.MethodTable[function].Unwrap();
+        var body = programType.MethodTable[function].NullGuard();
         var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(null, programType));
         Assign(new VariableSymbol("this", programType, true), programInstance);
         return EvaluateStatement(body);
@@ -95,7 +95,7 @@ class Evaluator
                 }
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
-                    var condition = (bool)(EvaluateExpression(cgs.Condition).Unwrap().LiteralValue ?? throw new InvalidOperationException());
+                    var condition = (bool)(EvaluateExpression(cgs.Condition).NullGuard().LiteralValue ?? throw new InvalidOperationException());
                     if (condition == cgs.JumpIfTrue)
                         i = labelToIndex[cgs.Label];
                     else
@@ -166,7 +166,7 @@ class Evaluator
                 EvaluateMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
             BoundNodeKind.MethodCallExpression =>
                 EvaluateMethodCallExpression((BoundMethodCallExpression)node,
-                    _stacks.Peek().Single(x => x.Key.Name == "this").Value.Unwrap().Type,
+                    _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard().Type,
                     _stacks.Peek().Single(x => x.Key.Name == "this").Value),
             BoundNodeKind.FieldExpression =>
                 EvaluateFieldAccessExpression((BoundFieldExpression)node),
@@ -189,25 +189,25 @@ class Evaluator
         
         if (node.MemberAccess.Kind is BoundNodeKind.FieldExpression)
         {
-            var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.Unwrap();
-            var value = EvaluateExpression(node.RightValue).Unwrap();
+            var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard();
+            var value = EvaluateExpression(node.RightValue).NullGuard();
         
-            var member = node.MemberAccess.Unwrap<BoundFieldExpression>();
+            var member = node.MemberAccess.NullGuard<BoundFieldExpression>();
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
         else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
         {
-            var variable = node.MemberAccess.Unwrap<BoundVariableExpression>().Variable;
-            var rightValue = EvaluateExpression(node.RightValue).Unwrap();
+            var variable = node.MemberAccess.NullGuard<BoundVariableExpression>().Variable;
+            var rightValue = EvaluateExpression(node.RightValue).NullGuard();
             return Assign(variable, rightValue);
         }
         else
         {
             var memberAccess = (BoundMemberAccessExpression)node.MemberAccess;
-            var instance = EvaluateExpression(memberAccess.Left).Unwrap();
-            var value = EvaluateExpression(node.RightValue).Unwrap();
+            var instance = EvaluateExpression(memberAccess.Left).NullGuard();
+            var value = EvaluateExpression(node.RightValue).NullGuard();
 
-            var member = memberAccess.Member.Unwrap<BoundFieldExpression>();
+            var member = memberAccess.Member.NullGuard<BoundFieldExpression>();
 
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
@@ -215,7 +215,7 @@ class Evaluator
 
     ObjectInstance? EvaluateMethodCallExpression(BoundMethodCallExpression methodCallExpression, TypeSymbol type, ObjectInstance? typeInstance)
     {
-        typeInstance.Unwrap();
+        typeInstance.NullGuard();
         
         var parameters = methodCallExpression.MethodSymbol.Parameters;
         var locals = _stacks.Peek();
@@ -226,7 +226,7 @@ class Evaluator
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
         Assign(new VariableSymbol("this", type, true), typeInstance);
-        var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].Unwrap();
+        var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].NullGuard();
         var result = EvaluateStatement(methodBody);
         _stacks.Pop();
         return result;
@@ -236,7 +236,7 @@ class Evaluator
     {
         // should return object.
         // objects is represented as Dictionary<string, object>
-        var leftValue = EvaluateExpression(node.Left).Unwrap();
+        var leftValue = EvaluateExpression(node.Left).NullGuard();
 
         if (node.Member is BoundMethodCallExpression methodCall)
             return EvaluateMethodCallExpression(methodCall, node.Left.Type, leftValue);
@@ -276,7 +276,7 @@ class Evaluator
 
     ObjectInstance EvaluateConversionExpression(BoundConversionExpression node)
     {
-        var value = EvaluateExpression(node.Expression).Unwrap();
+        var value = EvaluateExpression(node.Expression).NullGuard();
 
         if (Equals(node.Type, TypeSymbol.Bool)) 
             return ObjectInstance.Literal(TypeSymbol.Bool, Convert.ToBoolean(value));
@@ -285,7 +285,7 @@ class Evaluator
             return ObjectInstance.Literal(TypeSymbol.Int, Convert.ToInt32(value));
 
         if (Equals(node.Type, TypeSymbol.String))
-            return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).Unwrap());
+            return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).NullGuard());
         
         if (Equals(node.Type, TypeSymbol.Any))
             return value;
@@ -303,8 +303,8 @@ class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Int))
             {
-                var intRight = right.Unwrap().LiteralValue.Unwrap<int>();
-                var intLeft = left.Unwrap().LiteralValue.Unwrap<int>();
+                var intRight = right.NullGuard().LiteralValue.NullGuard<int>();
+                var intLeft = left.NullGuard().LiteralValue.NullGuard<int>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.Int, intLeft + intRight),
@@ -331,8 +331,8 @@ class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.String))
             {
-                var stringRight = right.Unwrap().LiteralValue.Unwrap<string>();
-                var stringLeft = left.Unwrap().LiteralValue.Unwrap<string>();
+                var stringRight = right.NullGuard().LiteralValue.NullGuard<string>();
+                var stringLeft = left.NullGuard().LiteralValue.NullGuard<string>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.String, stringLeft + stringRight),
@@ -348,8 +348,8 @@ class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Bool))
             {
-                var boolRight = right.Unwrap().LiteralValue.Unwrap<bool>();
-                var boolLeft = left.Unwrap().LiteralValue.Unwrap<bool>();
+                var boolRight = right.NullGuard().LiteralValue.NullGuard<bool>();
+                var boolLeft = left.NullGuard().LiteralValue.NullGuard<bool>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.String, boolLeft == boolRight),
@@ -371,10 +371,10 @@ class Evaluator
 
     ObjectInstance EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
-        var operand = EvaluateExpression(unary.Operand).Unwrap();
+        var operand = EvaluateExpression(unary.Operand).NullGuard();
         if (Equals(unary.Type, TypeSymbol.Int))
         {
-            var intOperand = operand.LiteralValue.Unwrap<int>();
+            var intOperand = operand.LiteralValue.NullGuard<int>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(TypeSymbol.Int,  -intOperand),
@@ -386,7 +386,7 @@ class Evaluator
 
         if (Equals(unary.Type, TypeSymbol.Bool))
         {
-            var boolOperand = operand.LiteralValue.Unwrap<bool>();
+            var boolOperand = operand.LiteralValue.NullGuard<bool>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(TypeSymbol.Bool, !boolOperand),
@@ -410,7 +410,7 @@ class Evaluator
     }
 
     ObjectInstance EvaluateLiteralExpression(BoundLiteralExpression l) =>
-        ObjectInstance.Literal(l.Type, l.Value.Unwrap());
+        ObjectInstance.Literal(l.Type, l.Value.NullGuard());
 
     ObjectInstance? Assign(VariableSymbol variableSymbol, ObjectInstance? value)
     { 

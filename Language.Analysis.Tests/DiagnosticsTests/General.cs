@@ -4,12 +4,20 @@ using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
+using Xunit.Abstractions;
 
 namespace TestProject1.DiagnosticsTests;
 
 [SuppressMessage("Usage", "xUnit1015:MemberData must reference an existing member")]
 public class General
 {
+    public General(ITestOutputHelper output)
+    {
+        Output = output;
+    }
+
+    ITestOutputHelper Output { get; set; }
+
     [Theory]
     [MemberData(
         nameof(TestTools.AllContextTypesForStatements),
@@ -304,7 +312,30 @@ public class General
             DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
         };
         
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
+    }
+    
+    [Theory]
+    [MemberData(
+        nameof(TestTools.AllContextTypesForStatements),
+        MemberType = typeof(TestTools))]
+    public void CannotUseUninitializedVariableDontProduceDiagnosticOnUnreachablePaths(TestTools.ContextType contextType)
+    {
+        var text =
+            """
+            var a : int; 
+            if (false){
+               var b = a;
+            }
+            var g = [a];
+            """;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE
+            
+        };
+        
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
     }
     
     [Fact]
@@ -319,7 +350,7 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), diagnostics);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), diagnostics, Output);
     }
     
     [Fact]
@@ -342,7 +373,7 @@ public class General
         {
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
 }

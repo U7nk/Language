@@ -104,7 +104,7 @@ sealed class ProgramBinder
                 var foundMain = TryFindMainMethod();
                 if (foundMain is { })
                 {
-                    _diagnostics.ReportNoMainMethodAllowedInScriptMode(foundMain.Declaration.Unwrap().Identifier
+                    _diagnostics.ReportNoMainMethodAllowedInScriptMode(foundMain.Declaration.NullGuard().Identifier
                         .Location);
                 }
             }
@@ -139,7 +139,7 @@ sealed class ProgramBinder
         if (globalStatementFunction is not null)
         {
             var functionBinder = new MethodBinder(_scope, IsScript, new MethodBinderLookup(
-                programType.Unwrap(),
+                programType.NullGuard(),
                 _scope.GetDeclaredTypes(),
                 globalStatementFunction));
 
@@ -199,7 +199,7 @@ sealed class ProgramBinder
             var alreadyDeclared = scope.GetDeclaredTypes()
                 .Single(x => x.Name == SyntaxFacts.StartTypeName);
             diagnostics.ReportCannotEmitGlobalStatementsBecauseTypeAlreadyExists(type.Name,
-                alreadyDeclared.Declaration.Unwrap().Location);
+                alreadyDeclared.Declaration.NullGuard().Location);
             return diagnostics;
         }
 
@@ -323,12 +323,16 @@ sealed class ProgramBinder
             var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.ScriptMainMethod));
             var properReturnBody = Lowerer.Lower(new BoundBlockStatement(null, statements));
             type.MethodTable[globalScope.ScriptMainMethod] = properReturnBody;
+            
+            ControlFlowGraph.AllVariablesInitializedBeforeUse(properReturnBody, diagnostics);
         }
         else if (globalScope.MainMethod is not null && globalScope.Statement.Statements.Any())
         {
             var body = Lowerer.Lower(new BoundBlockStatement(null, globalScope.Statement.Statements));
             var type = globalScope.Types.Single(x => x.MethodTable.ContainsKey(globalScope.MainMethod));
             type.MethodTable[globalScope.MainMethod] = body;
+            
+            ControlFlowGraph.AllVariablesInitializedBeforeUse(body, diagnostics);
         }
 
         var boundProgram = new BoundProgram(

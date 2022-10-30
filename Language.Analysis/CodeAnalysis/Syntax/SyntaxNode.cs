@@ -48,7 +48,7 @@ public abstract class SyntaxNode : ISyntaxNode
             else if (property.PropertyType.CanBeConvertedTo<SeparatedSyntaxList>())
             {
                 var value = (SeparatedSyntaxList?)property.GetValue(this);
-                value.Unwrap();
+                value.NullGuard();
                 
                 foreach (var child in value.GetWithSeparators())
                     yield return child;

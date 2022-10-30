@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
@@ -20,7 +21,7 @@ public abstract class BoundNode
         yield return this;
         
         var properties = GetType()
-            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            .GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         foreach (var property in properties)
         {
             if (property.PropertyType.CanBeConvertedTo<BoundNode>())
@@ -47,7 +48,7 @@ public abstract class BoundNode
             {
                 
                 var value = ((IEnumerable<BoundNode>?)property.GetValue(this))
-                    .Unwrap()
+                    .NullGuard()
                     .ToList();
 
                 foreach (var child in value)

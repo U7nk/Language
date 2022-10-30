@@ -53,7 +53,7 @@ internal static class Extensions
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: NotNull]
-    public static T Unwrap<T>(
+    public static T NullGuard<T>(
         [NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
@@ -68,7 +68,7 @@ internal static class Extensions
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: NotNull]
-    public static T Unwrap<T>(
+    public static T NullGuard<T>(
         [NotNull]this object? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {

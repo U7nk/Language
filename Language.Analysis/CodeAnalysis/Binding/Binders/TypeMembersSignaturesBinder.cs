@@ -20,7 +20,7 @@ sealed class TypeMembersSignaturesBinder
 
     public ImmutableArray<Diagnostic> BindMembersSignatures(ClassDeclarationSyntax classDeclaration)
     {
-        _lookup.Unwrap();
+        _lookup.NullGuard();
         _ = _scope.TryLookupType(classDeclaration.Identifier.Text, out var currentType);
         Debug.Assert(currentType != null, "Type should be declared before members");
         

@@ -295,7 +295,7 @@ public class EvaluatorTests
                 var resultObject = Assert.IsType<ObjectInstance>(result);
                 var field = Assert.Single(resultObject.Fields);
                 field.Key.Should().Be("Fieldo");
-                field.Value.Unwrap().LiteralValue.Should().Be(10);
+                field.Value.NullGuard().LiteralValue.Should().Be(10);
             }, isScript: false);
     }
 
@@ -370,7 +370,7 @@ public class EvaluatorTests
             result =>
             {
                 result.Should().NotBeNull();
-                result.Unwrap().Type.Should().Be(TypeSymbol.Int);
+                result.NullGuard().Type.Should().Be(TypeSymbol.Int);
                 result.LiteralValue.Should().Be(10);
             },
             isScript: false);
@@ -401,8 +401,8 @@ public class EvaluatorTests
             result =>
             {
                 result.Should().NotBeNull();
-                result.Unwrap().Type.Should().Be(TypeSymbol.Int);
-                result.Unwrap().LiteralValue.Should().Be(15);
+                result.NullGuard().Type.Should().Be(TypeSymbol.Int);
+                result.NullGuard().LiteralValue.Should().Be(15);
             },
             isScript: false);
     }
@@ -570,7 +570,7 @@ public class EvaluatorTests
 
     static void AssertValue(string expression, object expectedValue, bool isScript)
     {
-        EvaluateValue(expression, isScript).Unwrap().LiteralValue.Should().Be(expectedValue);
+        EvaluateValue(expression, isScript).NullGuard().LiteralValue.Should().Be(expectedValue);
     }
 
     static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript)

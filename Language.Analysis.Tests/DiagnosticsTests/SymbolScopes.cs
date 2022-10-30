@@ -1,9 +1,17 @@
 using Language.Analysis.CodeAnalysis;
+using Xunit.Abstractions;
 
 namespace TestProject1.DiagnosticsTests;
 
 public class SymbolScopes
 {
+    public SymbolScopes(ITestOutputHelper output)
+    {
+        Output = output;
+    }
+
+    ITestOutputHelper Output { get; set; }
+
     [Fact]
     public void MethodCannotHaveNameOfType()
     {
@@ -19,7 +27,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -39,7 +47,7 @@ public class SymbolScopes
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
@@ -60,7 +68,7 @@ public class SymbolScopes
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -81,7 +89,7 @@ public class SymbolScopes
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Theory]
@@ -99,7 +107,7 @@ public class SymbolScopes
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
     }
     
     [Theory]
@@ -122,7 +130,7 @@ public class SymbolScopes
 
         TestTools.AssertDiagnostics(
             TestTools.StatementsInContext(text, contextType), 
-            diagnostics);
+            diagnostics, Output);
     }
     
     
@@ -144,7 +152,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
@@ -165,7 +173,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -188,7 +196,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -207,7 +215,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
         
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -228,7 +236,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
         
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -247,7 +255,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -265,7 +273,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -283,7 +291,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
 }

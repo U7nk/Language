@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis;
 
@@ -305,13 +306,66 @@ class ControlFlowGraph
         return graph.End.Incoming.All(x => x.From.Statements.Last() is BoundReturnStatement);
     }
     
-    public static bool AllVariablesInitializedBeforeUse(BoundBlockStatement body)
+    public static void AllVariablesInitializedBeforeUse(BoundBlockStatement body, DiagnosticBag diagnostics)
     {
         var graph = Create(body);
-        var variablesUsages = graph.Blocks.SelectMany(x => 
-                x.Statements.Where(s => 
-                    s.GetChildren(recursion:true).Any(c => c.Kind is BoundNodeKind.VariableExpression)))
+        var variablesUsagesBlocks = graph.Blocks.Where(x => 
+                x.Statements
+                    .Any(s => s.GetChildren(recursion: true).Any(c => c.Kind is BoundNodeKind.VariableExpression)))
             .ToList();
-        return graph.End.Incoming.All(x => x.From.Statements.Last() is BoundReturnStatement);
+
+        foreach (var variablesUsagesBlock in variablesUsagesBlocks)
+        {
+            var variableUseExpressions = variablesUsagesBlock.Statements.SelectMany(
+                bs => bs.GetChildren(recursion: true).Where(bn => bn.Kind is BoundNodeKind.VariableExpression)
+            ).ToList();
+            foreach (var variableUseExpression in variableUseExpressions.Cast<BoundVariableExpression>())
+            {
+                bool isInitialized = TraverseUpCheckVariableIsInitialized(
+                    variablesUsagesBlock,
+                    variableUseExpression);
+                if (!isInitialized)
+                {
+                    var syntax = (NameExpressionSyntax)variableUseExpression.Syntax.NullGuard();
+                    diagnostics.ReportCannotUseUninitializedVariable(syntax.IdentifierToken);
+                }
+            }
+        }
+    }
+
+    static bool TraverseUpCheckVariableIsInitialized(BasicBlock variablesUsagesBlock, BoundVariableExpression variableUseExpressions)
+    {
+        if (variableUseExpressions.Variable is ParameterSymbol)
+            return true;
+        
+        
+        
+        foreach (var boundStatement in variablesUsagesBlock.Statements)
+        {
+            var childrenFlatten = boundStatement.GetChildren(recursion: true).ToList();
+            foreach (var child in childrenFlatten)
+            {
+                if (child.Kind is BoundNodeKind.AssignmentExpression)
+                {
+                    var assignmentExpression = (BoundAssignmentExpression)child;
+                    if (Equals(assignmentExpression.Variable, variableUseExpressions.Variable))
+                        return true;
+                }
+                else if (child.Kind is BoundNodeKind.VariableDeclarationAssignmentStatement)
+                {
+                    var variableDeclarationAssignmentStatement = (BoundVariableDeclarationAssignmentStatement)child;
+                    if (Equals(variableDeclarationAssignmentStatement.Variable, variableUseExpressions.Variable))
+                        return true;
+                }
+            }
+        }
+
+        foreach (var incomingBlock in variablesUsagesBlock.Incoming.Select(x=> x.From))
+        {
+            if (TraverseUpCheckVariableIsInitialized(incomingBlock, variableUseExpressions))
+                return true;
+        }
+
+        return false;
     }
 }

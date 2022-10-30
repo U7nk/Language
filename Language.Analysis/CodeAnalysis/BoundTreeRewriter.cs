@@ -251,7 +251,7 @@ internal abstract class BoundTreeRewriter
         if (node.VariableDeclarationAssignment is not null)
             declaration = RewriteVariableDeclarationAssignmentStatement(node.VariableDeclarationAssignment);
         else
-            expression = RewriteExpression(node.Expression.Unwrap());
+            expression = RewriteExpression(node.Expression.NullGuard());
 
         var condition = RewriteExpression(node.Condition);
         var mutation = RewriteExpression(node.Mutation);

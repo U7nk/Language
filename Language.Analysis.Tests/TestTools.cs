@@ -1,10 +1,13 @@
+using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using FluentAssertions;
 using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
+using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
+using Xunit.Abstractions;
 
 namespace TestProject1;
 
@@ -45,17 +48,18 @@ public class TestTools
         }
     }
 
-    public static void AssertDiagnostics(string text, string[] diagnosticsCodes)
+    public static void AssertDiagnostics(string text, string[] diagnosticsCodes, ITestOutputHelper output)
     {
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-        
+
         var diagnosticsTexts = diagnostics
             .Select(d => AnnotatedTextFromDiagnostic(d) + "\n" + d.Code + d.Message)
             .ToArray();
+
         if (diagnostics.Length != diagnosticsCodes.Length)
         {
             Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
@@ -63,7 +67,7 @@ public class TestTools
                         $"Actual: \n{string.Join(",\n", diagnosticsTexts)}");
             diagnostics.Length.Should().Be(diagnosticsCodes.Length);
         }
-
+        
         diagnostics.Length.Should().Be(
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");

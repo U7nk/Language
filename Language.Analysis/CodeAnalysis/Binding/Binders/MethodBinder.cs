@@ -34,7 +34,7 @@ sealed class MethodBinder
         _scope = new(_scope);
         methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
 
-        var result = BindBlockStatement(methodSymbol.Declaration.Unwrap().Body);
+        var result = BindBlockStatement(methodSymbol.Declaration.NullGuard().Body);
 
         _scope = _scope.Parent ?? throw new InvalidOperationException();
 
@@ -166,7 +166,7 @@ sealed class MethodBinder
         if (syntax.VariableDeclaration is not null)
             variableDeclaration = BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
         else
-            expression = BindExpression(syntax.Expression.Unwrap());
+            expression = BindExpression(syntax.Expression.NullGuard());
 
         var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
         var mutation = BindExpression(syntax.Mutation);
@@ -208,7 +208,7 @@ sealed class MethodBinder
         if (typeClause is null)
             return null;
 
-        _lookup.Unwrap();
+        _lookup.NullGuard();
         var type = _lookup.AvailableTypes.SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
@@ -230,7 +230,7 @@ sealed class MethodBinder
         var type = BindTypeClause(syntax.TypeClause);
         
         var name = syntax.IdentifierToken.Text;
-        var variable = new VariableSymbol(name, (type ?? variableType).Unwrap(), isReadonly);
+        var variable = new VariableSymbol(name, (type ?? variableType).NullGuard(), isReadonly);
 
         if (!_scope.TryDeclareVariable(variable))
         {
@@ -412,7 +412,7 @@ sealed class MethodBinder
 
     BoundExpression BindObjectCreationExpression(ObjectCreationExpressionSyntax syntax)
     {
-        _lookup.Unwrap();
+        _lookup.NullGuard();
 
         var typeName = syntax.TypeIdentifier.Text;
         var matchingTypes = _lookup.AvailableTypes

@@ -122,7 +122,7 @@ public sealed class Compilation
             return;
         }
         
-        type.MethodTable[method].Unwrap().WriteTo(writer);
+        type.MethodTable[method].NullGuard().WriteTo(writer);
     }
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, 

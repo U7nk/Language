@@ -21,7 +21,7 @@ public sealed class FieldSignatureBinder
     public ImmutableArray<Diagnostic> BindDeclaration(FieldDeclarationSyntax fieldDeclaration)
     {
         var diagnostics = new DiagnosticBag();
-        _lookup.Unwrap();
+        _lookup.NullGuard();
         var type = _lookup.LookupType(fieldDeclaration.TypeClause.Identifier.Text);
         if (type == null)
         {
