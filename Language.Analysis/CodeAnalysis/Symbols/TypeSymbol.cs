@@ -1,15 +1,17 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class TypeSymbol : Symbol
 {
-    public static readonly TypeSymbol Error = new("error", null, new MethodTable(), new FieldTable());
-    public static readonly TypeSymbol Any = new("any", null, new MethodTable(), new FieldTable());
-    public static readonly TypeSymbol Void = new("void", null, new MethodTable(), new FieldTable());
-    public static readonly TypeSymbol Bool = new("bool", null, new MethodTable(), new FieldTable());
-    public static readonly TypeSymbol Int = new("int", null, new MethodTable(), new FieldTable());
-    public static readonly TypeSymbol String = new("string", null, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol Error = new("error", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol Any = new("any", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol Void = new("void", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol Bool = new("bool", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol Int = new("int", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
+    public static readonly TypeSymbol String = new("string", ImmutableArray<SyntaxNode>.Empty, new MethodTable(), new FieldTable());
     public static TypeSymbol FromLiteral(SyntaxToken literalToken)
     {
         if (literalToken.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
@@ -23,18 +25,16 @@ public class TypeSymbol : Symbol
         
         return Error;
     }
-    public static TypeSymbol New(string name, ClassDeclarationSyntax? declaration,
+    public static TypeSymbol New(string name, ImmutableArray<SyntaxNode> declaration,
         MethodTable methodTable, FieldTable fieldTable) 
         => new(name, declaration, methodTable, fieldTable);
 
-    TypeSymbol(string name, ClassDeclarationSyntax? declaration, MethodTable methodTable, FieldTable fieldTable) : base(name)
+    TypeSymbol(string name, ImmutableArray<SyntaxNode> declaration, MethodTable methodTable, FieldTable fieldTable) : base(declaration, name)
     {
-        Declaration = declaration;
         MethodTable = methodTable;
         FieldTable = fieldTable;
     }
 
-    public ClassDeclarationSyntax? Declaration { get; }
     public MethodTable MethodTable { get; }
     public FieldTable FieldTable { get; }
 

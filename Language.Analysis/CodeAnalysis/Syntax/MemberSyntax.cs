@@ -1,9 +1,10 @@
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
 
-public interface ITopMemberSyntax : ISyntaxNode
+public interface ITopMemberDeclarationSyntax : ISyntaxNode
 {
 }
-interface IClassMemberSyntax : ISyntaxNode
+
+public interface IClassMemberDeclarationSyntax : ISyntaxNode
 {
 }

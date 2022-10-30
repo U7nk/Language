@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Binding.Binders;
@@ -54,7 +55,7 @@ class Evaluator
         var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
         var body = programType.MethodTable[function].NullGuard();
         var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(null, programType));
-        Assign(new VariableSymbol("this", programType, true), programInstance);
+        Assign(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "this", programType, true), programInstance);
         return EvaluateStatement(body);
     }
 
@@ -225,7 +226,7 @@ class Evaluator
         }
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
-        Assign(new VariableSymbol("this", type, true), typeInstance);
+        Assign(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "this", type, true), typeInstance);
         var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].NullGuard();
         var result = EvaluateStatement(methodBody);
         _stacks.Pop();
@@ -271,7 +272,11 @@ class Evaluator
 
     ObjectInstance? EvaluateThisExpression(BoundThisExpression node)
     {
-        return _stacks.Peek()[new VariableSymbol("this", node.Type, true)];
+        return _stacks.Peek()[new VariableSymbol(
+            node.Syntax is null ? ImmutableArray<SyntaxNode>.Empty : ImmutableArray.Create(node.Syntax),
+            name: "this",
+            type: node.Type,
+            isReadonly: true)];
     }
 
     ObjectInstance EvaluateConversionExpression(BoundConversionExpression node)

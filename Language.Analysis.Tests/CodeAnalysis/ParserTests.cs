@@ -121,8 +121,8 @@ public class ParserTests
         var expression = SyntaxTree.Parse(text);
         var root = expression.Root;
         var statement = root.Members.Single();
-        root.Members.Single().Should().BeOfType<GlobalStatementSyntax>();
-        return ((ExpressionStatementSyntax)((GlobalStatementSyntax)statement).Statement).Expression;
+        root.Members.Single().Should().BeOfType<GlobalStatementDeclarationSyntax>();
+        return ((ExpressionStatementSyntax)((GlobalStatementDeclarationSyntax)statement).Statement).Expression;
     }
 
     public static IEnumerable<object[]> GetUnaryBinaryOperatorPairsData()

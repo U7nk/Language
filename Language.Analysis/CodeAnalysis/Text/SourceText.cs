@@ -6,7 +6,7 @@ public class SourceText
 {
     public string FileName { get; }
     readonly string _text;
-    public  ImmutableArray<TextLine> Lines { get; }
+    public ImmutableArray<TextLine> Lines { get; }
 
     SourceText(string text, string fileName)
     {

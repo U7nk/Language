@@ -1,17 +1,12 @@
-namespace Language.Analysis.CodeAnalysis.Symbols;
+using System.Collections.Immutable;
+using Language.Analysis.CodeAnalysis.Syntax;
 
-public abstract class MemberSymbol : Symbol
-{
-    protected MemberSymbol(string name, TypeSymbol type) : base(name)
-    {
-        Type = type;
-    }
-    public TypeSymbol Type { get; }
-}
+namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class FieldSymbol : MemberSymbol
 {
-    public FieldSymbol(string name, TypeSymbol type) : base(name, type)
+    public FieldSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol type) 
+        : base(declarationSyntax,name, type)
     { }
     
     public override SymbolKind Kind => SymbolKind.Field;

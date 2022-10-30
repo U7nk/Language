@@ -7,15 +7,14 @@ public class MethodSymbol : MemberSymbol
 {
     public ImmutableArray<ParameterSymbol> Parameters { get; }
     public TypeSymbol ReturnType => Type;
-    public MethodDeclarationSyntax? Declaration { get; }
     public override SymbolKind Kind => SymbolKind.Method;
 
-    public MethodSymbol(string name,
+    public MethodSymbol(ImmutableArray<SyntaxNode> declaration,
+        string name,
         ImmutableArray<ParameterSymbol> parameters,
-        TypeSymbol returnType, MethodDeclarationSyntax? declaration)
-        : base(name, returnType)
+        TypeSymbol returnType) 
+        : base(declaration, name, returnType)
     {
         Parameters = parameters;
-        Declaration = declaration;
     }
 }

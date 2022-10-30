@@ -3,7 +3,7 @@
 using System;
 namespace Language.Analysis.CodeAnalysis.Syntax;
 public partial class SyntaxTree {
-    public Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax NewCompilationUnit(System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.ITopMemberSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken endOfFileToken)
+    public Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax NewCompilationUnit(System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.ITopMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken endOfFileToken)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax(this,members,endOfFileToken);
     }
@@ -68,11 +68,6 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ForStatementSyntax(this,forKeyword,openParenthesis,variableDeclaration,expression,semicolon,condition,middleSemiColonToken,mutation,closeParenthesis,body);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.GlobalStatementSyntax NewGlobalStatement(Language.Analysis.CodeAnalysis.Syntax.StatementSyntax statement)
-    {
-       return new Language.Analysis.CodeAnalysis.Syntax.GlobalStatementSyntax(this,statement);
-    }
-
     public Language.Analysis.CodeAnalysis.Syntax.IfStatementSyntax NewIfStatement(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken ifKeyword,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax condition,Language.Analysis.CodeAnalysis.Syntax.StatementSyntax thenStatement,Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax? elseClause)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.IfStatementSyntax(this,ifKeyword,condition,thenStatement,elseClause);
@@ -81,6 +76,11 @@ public partial class SyntaxTree {
     public Language.Analysis.CodeAnalysis.Syntax.ReturnStatementSyntax NewReturnStatement(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken returnKeyword,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax? expression,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolon)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.ReturnStatementSyntax(this,returnKeyword,expression,semicolon);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.GlobalStatementDeclarationSyntax NewGlobalStatementDeclaration(Language.Analysis.CodeAnalysis.Syntax.StatementSyntax statement)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.GlobalStatementDeclarationSyntax(this,statement);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax NewParameter(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax type)
@@ -158,8 +158,8 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax(this,elseKeyword,elseStatement);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax NewClassDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken classKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax> methods,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax> fields,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)
+    public Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax NewClassDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken classKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.IClassMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax(this,classKeyword,identifier,openBraceToken,methods,fields,closeBraceToken);
+       return new Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax(this,classKeyword,identifier,openBraceToken,members,closeBraceToken);
     }
 }

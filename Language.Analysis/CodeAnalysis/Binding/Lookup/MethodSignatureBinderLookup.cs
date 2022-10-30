@@ -3,12 +3,12 @@ using Language.Analysis.CodeAnalysis.Symbols;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
-public class FieldBinderLookup : BaseBinderLookup
+public class MethodSignatureBinderLookup : BaseBinderLookup
 {
-    public FieldBinderLookup(ImmutableArray<TypeSymbol> availableTypes, TypeSymbol containingType) : base(availableTypes)
+    public MethodSignatureBinderLookup(ImmutableArray<TypeSymbol> availableTypes, TypeSymbol containingType)
+        : base(availableTypes)
     {
         ContainingType = containingType;
     }
-    
     public TypeSymbol ContainingType { get; }
 }

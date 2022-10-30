@@ -2,7 +2,7 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 
 
 
-public class MethodDeclarationSyntax : SyntaxNode, ITopMemberSyntax, IClassMemberSyntax
+public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, IClassMemberDeclarationSyntax
 {
     public MethodDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken functionKeyword, SyntaxToken identifier,
         SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters,

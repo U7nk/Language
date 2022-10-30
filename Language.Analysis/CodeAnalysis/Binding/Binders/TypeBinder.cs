@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
@@ -24,22 +25,10 @@ sealed class TypeBinder
         var diagnostics = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
 
-        foreach (var (functionSymbol, _) in _lookup.CurrentType.MethodTable)
+        foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
-            typeScope.TryDeclareMethod(functionSymbol)
-                .ThrowIfFalse();
-        }
-        
-        foreach (var fieldSymbol in _lookup.CurrentType.FieldTable)
-        {
-            typeScope.TryDeclareField(fieldSymbol)
-                .ThrowIfFalse();
-        }
-        
-        foreach (var functionSymbol in _lookup.CurrentType.MethodTable.Symbols)
-        {
-            if (functionSymbol.Declaration is null
-                && (functionSymbol.Name == SyntaxFacts.MainMethodName || functionSymbol.Name == SyntaxFacts.ScriptMainMethodName)
+            if (methodSymbol.DeclarationSyntax.Empty()
+                && (methodSymbol.Name == SyntaxFacts.MainMethodName || methodSymbol.Name == SyntaxFacts.ScriptMainMethodName)
                 && _lookup.CurrentType.Name == SyntaxFacts.StartTypeName)
             {
                 // function generated from global statements
@@ -47,23 +36,23 @@ sealed class TypeBinder
                 continue;
             }
             
-            var functionBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
+            var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
                 _lookup.CurrentType,
                 _lookup.AvailableTypes,
-                functionSymbol));
-            var body = functionBinder.BindMethodBody(functionSymbol);
+                methodSymbol));
+            var body = methodBinder.BindMethodBody(methodSymbol);
             var loweredBody = Lowerer.Lower(body);
-            if (!Equals(functionSymbol.ReturnType, TypeSymbol.Void)
-                && !ControlFlowGraph.AllPathsReturn(loweredBody))
-            {
-                diagnostics.ReportAllPathsMustReturn(functionSymbol.Declaration.NullGuard().Identifier.Location);
-            }
             
+            if (!Equals(methodSymbol.ReturnType, TypeSymbol.Void) && !ControlFlowGraph.AllPathsReturn(loweredBody))
+                diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax
+                    .Cast<MethodDeclarationSyntax>()
+                    .First().Identifier.Location);
+
             ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, diagnostics);
             
-            functionBinder.Diagnostics.AddRangeTo(diagnostics);
+            methodBinder.Diagnostics.AddRangeTo(diagnostics);
 
-            _lookup.CurrentType.MethodTable.Declare(functionSymbol, loweredBody);
+            _lookup.CurrentType.MethodTable.Declare(methodSymbol, loweredBody);
         }
         
         return diagnostics.ToImmutableArray();

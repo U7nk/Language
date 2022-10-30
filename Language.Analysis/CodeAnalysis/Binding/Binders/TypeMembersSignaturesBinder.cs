@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
@@ -18,36 +20,38 @@ sealed class TypeMembersSignaturesBinder
         _isScript = isScript;
     }
 
-    public ImmutableArray<Diagnostic> BindMembersSignatures(ClassDeclarationSyntax classDeclaration)
+    public ImmutableArray<Diagnostic> BindMembersSignatures(
+        ClassDeclarationSyntax classDeclaration,
+        TypeSymbol currentType)
     {
         _lookup.NullGuard();
-        _ = _scope.TryLookupType(classDeclaration.Identifier.Text, out var currentType);
-        Debug.Assert(currentType != null, "Type should be declared before members");
-        
+
         var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
-        foreach (var function in classDeclaration.Methods)
+        foreach (var member in classDeclaration.Members)
         {
-            var functionBinder = new MethodSignatureBinder(new BaseBinderLookup(_lookup.AvailableTypes), typeScope);
-            functionBinder.BindMethodSignature(function)
-                .AddRangeTo(diagnostics);
-        }
-        
-        foreach (var declaredFunction in typeScope.GetDeclaredMethods())
-        {
-            currentType.MethodTable.Add(declaredFunction, null);
-        }
-        
-        foreach (var field in classDeclaration.Fields)
-        {
-            var fieldBinder = new FieldSignatureBinder(typeScope, _isScript, new FieldBinderLookup(_lookup.AvailableTypes));
-            fieldBinder.BindDeclaration(field)
-                .AddRangeTo(diagnostics);
-        }
-        
-        foreach (var declaredField in typeScope.GetDeclaredFields())
-        {
-            currentType.FieldTable.Add(declaredField);
+            if (member.Kind is SyntaxKind.MethodDeclaration)
+            {
+                var method = (MethodDeclarationSyntax) member;
+                var methodSignatureBinder = new MethodSignatureBinder(
+                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType),
+                    typeScope);
+                methodSignatureBinder.BindMethodSignature(method)
+                    .AddRangeTo(diagnostics);
+            }
+            else if (member.Kind is SyntaxKind.FieldDeclaration)
+            {
+                var field = (FieldDeclarationSyntax)member;
+                var fieldBinder = new FieldSignatureBinder(
+                    typeScope, 
+                    _isScript,
+                    new FieldBinderLookup(_lookup.AvailableTypes, currentType));
+                fieldBinder.BindDeclaration(field).AddRangeTo(diagnostics);
+            }
+            else
+            {
+                throw new Exception($"Unexpected member kind {member.Kind}");
+            }
         }
 
         return diagnostics.ToImmutableArray();

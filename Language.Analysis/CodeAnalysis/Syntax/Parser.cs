@@ -111,9 +111,9 @@ public class Parser
         return new CompilationUnitSyntax(_syntaxTree, members, endOfFileToken);
     }
 
-    ImmutableArray<ITopMemberSyntax> ParseTopMembers()
+    ImmutableArray<ITopMemberDeclarationSyntax> ParseTopMembers()
     {
-        var topMembers = ImmutableArray.CreateBuilder<ITopMemberSyntax>();
+        var topMembers = ImmutableArray.CreateBuilder<ITopMemberDeclarationSyntax>();
         while (Current.Kind is not SyntaxKind.EndOfFileToken)
         {
             var startToken = Current;
@@ -131,7 +131,7 @@ public class Parser
         return topMembers.ToImmutable();
     }
 
-    ITopMemberSyntax ParseTopMember()
+    ITopMemberDeclarationSyntax ParseTopMember()
     {
         if (Current.Kind == SyntaxKind.ClassKeyword)
             return ParseClassDeclaration();
@@ -152,14 +152,13 @@ public class Parser
         return new ClassDeclarationSyntax(
                     _syntaxTree, classKeyword,
                     identifier, openBraceToken,
-                    members.OfType<MethodDeclarationSyntax>().ToImmutableArray(),
-                    members.OfType<FieldDeclarationSyntax>().ToImmutableArray(),
+                    members,
                     closeBraceToken);
     }
 
-    ImmutableArray<IClassMemberSyntax> ParseClassMembers()
+    ImmutableArray<IClassMemberDeclarationSyntax> ParseClassMembers()
     {
-        var members = ImmutableArray.CreateBuilder<IClassMemberSyntax>();
+        var members = ImmutableArray.CreateBuilder<IClassMemberDeclarationSyntax>();
         while (Current.Kind is SyntaxKind.FunctionKeyword or SyntaxKind.IdentifierToken)
         {
             switch (Current.Kind)
@@ -199,10 +198,10 @@ public class Parser
                     parameters, closeParenthesisToken, type, body);
     }
     
-    GlobalStatementSyntax ParseGlobalStatement()
+    GlobalStatementDeclarationSyntax ParseGlobalStatement()
     {
         var statement = ParseStatement();
-        return new GlobalStatementSyntax(_syntaxTree, statement);
+        return new GlobalStatementDeclarationSyntax(_syntaxTree, statement);
     }
 
     SeparatedSyntaxList<ParameterSyntax> ParseParameterList()

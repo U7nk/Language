@@ -13,12 +13,12 @@ public class SymbolScopes
     ITestOutputHelper Output { get; set; }
 
     [Fact]
-    public void MethodCannotHaveNameOfType()
+    public void FieldCannotHaveNameOfType()
     {
         var text =
-            $$"""
+            """
             class TypeName {
-                [TypeName] : int; 
+                [TypeName] : int;
             } 
             """ ;
         
@@ -33,10 +33,10 @@ public class SymbolScopes
     [Fact]
     public void VariableCannotHaveSameNameAsParameter()
     {
-        const string text = $$"""
+        const string text = """
             class Program
             {
-                function Foo(a : int) {
+                function Foo([a] : int) {
                     var [a] : int = 0;
                 }
             }
@@ -45,6 +45,7 @@ public class SymbolScopes
         var diagnostics = new[]
         {
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
         TestTools.AssertDiagnostics(text, diagnostics, Output);
@@ -74,10 +75,10 @@ public class SymbolScopes
     [Fact]
     public void TwoParametersAndVariableWithSameName()
     {
-        const string text = $$"""
+        const string text = """
             class Program
             {
-                function Foo(a : int, [a] : int) {
+                function Foo([a] : int, [a] : int) {
                     var [a] : int = 5;
                 }
             }
@@ -85,6 +86,7 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
@@ -97,13 +99,14 @@ public class SymbolScopes
     public void VariablesCannotHaveSameName(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
-            var a : int;
+            """
+            var [a] : int;
             var [a] : int;
             """ ;
         
         var diagnostics = new[]
         {
+            DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
@@ -115,7 +118,7 @@ public class SymbolScopes
     public void VariablesCannotHaveSameNameInNestedScope(TestTools.ContextType contextType)
     {
         var text =
-            $$"""
+            """
             var [a] : int; 
             {
                 var [a] : int;
@@ -139,7 +142,7 @@ public class SymbolScopes
     public void MethodCannotHaveSameNameAsType()
     {
         var text =
-            $$"""
+            """
             class TypeName {
                 function [TypeName]() {
                     
@@ -159,7 +162,7 @@ public class SymbolScopes
     public void MethodCannotHaveNameOfField()
     {
         var text =
-            $$"""
+            """
             class TypeName {
                 [field] : int;
                 function [field]() {
@@ -170,6 +173,7 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
 
@@ -177,10 +181,10 @@ public class SymbolScopes
     }
     
     [Fact]
-    public void MethodCannotHaveNameOfFunction()
+    public void MethodCannotHaveNameOfMethod()
     {
         var text =
-            $$"""
+            """
             class TypeName {
                 function [FunctionName]() {
                     
@@ -193,7 +197,8 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
-            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
+            DiagnosticBag.METHOD_ALREADY_DECLARED_CODE,
+            DiagnosticBag.METHOD_ALREADY_DECLARED_CODE
         };
 
         TestTools.AssertDiagnostics(text, diagnostics, Output);
@@ -203,7 +208,7 @@ public class SymbolScopes
     public void FieldCannotHaveNameOfField()
     {
         var text =
-            $$"""
+            """
             class TypeName {
                 [field] : int;
                 [field] : int;
@@ -212,7 +217,8 @@ public class SymbolScopes
 
         var diagnostics = new[]
         {
-            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
+            DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
+            DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
         };
         
         TestTools.AssertDiagnostics(text, diagnostics, Output);
@@ -221,8 +227,9 @@ public class SymbolScopes
     [Fact]
     public void FieldCannotHaveNameOfMethod()
     {
+        
         var text =
-            $$"""
+            """
             class TypeName {
                 function [FunctionName]() {
                     
@@ -233,7 +240,8 @@ public class SymbolScopes
         
         var diagnostics = new[]
         {
-            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
         };
         
         TestTools.AssertDiagnostics(text, diagnostics, Output);
@@ -243,7 +251,7 @@ public class SymbolScopes
     public void VariableCanShadowField()
     {
         var text =
-            $$"""
+            """
             class TypeName {
                 field : int;
                 function FunctionName()
@@ -262,7 +270,7 @@ public class SymbolScopes
     public void VariableCanShadowMethod()
     {
         var text =
-            $$"""
+            """
             class TypeName { 
                 function FunctionName()
                 { 

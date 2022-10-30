@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
@@ -6,7 +9,7 @@ public class VariableSymbol : Symbol
 {
     public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
-    public VariableSymbol(string name, TypeSymbol type, bool isReadonly) : base(name)
+    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol type, bool isReadonly) : base(declarationSyntax, name)
     {
         Type = type;
         IsReadonly = isReadonly;

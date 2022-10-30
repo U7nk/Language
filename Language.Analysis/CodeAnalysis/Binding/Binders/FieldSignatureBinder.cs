@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -32,12 +33,34 @@ public sealed class FieldSignatureBinder
 
         // if diagnostics are reported field should not be used later in binding
         // so we just let it be null and try to gain more diagnostics
-        var field = new FieldSymbol(fieldDeclaration.Identifier.Text, type!);  
-        if (!_scope.TryDeclareField(field))
+        var field = new FieldSymbol(ImmutableArray.Create<SyntaxNode>(fieldDeclaration), fieldDeclaration.Identifier.Text, type!);
+        
+        if (!_scope.TryDeclareField(field, _lookup.ContainingType))
         {
-            diagnostics.ReportFieldAlreadyDeclared(
-                fieldDeclaration.Identifier.Location,
-                fieldDeclaration.Identifier.Text);
+            if (field.Name == _lookup.ContainingType.Name)
+                diagnostics.ReportClassMemberCannotHaveNameOfClass(fieldDeclaration.Identifier);
+            
+            
+            var sameNameFields = _lookup.ContainingType.FieldTable.Symbols.Where(x => x.Name == field.Name).ToList();
+            if (sameNameFields.Any())
+            {
+                foreach (var sameNameField in sameNameFields)
+                    diagnostics.ReportFieldAlreadyDeclared(
+                        sameNameField.DeclarationSyntax.Cast<FieldDeclarationSyntax>().First().Identifier);
+                
+                diagnostics.ReportFieldAlreadyDeclared(fieldDeclaration.Identifier);
+            }
+
+            
+            var sameNameMethods = _lookup.ContainingType.MethodTable.Symbols.Where(x => x.Name == field.Name).ToList();
+            if (sameNameMethods.Any())
+            {
+                foreach (var sameNameMethod in sameNameMethods)
+                    diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(
+                        sameNameMethod.DeclarationSyntax.Cast<MethodDeclarationSyntax>().First().Identifier);
+                
+                diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
+            }
         }
 
         return diagnostics.ToImmutableArray();

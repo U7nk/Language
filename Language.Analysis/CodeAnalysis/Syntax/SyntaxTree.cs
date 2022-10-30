@@ -65,7 +65,7 @@ public partial class SyntaxTree
         {
             var lexer = new Lexer(syntaxTree);
             tokens = lexer.Lex();
-            root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<ITopMemberSyntax>.Empty, lexer.NextToken());
+            root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<ITopMemberDeclarationSyntax>.Empty, lexer.NextToken());
             diags = lexer.Diagnostics.ToImmutableArray();
         }
         

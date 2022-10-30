@@ -10,7 +10,15 @@ namespace Language.Analysis.CodeAnalysis;
 public class DiagnosticBag : List<Diagnostic>
 {
     public void Report(TextLocation textLocation, string message, string code)
-        => Add(new Diagnostic(textLocation, message, code));
+    {
+        var diagnostic = new Diagnostic(textLocation, message, code);
+        var diagnosticHash = diagnostic.GetHashCode();
+        var sameHashDiagnostics = this.Where(d => d.GetHashCode() == diagnosticHash);
+        if (sameHashDiagnostics.Any(sameHashDiagnostic => sameHashDiagnostic == diagnostic))
+            return;
+
+        Add(new Diagnostic(textLocation, message, code));
+    }
 
     public const string INVALID_NUMBER_CODE = "[0001:Error]";
 
@@ -63,10 +71,10 @@ public class DiagnosticBag : List<Diagnostic>
 
     public const string VARIABLE_ALREADY_DECLARED_CODE = "[0007:Error]";
 
-    public void ReportVariableAlreadyDeclared(TextLocation location, string name)
+    public void ReportVariableAlreadyDeclared(SyntaxToken variableIdentifier)
     {
-        var message = $"Variable '{name}' is already declared.";
-        Report(location, message, VARIABLE_ALREADY_DECLARED_CODE);
+        var message = $"Variable with same name '{variableIdentifier.Text}' is already declared.";
+        Report(variableIdentifier.Location, message, VARIABLE_ALREADY_DECLARED_CODE);
     }
 
     public const string CANNOT_CONVERT_CODE = "[0008:Error]";
@@ -145,18 +153,18 @@ public class DiagnosticBag : List<Diagnostic>
 
     public const string PARAMETER_ALREADY_DECLARED_CODE = "[0018:Error]";
 
-    public void ReportParameterAlreadyDeclared(TextLocation location, string name)
+    public void ReportParameterAlreadyDeclared(SyntaxToken parameterIdentifier)
     {
-        var message = $"Parameter '{name}' is already declared.";
-        Report(location, message, PARAMETER_ALREADY_DECLARED_CODE);
+        var message = $"Parameter with same name '{parameterIdentifier.Text}' is already declared.";
+        Report(parameterIdentifier.Location, message, PARAMETER_ALREADY_DECLARED_CODE);
     }
 
     public const string METHOD_ALREADY_DECLARED_CODE = "[0019:Error]";
 
-    public void ReportMethodAlreadyDeclared(TextLocation location, string identifierText)
+    public void ReportMethodAlreadyDeclared(SyntaxToken methodIdentifier)
     {
-        var message = $"Method '{identifierText}' is already declared.";
-        Report(location, message, METHOD_ALREADY_DECLARED_CODE);
+        var message = $"Method '{methodIdentifier.Text}' is already declared.";
+        Report(methodIdentifier.Location, message, METHOD_ALREADY_DECLARED_CODE);
     }
 
     public const string INVALID_BREAK_OR_CONTINUE_CODE = "[0020:Error]";
@@ -291,10 +299,10 @@ public class DiagnosticBag : List<Diagnostic>
 
     public const string FIELD_ALREADY_DECLARED_CODE = "[0036:Error]";
 
-    public void ReportFieldAlreadyDeclared(TextLocation fieldLocation, string fieldName)
+    public void ReportFieldAlreadyDeclared(SyntaxToken fieldIdentifier)
     {
-        var message = $"Field '{fieldName}' is already declared.";
-        Report(fieldLocation, message, FIELD_ALREADY_DECLARED_CODE);
+        var message = $"Field '{fieldIdentifier.Text}' is already declared.";
+        Report(fieldIdentifier.Location, message, FIELD_ALREADY_DECLARED_CODE);
     }
 
     public const string UNDEFINED_FIELD_ACCESS_CODE = "[0037:Error]";

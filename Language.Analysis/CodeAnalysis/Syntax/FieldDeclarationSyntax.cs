@@ -1,6 +1,6 @@
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
-public class FieldDeclarationSyntax : SyntaxNode, IClassMemberSyntax
+public class FieldDeclarationSyntax : SyntaxNode, IClassMemberDeclarationSyntax
 {
     public FieldDeclarationSyntax(
         SyntaxTree syntaxTree, SyntaxToken identifier, 

@@ -188,13 +188,14 @@ public class General
     public void VariableDeclaration_Reports_Redeclaration(TestTools.ContextType contextType)
     {
         var text =
-            $$"""  
-            var a = 10;
+            """  
+            var [a] = 10;
             var [a] = 10;
             """;
         var diagnostics = new[]
         {
-            "Variable 'a' is already declared.",
+            "Variable with same name 'a' is already declared.",
+            "Variable with same name 'a' is already declared.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text, contextType),
@@ -217,14 +218,15 @@ public class General
     {
         var text =
             """
-            for (var i = 1; i < 4; i = i + 1)
+            for (var [i] = 1; i < 4; i = i + 1)
             {
                 var [i] = 5;
             }
             """ ;
         var diagnostics = new[]
         {
-            "Variable 'i' is already declared.",
+            "Variable with same name 'i' is already declared.",
+            "Variable with same name 'i' is already declared.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text, contextType),

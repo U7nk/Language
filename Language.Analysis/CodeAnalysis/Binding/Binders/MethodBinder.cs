@@ -34,7 +34,8 @@ sealed class MethodBinder
         _scope = new(_scope);
         methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
 
-        var result = BindBlockStatement(methodSymbol.Declaration.NullGuard().Body);
+        var result = BindBlockStatement(
+            methodSymbol.DeclarationSyntax.Cast<MethodDeclarationSyntax>().First().Body);
 
         _scope = _scope.Parent ?? throw new InvalidOperationException();
 
@@ -230,12 +231,39 @@ sealed class MethodBinder
         var type = BindTypeClause(syntax.TypeClause);
         
         var name = syntax.IdentifierToken.Text;
-        var variable = new VariableSymbol(name, (type ?? variableType).NullGuard(), isReadonly);
+        var variable = new VariableSymbol(
+            ImmutableArray.Create<SyntaxNode>(syntax),
+            name, 
+            (type ?? variableType).NullGuard(), 
+            isReadonly);
 
         if (!_scope.TryDeclareVariable(variable))
         {
-            var location = syntax.IdentifierToken.Location;
-            _diagnostics.ReportVariableAlreadyDeclared(location, name);
+            _scope.TryLookupVariable(variable.Name, out var existingVariable)
+                .ThrowIfFalse();
+            
+            SyntaxToken? existingVariableIdentifier;
+            switch (existingVariable.NullGuard().Kind)
+            {
+                case SymbolKind.Parameter:
+                {
+                    existingVariableIdentifier =
+                        existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
+                    _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
+                    _diagnostics.ReportParameterAlreadyDeclared(syntax.IdentifierToken);
+                    break;
+                }
+                case SymbolKind.Variable:
+                {
+                    existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
+                        .First().IdentifierToken;
+                    _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
+                    _diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken);
+                    break;
+                }
+                default:
+                    throw new Exception($"Unexpected symbol {existingVariable.NullGuard().Kind}");
+            }
         }
 
         return new BoundVariableDeclarationStatement(syntax, variable);
@@ -509,7 +537,7 @@ sealed class MethodBinder
             return new BoundFieldExpression(syntax, field);
         }
         
-        _ = _scope.TryLookupField(name, out var fieldSymbol);
+        var fieldSymbol = _lookup.CurrentType.FieldTable.SingleOrDefault(x=> x.Name == name);
 
         if (_scope.TryLookupVariable(name, out var variable))
         {
@@ -520,7 +548,7 @@ sealed class MethodBinder
 
         if (fieldSymbol is { })
         {
-            return new BoundFieldExpression(syntax,fieldSymbol);
+            return new BoundFieldExpression(syntax, fieldSymbol);
         }
 
         _diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);

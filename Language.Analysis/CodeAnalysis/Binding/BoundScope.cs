@@ -46,7 +46,7 @@ public class BoundScope
         variable = null;
         if (_symbols.TryGetValue(name, out var sameNamers))
         {
-            var variables = sameNamers.Where(x => x.Kind == SymbolKind.Variable).ToList();
+            var variables = sameNamers.Where(x => x.Kind is SymbolKind.Variable or SymbolKind.Parameter).ToList();
             Debug.Assert(variables.Count <= 1);
             if (variables.Any())
             {
@@ -66,10 +66,16 @@ public class BoundScope
             .OfType<VariableSymbol>()
             .ToImmutableArray();
 
-    public bool TryDeclareMethod(MethodSymbol method)
+    public bool TryDeclareMethod(MethodSymbol method, TypeSymbol containingType)
     {
-        if (Parent?.TryLookupMethod(method.Name, out _) is true)
+        if (containingType.Name == method.Name)
             return false;
+        
+        if (Parent?.TryLookupField(method.Name, out _) is true)
+            return false;
+        
+        if (Parent?.TryLookupMethod(method.Name, out _) is true)
+            return false;   
         
         if (_symbols.TryGetValue(method.Name, out var sameNamers))
         {
@@ -88,6 +94,8 @@ public class BoundScope
         {
             _symbols.Add(method.Name,new List<Symbol>{ method });    
         }
+        
+        containingType.MethodTable.Add(method, null);
         return true;
     }
     public bool TryLookupMethod(string name, [NotNullWhen(true)] out MethodSymbol? function)
@@ -166,11 +174,17 @@ public class BoundScope
             .OfType<TypeSymbol>()
             .ToImmutableArray();
 
-    public bool TryDeclareField(FieldSymbol fieldSymbol)
+    public bool TryDeclareField(FieldSymbol fieldSymbol, TypeSymbol containingType)
     {
-        if (Parent?.TryLookupField(fieldSymbol.Name, out _) is true)
+        if (containingType.Name == fieldSymbol.Name)
             return false;
         
+        if (containingType.MethodTable.Symbols.Any(x => x.Name == fieldSymbol.Name))
+            return false;
+        
+        if (Parent?.TryLookupField(fieldSymbol.Name, out _) is true)
+            return false;
+
         if (_symbols.TryGetValue(fieldSymbol.Name, out var sameNamers))
         {
             var functionsAndFieldsAndTypes = sameNamers.Where(
@@ -189,6 +203,7 @@ public class BoundScope
             _symbols.Add(fieldSymbol.Name,new List<Symbol>{ fieldSymbol });    
         }
         
+        containingType.FieldTable.Add(fieldSymbol);
         return true;
     }
     
