@@ -239,31 +239,37 @@ sealed class MethodBinder
 
         if (!_scope.TryDeclareVariable(variable))
         {
-            _scope.TryLookupVariable(variable.Name, out var existingVariable)
+
+            _scope.TryLookupVariable(variable.Name, out var existingSymbol)
                 .ThrowIfFalse();
-            
-            SyntaxToken? existingVariableIdentifier;
-            switch (existingVariable.NullGuard().Kind)
+            var existingVariables = _lookup.CurrentMethod.Parameters.Append(existingSymbol);
+
+            foreach (var existingVariable in existingVariables)
             {
-                case SymbolKind.Parameter:
+                SyntaxToken? existingVariableIdentifier;
+                switch (existingVariable.NullGuard().Kind)
                 {
-                    existingVariableIdentifier =
-                        existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
-                    _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                    _diagnostics.ReportParameterAlreadyDeclared(syntax.IdentifierToken);
-                    break;
+                    case SymbolKind.Parameter:
+                    {
+                        existingVariableIdentifier =
+                            existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
+                        _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
+                        _diagnostics.ReportParameterAlreadyDeclared(syntax.IdentifierToken);
+                        break;
+                    }
+                    case SymbolKind.Variable:
+                    {
+                        existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
+                            .First().IdentifierToken;
+                        _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
+                        _diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken);
+                        break;
+                    }
+                    default:
+                        throw new Exception($"Unexpected symbol {existingVariable.NullGuard().Kind}");
                 }
-                case SymbolKind.Variable:
-                {
-                    existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
-                        .First().IdentifierToken;
-                    _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                    _diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken);
-                    break;
-                }
-                default:
-                    throw new Exception($"Unexpected symbol {existingVariable.NullGuard().Kind}");
             }
+            
         }
 
         return new BoundVariableDeclarationStatement(syntax, variable);
