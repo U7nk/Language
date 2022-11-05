@@ -87,22 +87,22 @@ public class SymbolScopes
     [Fact]
     public void TwoParametersAndVariableWithSameName()
     {
-        const string text = """
+        var text = """
             class Program
             {
                 static function main(){
                 }
-                function Foo([a] : int, [a] : int) {
-                    var [a] : int = 5;
+                function Foo(a : int, a : int) {
+                    var a : int = 5;
                 }
             }
-            """ ;
-
-        var annotatedText = AnnotatedText.Parse(text);
-        var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
+            """.Replace(Environment.NewLine, "\n\r");
+        
+        var syntaxTree = SyntaxTree.Parse(text);
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
+
         diagnostics.Any(x => x is
         {
             Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
