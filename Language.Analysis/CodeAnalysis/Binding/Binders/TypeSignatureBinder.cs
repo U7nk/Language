@@ -24,7 +24,7 @@ sealed class TypeSignatureBinder
         var diagnostics = new DiagnosticBag();
         
         _scope.TryLookupType(name, out var existingType).ThrowIfFalse();
-        existingType.NullGuard().AddDeclaration(classDeclaration);
+        existingType.NG().AddDeclaration(classDeclaration);
         
         foreach (var syntaxNode in existingType.DeclarationSyntax.Cast<ClassDeclarationSyntax>())
         {

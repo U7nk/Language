@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -205,9 +206,12 @@ public class General
     [Fact]
     public void Reports_NoError_For_Inserted_Token()
     {
-        var text = "";
-        var diagnostics = Array.Empty<string>();
-        TestTools.AssertDiagnosticsWithMessages(text, diagnostics);
+        var text = "[]";
+        var diagnostics = new[]
+        {
+            DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Theory]
@@ -345,7 +349,7 @@ public class General
     {
         var text =
             """
-            [this.Field;]
+            [StaticField;]
             """ ;
         var diagnostics = new[]
         {
@@ -356,26 +360,182 @@ public class General
     }
     
     [Fact]
-    public void StaticMethodInsideClassCannotBeCalledWithThis()
+    public void FieldAccessExpressionStatementInvalidInInstanceMethod()
+    {
+        var text =
+            """
+            class Program{
+                static StaticField : int;
+                InstanceField : int;
+                
+                static function main(){
+                    
+                }
+                
+                function StaticMethod(){
+                    [StaticField;]
+                    [Program.StaticField;]
+                }
+            } 
+            """ ;
+            
+        var diagnostics = new[]
+        {
+            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+        };
+
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void StaticMethodInsideClassCannotBeCalledOnThis()
     {
         var text =
             $$"""
             class Program
             {
-                static function Main()
+                static function main()
+                {
+                    
+                }
+                
+                function nonStaticMethod()
                 {
                     this.[staticMethod]();
                 }
-                static function staticMethod() {
                 
+                static function staticMethod() {
+                    
                 } 
             }
             """ ;
         var diagnostics = new[]
         {
-            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
         };
         TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void StaticFieldInsideClassCannotBeCalledWithThis()
+    {
+        var text =
+            """
+            class Program
+            {
+                static staticField : int;
+                static function main() {  
+                    
+                }
+                
+                function method() {
+                    var x = this.[staticField];
+                }
+                
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void ThisCannotBeUsedInsideStaticMethod()
+    {
+        var text =
+            """
+            class Program
+            {
+                nonStaticField : int;
+                static function main() {  
+                    var x = [this].nonStaticField;
+                    var y = [this].nonStaticMethod();
+                }
+                
+                function nonStaticMethod() : int {
+                    return 0;
+                }
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
+            DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void MemberAccessReportsAmbiguity()
+    {
+        var text =
+            """
+            class Program
+            {
+                static Field : InstanceField;
+                static function main() {   
+                    Field.[Foo]();   
+                }
+            }
+            class Field{
+                static function Foo(){
+                    
+                }
+            }
+            class InstanceField {
+                function Foo(){
+                    
+                }
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.AMBIGUOUS_MEMBER_ACCESS_CODE,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void MainFunctionShouldBeStatic()
+    {
+        var text =
+            """
+            class Program
+            {
+                function [main]() {   
+                    var x = 1;   
+                } 
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void MainMethodShouldBeDeclared()
+    {
+        var text =
+            """
+            class Program
+            {
+                function NotMain() {   
+                    var x = 1;
+                } 
+            }
+            """ ;
+        var diagnosticsExpected = new[]
+        {
+            DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE,
+        };
+        
+        var (result, diagnostics) = TestTools.Evaluate(text);
+        diagnostics.Should().ContainSingle(diagnosticsExpected.Single());
     }
 
 }

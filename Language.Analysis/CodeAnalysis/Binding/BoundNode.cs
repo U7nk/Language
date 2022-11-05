@@ -48,7 +48,7 @@ public abstract class BoundNode
             {
                 
                 var value = ((IEnumerable<BoundNode>?)property.GetValue(this))
-                    .NullGuard()
+                    .NG()
                     .ToList();
 
                 foreach (var child in value)

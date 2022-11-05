@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -243,7 +244,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
     {
-        var message = $"main method must have correct signature(return type {TypeSymbol.Void} and 0 parameters).";
+        var message = $"main method must have correct signature(main must be static, have return type {TypeSymbol.Void} and 0 parameters).";
         Report(identifierLocation, message, MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE);
     }
 
@@ -350,5 +351,51 @@ public class DiagnosticBag : List<Diagnostic>
     {
         var message = $"Cannot use uninitialized variable '{identifier.Text}'.";
         Report(identifier.Location, message, REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE);
+    }
+
+    public const string AMBIGUOUS_MEMBER_ACCESS_CODE = "[0043:Error]";
+    public void ReportAmbiguousMemberMemberAccess(SyntaxToken memberIdentifier, ImmutableArray<Symbol> symbols)
+    {
+        var memberName = memberIdentifier.Text;
+        var message = $"Ambiguous '{memberName}' member access. Found:\n ";
+        foreach (var symbol in symbols)
+        {
+            message += symbol.Kind switch
+            {
+                SymbolKind.Variable => $"variable '{symbol.Name}' of type '{symbol.As<VariableSymbol>().Type}'.",
+                SymbolKind.Type => $"type '{symbol.Name}'.",
+                SymbolKind.Parameter => $"parameter '{symbol.Name}' of type '{symbol.As<ParameterSymbol>().Type}'.",
+                SymbolKind.Method => $"method '{symbol.Name}' of type '{symbol.As<MethodSymbol>().Type}'.",
+                SymbolKind.Field => $"field '{symbol.Name}' of type '{symbol.As<FieldSymbol>().Type}'.",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            message += "\n";
+        }
+        message += $"All of them have member with '{memberName}' name.";
+        
+        Report(memberIdentifier.Location, message, AMBIGUOUS_MEMBER_ACCESS_CODE);
+    }
+    
+    public const string THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE = "[0044:Error]";
+
+    public void ReportThisExpressionNotAllowedInStaticContext(SyntaxToken thisKeyword)
+    {
+        var message = "This expression is not allowed in static context.";
+        Report(thisKeyword.Location, message, THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE);
+    }
+
+    
+    public const string MAIN_METHOD_SHOULD_BE_DECLARED_CODE = "[0046:Error]";
+    public void ReportMainMethodShouldBeDeclared(SourceText sourceText)
+    {
+        var message = "Main method should be declared.";
+        Report(new TextLocation(sourceText, new TextSpan(0, 0)), message, MAIN_METHOD_SHOULD_BE_DECLARED_CODE);
+    }
+
+    public const string CANNOT_ACCESS_STATIC_ON_NON_STATIC = "[0047:Error]";
+    public void ReportCannotAccessStaticFieldOnNonStaticMember(SyntaxToken identifierToken)
+    {
+        var message = $"Cannot access static field '{identifierToken.Text}' on non-static member.";
+        Report(identifierToken.Location, message, CANNOT_ACCESS_STATIC_ON_NON_STATIC);
     }
 }

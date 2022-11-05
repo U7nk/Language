@@ -5,11 +5,11 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
-public class VariableSymbol : Symbol
+public class VariableSymbol : Symbol, ITypedSymbol
 {
     public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
-    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol type, bool isReadonly) : base(declarationSyntax, name)
+    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType, TypeSymbol type, bool isReadonly) : base(declarationSyntax, name, containingType)
     {
         Type = type;
         IsReadonly = isReadonly;

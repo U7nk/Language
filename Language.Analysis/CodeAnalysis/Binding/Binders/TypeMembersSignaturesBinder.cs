@@ -24,7 +24,7 @@ sealed class TypeMembersSignaturesBinder
         ClassDeclarationSyntax classDeclaration,
         TypeSymbol currentType)
     {
-        _lookup.NullGuard();
+        _lookup.NG();
 
         var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
@@ -34,7 +34,7 @@ sealed class TypeMembersSignaturesBinder
             {
                 var method = (MethodDeclarationSyntax) member;
                 var methodSignatureBinder = new MethodSignatureBinder(
-                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType),
+                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType, isTopMethod: false),
                     typeScope);
                 methodSignatureBinder.BindMethodSignature(method)
                     .AddRangeTo(diagnostics);

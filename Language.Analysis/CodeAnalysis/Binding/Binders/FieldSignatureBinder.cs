@@ -22,9 +22,9 @@ public sealed class FieldSignatureBinder
     public ImmutableArray<Diagnostic> BindDeclaration(FieldDeclarationSyntax fieldDeclaration)
     {
         var diagnostics = new DiagnosticBag();
-        _lookup.NullGuard();
-        var type = _lookup.LookupType(fieldDeclaration.TypeClause.Identifier.Text);
-        if (type == null)
+        _lookup.NG();
+        var fieldType = _lookup.LookupType(fieldDeclaration.TypeClause.Identifier.Text);
+        if (fieldType == null)
         {
             diagnostics.ReportUndefinedType(
                 fieldDeclaration.TypeClause.Location,
@@ -32,8 +32,12 @@ public sealed class FieldSignatureBinder
         }
 
         // if diagnostics are reported field should not be used later in binding
-        // so we just let it be null and try to gain more diagnostics
-        var field = new FieldSymbol(ImmutableArray.Create<SyntaxNode>(fieldDeclaration), fieldDeclaration.Identifier.Text, type!);
+        // so we just let type to be null and try to gain more diagnostics
+        var field = new FieldSymbol(ImmutableArray.Create<SyntaxNode>(fieldDeclaration),
+                                    fieldDeclaration.StaticKeyword is { },
+                                    fieldDeclaration.Identifier.Text,
+                                    _lookup.ContainingType, 
+                                    fieldType!);
         
         if (!_scope.TryDeclareField(field, _lookup.ContainingType))
         {

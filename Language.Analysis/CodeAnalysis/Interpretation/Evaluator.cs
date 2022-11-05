@@ -3,60 +3,54 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
-using Language.Analysis.CodeAnalysis.Binding.Binders;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.Analysis.CodeAnalysis;
-
-public class ObjectInstance
-{
-    public Dictionary<string, ObjectInstance?> Fields { get; }
-    public TypeSymbol Type { get; }
-    public object? LiteralValue { get; }
-
-    public static ObjectInstance Object(TypeSymbol type, Dictionary<string, ObjectInstance?> fields) => new(type, fields);
-    public static ObjectInstance Literal(TypeSymbol type, object value) => new(type, new Dictionary<string, ObjectInstance?>(), value);
-
-    private ObjectInstance(TypeSymbol type, Dictionary<string, ObjectInstance?> fields, object? literalValue = null)
-    {
-        if (fields.Any() && literalValue is { })
-        {
-            throw new ArgumentException("Cannot have both fields and literal value");
-        }
-
-        LiteralValue = literalValue;
-        Type = type;
-        Fields = fields;
-    }
-}
+namespace Language.Analysis.CodeAnalysis.Interpretation;
 
 class Evaluator
 {
     readonly BoundProgram _program;
     readonly Stack<Dictionary<VariableSymbol, ObjectInstance?>> _stacks;
+    readonly Dictionary<TypeSymbol, TypeStaticInstance> _types;
     ObjectInstance? _lastValue;
 
     public Evaluator(BoundProgram program, Dictionary<VariableSymbol, ObjectInstance?> globalVariables)
     {
         _stacks = new Stack<Dictionary<VariableSymbol, ObjectInstance?>>();
-        
         _stacks.Push(globalVariables);
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
         _program = program;
+        _types = new Dictionary<TypeSymbol, TypeStaticInstance>();
     } 
 
     public ObjectInstance? Evaluate()
     {
         var function = _program.MainMethod ?? _program.ScriptMainMethod;
+
         if (function is null)
             return null;
-        
+
+        if (!function.IsStatic)
+            throw new Exception("Main method must be static.");
+
         var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
-        var body = programType.MethodTable[function].NullGuard();
-        var programInstance = EvaluateObjectCreationExpression(new BoundObjectCreationExpression(null, programType));
-        Assign(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "this", programType, true), programInstance);
+        var programTypeStatic = new TypeStaticInstance(CreateFieldsFromTable(programType.FieldTable),
+                                                       programType);
+        _types.Add(programType, programTypeStatic);
+        
+        var body = programType.MethodTable[function].NG();
         return EvaluateStatement(body);
+    }
+
+    Dictionary<string, ObjectInstance?> CreateFieldsFromTable(FieldTable table)
+    {
+        var result = new Dictionary<string, ObjectInstance?>();
+        foreach (var field in table)
+        {
+            result.Add(field.Name, EvaluateDefaultValueObjectCreation(field.Type));
+        }
+        return result;
     }
 
     ObjectInstance? EvaluateStatement(BoundBlockStatement body)
@@ -96,7 +90,8 @@ class Evaluator
                 }
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
-                    var condition = (bool)(EvaluateExpression(cgs.Condition).NullGuard().LiteralValue ?? throw new InvalidOperationException());
+                    var condition = (bool)(EvaluateExpression(cgs.Condition).NG<ObjectInstance>().LiteralValue 
+                                           ?? throw new InvalidOperationException());
                     if (condition == cgs.JumpIfTrue)
                         i = labelToIndex[cgs.Label];
                     else
@@ -113,7 +108,7 @@ class Evaluator
                     var value = rs.Expression == null 
                         ? null 
                         : EvaluateExpression(rs.Expression);
-                    _lastValue = value;
+                    _lastValue = value.As<ObjectInstance?>();
                     return _lastValue;
                 default:
                     throw new Exception($"Unexpected node  {statement.Kind}");
@@ -132,16 +127,16 @@ class Evaluator
     
     void EvaluateVariableDeclarationAssignmentStatement(BoundVariableDeclarationAssignmentStatement assignmentStatement)
     {
-        var value = EvaluateExpression(assignmentStatement.Initializer);
+        var value = EvaluateExpression(assignmentStatement.Initializer).NG<ObjectInstance>();
         Assign(assignmentStatement.Variable, value);
     }
 
     void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
     {
-        _lastValue = EvaluateExpression(expressionStatement.Expression);
+        _lastValue = EvaluateExpression(expressionStatement.Expression).As<ObjectInstance?>();
     }
 
-    public ObjectInstance? EvaluateExpression(BoundExpression node)
+    public RuntimeObject? EvaluateExpression(BoundExpression node)
     {
         return node.Kind switch
         {
@@ -167,67 +162,135 @@ class Evaluator
                 EvaluateMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
             BoundNodeKind.MethodCallExpression =>
                 EvaluateMethodCallExpression((BoundMethodCallExpression)node,
-                    _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard().Type,
-                    _stacks.Peek().Single(x => x.Key.Name == "this").Value),
+                    _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value?.Type,
+                    _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value),
             BoundNodeKind.FieldExpression =>
                 EvaluateFieldAccessExpression((BoundFieldExpression)node),
+            BoundNodeKind.NamedTypeExpression =>
+                EvaluateNamedTypeExpression((BoundNamedTypeExpression)node),
             _ => /* default */
                 throw new($"Unexpected node  {node.Kind}")
         };
     }
 
+    TypeStaticInstance EvaluateNamedTypeExpression(BoundNamedTypeExpression node)
+    {
+        if (_types.TryGetValue(node.Type, out var typeStaticInstance))
+            return typeStaticInstance;
+        
+        var type = node.Type;
+        var fields = new Dictionary<string, ObjectInstance?>();
+        foreach (var field in type.FieldTable.Where(x=> x.IsStatic))
+        {
+            var value = EvaluateDefaultValueObjectCreation(field.Type);
+            fields.Add(field.Name, value);
+        }
+        var typeStatic = new TypeStaticInstance(fields, type);
+        _types.Add(typeStatic.Type, typeStatic);
+        return typeStatic;
+    }
+
     ObjectInstance? EvaluateFieldAccessExpression(BoundFieldExpression node)
     {
-        var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value;
-        if (instance is null)
-            throw new InvalidOperationException("Cannot access field on null instance");
+        RuntimeObject instance;
+        if (node.FieldSymbol.IsStatic)
+        {
+            instance = GetTypeStaticInstance(node.FieldSymbol.ContainingType.NG());
+        }
+        else
+        {
+            instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NG();
+        }
+        
         return instance.Fields[node.FieldSymbol.Name];
     }
-    ObjectInstance? EvaluateMemberAssignmentExpression(BoundMemberAssignmentExpression node)
+    RuntimeObject? EvaluateMemberAssignmentExpression(BoundMemberAssignmentExpression node)
     {
         // should return object.
         // objects is represented as Dictionary<string, object>
         
         if (node.MemberAccess.Kind is BoundNodeKind.FieldExpression)
         {
-            var instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard();
-            var value = EvaluateExpression(node.RightValue).NullGuard();
+            var fieldExpression = (BoundFieldExpression)node.MemberAccess;
+            RuntimeObject instance;
+            if (fieldExpression.FieldSymbol.IsStatic)
+            {
+                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.Type);
+            }
+            else
+            {
+                instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NG();    
+            }
+            
+            
+            var value = EvaluateExpression(node.RightValue).NG<ObjectInstance>();
         
-            var member = node.MemberAccess.NullGuard<BoundFieldExpression>();
+            var member = node.MemberAccess.NG<BoundFieldExpression>();
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
         else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
         {
-            var variable = node.MemberAccess.NullGuard<BoundVariableExpression>().Variable;
-            var rightValue = EvaluateExpression(node.RightValue).NullGuard();
+            var variable = node.MemberAccess.NG<BoundVariableExpression>().Variable;
+            var rightValue = EvaluateExpression(node.RightValue)
+                .NG<ObjectInstance>();
             return Assign(variable, rightValue);
         }
         else
         {
             var memberAccess = (BoundMemberAccessExpression)node.MemberAccess;
-            var instance = EvaluateExpression(memberAccess.Left).NullGuard();
-            var value = EvaluateExpression(node.RightValue).NullGuard();
+            var instance = EvaluateExpression(memberAccess.Left).NG();
+            var value = EvaluateExpression(node.RightValue).NG<ObjectInstance>();
 
-            var member = memberAccess.Member.NullGuard<BoundFieldExpression>();
+            var member = memberAccess.Member.NG<BoundFieldExpression>();
 
             return instance.Fields[member.FieldSymbol.Name] = value;
         }
     }
 
-    ObjectInstance? EvaluateMethodCallExpression(BoundMethodCallExpression methodCallExpression, TypeSymbol type, ObjectInstance? typeInstance)
+    TypeStaticInstance GetTypeStaticInstance(TypeSymbol fieldSymbolType)
     {
-        typeInstance.NullGuard();
+        if (_types.TryGetValue(fieldSymbolType, out var typeStaticInstance))
+            return typeStaticInstance;
         
+        
+        var fields = CreateFieldsFromTable(fieldSymbolType.FieldTable);
+        var typeStatic = new TypeStaticInstance(fields, fieldSymbolType);
+        _types.Add(typeStatic.Type, typeStatic);
+        return typeStatic;
+    }
+
+    ObjectInstance? EvaluateMethodCallExpression(BoundMethodCallExpression methodCallExpression, TypeSymbol? type, RuntimeObject? typeInstance)
+    {
+        if (!methodCallExpression.MethodSymbol.IsStatic)
+        {
+            var message = $"Method {methodCallExpression.MethodSymbol.Name} is not static";
+            type.NG(message + " and this expression should not be null");
+            typeInstance.NG(message + " and this expression should not be null");
+        }
+        else
+        {
+            type = methodCallExpression.MethodSymbol.ContainingType.NG();
+            typeInstance = GetTypeStaticInstance(type);
+        }
+
         var parameters = methodCallExpression.MethodSymbol.Parameters;
         var locals = _stacks.Peek();
         foreach (var i in 0..methodCallExpression.Arguments.Length)
         {
-            locals.Add(parameters[i], EvaluateExpression(methodCallExpression.Arguments[i]));
+            locals.Add(parameters[i], 
+                       EvaluateExpression(methodCallExpression.Arguments[i]).NG<ObjectInstance>());
         }
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
-        Assign(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "this", type, true), typeInstance);
-        var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].NullGuard();
+        if (typeInstance is ObjectInstance objectInstance)
+        {
+            Assign(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "this",
+                                      containingType: null,
+                                      type, isReadonly: true),
+                   objectInstance);
+        }
+
+        var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].NG();
         var result = EvaluateStatement(methodBody);
         _stacks.Pop();
         return result;
@@ -237,7 +300,7 @@ class Evaluator
     {
         // should return object.
         // objects is represented as Dictionary<string, object>
-        var leftValue = EvaluateExpression(node.Left).NullGuard();
+        var leftValue = EvaluateExpression(node.Left).NG();
 
         if (node.Member is BoundMethodCallExpression methodCall)
             return EvaluateMethodCallExpression(methodCall, node.Left.Type, leftValue);
@@ -276,12 +339,13 @@ class Evaluator
             node.Syntax is null ? ImmutableArray<SyntaxNode>.Empty : ImmutableArray.Create(node.Syntax),
             name: "this",
             type: node.Type,
-            isReadonly: true)];
+            isReadonly: true, 
+            containingType: null)];
     }
 
     ObjectInstance EvaluateConversionExpression(BoundConversionExpression node)
     {
-        var value = EvaluateExpression(node.Expression).NullGuard();
+        var value = EvaluateExpression(node.Expression).NG<ObjectInstance>();
 
         if (Equals(node.Type, TypeSymbol.Bool)) 
             return ObjectInstance.Literal(TypeSymbol.Bool, Convert.ToBoolean(value));
@@ -290,7 +354,7 @@ class Evaluator
             return ObjectInstance.Literal(TypeSymbol.Int, Convert.ToInt32(value));
 
         if (Equals(node.Type, TypeSymbol.String))
-            return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).NullGuard());
+            return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).NG());
         
         if (Equals(node.Type, TypeSymbol.Any))
             return value;
@@ -301,15 +365,15 @@ class Evaluator
 
     ObjectInstance EvaluateBinaryExpression(BoundBinaryExpression b)
     {
-        var left = EvaluateExpression(b.Left);
-        var right = EvaluateExpression(b.Right);
+        var left = EvaluateExpression(b.Left).NG<ObjectInstance>();
+        var right = EvaluateExpression(b.Right).NG<ObjectInstance>();
         
         if (Equals(b.Left.Type, TypeSymbol.Int))
         {
             if (Equals(b.Right.Type, TypeSymbol.Int))
             {
-                var intRight = right.NullGuard().LiteralValue.NullGuard<int>();
-                var intLeft = left.NullGuard().LiteralValue.NullGuard<int>();
+                var intRight = right.NG().LiteralValue.NG<int>();
+                var intLeft = left.NG().LiteralValue.NG<int>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.Int, intLeft + intRight),
@@ -336,8 +400,8 @@ class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.String))
             {
-                var stringRight = right.NullGuard().LiteralValue.NullGuard<string>();
-                var stringLeft = left.NullGuard().LiteralValue.NullGuard<string>();
+                var stringRight = right.NG().LiteralValue.NG<string>();
+                var stringLeft = left.NG().LiteralValue.NG<string>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.String, stringLeft + stringRight),
@@ -353,8 +417,8 @@ class Evaluator
         {
             if (Equals(b.Right.Type, TypeSymbol.Bool))
             {
-                var boolRight = right.NullGuard().LiteralValue.NullGuard<bool>();
-                var boolLeft = left.NullGuard().LiteralValue.NullGuard<bool>();
+                var boolRight = right.NG().LiteralValue.NG<bool>();
+                var boolLeft = left.NG().LiteralValue.NG<bool>();
                 return b.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.String, boolLeft == boolRight),
@@ -376,10 +440,10 @@ class Evaluator
 
     ObjectInstance EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
-        var operand = EvaluateExpression(unary.Operand).NullGuard();
+        var operand = EvaluateExpression(unary.Operand).NG<ObjectInstance>();
         if (Equals(unary.Type, TypeSymbol.Int))
         {
-            var intOperand = operand.LiteralValue.NullGuard<int>();
+            var intOperand = operand.LiteralValue.NG<int>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(TypeSymbol.Int,  -intOperand),
@@ -391,7 +455,7 @@ class Evaluator
 
         if (Equals(unary.Type, TypeSymbol.Bool))
         {
-            var boolOperand = operand.LiteralValue.NullGuard<bool>();
+            var boolOperand = operand.LiteralValue.NG<bool>();
             return unary.Op.Kind switch
             {
                 BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(TypeSymbol.Bool, !boolOperand),
@@ -404,7 +468,7 @@ class Evaluator
 
     ObjectInstance? EvaluateAssignmentExpression(BoundAssignmentExpression a)
     {
-        var value = EvaluateExpression(a.Expression);
+        var value = EvaluateExpression(a.Expression).NG<ObjectInstance>();
         Assign(a.Variable, value);
         return value;
     }
@@ -415,7 +479,7 @@ class Evaluator
     }
 
     ObjectInstance EvaluateLiteralExpression(BoundLiteralExpression l) =>
-        ObjectInstance.Literal(l.Type, l.Value.NullGuard());
+        ObjectInstance.Literal(l.Type, l.Value.NG());
 
     ObjectInstance? Assign(VariableSymbol variableSymbol, ObjectInstance? value)
     { 

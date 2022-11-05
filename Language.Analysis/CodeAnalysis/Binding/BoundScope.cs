@@ -17,7 +17,19 @@ public class BoundScope
     {
         Parent = parent;
     }
-    
+
+    public ImmutableArray<Symbol> LookupSymbolsByName(string name)
+    {
+        var resultingSymbols = new List<Symbol>();
+        Parent?.LookupSymbolsByName(name).AddRangeTo(resultingSymbols);
+        if (_symbols.TryGetValue(name, out var ourSymbols))
+        {
+            resultingSymbols.AddRange(ourSymbols);
+        }
+        
+        return resultingSymbols.ToImmutableArray();
+    }
+
     public bool TryDeclareVariable(VariableSymbol variable)
     {
         if (Parent?.TryLookupVariable(variable.Name, out _) is true)
@@ -92,10 +104,10 @@ public class BoundScope
         }
         else
         {
-            _symbols.Add(method.Name,new List<Symbol>{ method });    
+            _symbols.Add(method.Name, new List<Symbol>{ method });    
         }
         
-        containingType.MethodTable.Add(method, null);
+        containingType.MethodTable.TryAdd(method, null);
         return true;
     }
     public bool TryLookupMethod(string name, [NotNullWhen(true)] out MethodSymbol? function)
@@ -202,8 +214,12 @@ public class BoundScope
         {
             _symbols.Add(fieldSymbol.Name,new List<Symbol>{ fieldSymbol });    
         }
-        
-        containingType.FieldTable.Add(fieldSymbol);
+
+        if (!containingType.FieldTable.Contains(fieldSymbol))
+        {
+            containingType.FieldTable.Add(fieldSymbol);
+        }
+
         return true;
     }
     

@@ -12,7 +12,13 @@ public class MethodTable : Dictionary<MethodSymbol, BoundBlockStatement?>
 {
     public IEnumerable<MethodSymbol> Symbols => Keys;
     public IEnumerable<BoundBlockStatement?> Bodies => Values;
-    
+
+    public MethodTable(Dictionary<MethodSymbol, BoundBlockStatement?> methods) : base(methods)
+    {
+        
+    }
+    public MethodTable()
+    { }
     public void Declare(MethodSymbol symbol, BoundBlockStatement? body)
     {
         if (ContainsKey(symbol))

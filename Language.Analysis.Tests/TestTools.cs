@@ -4,6 +4,7 @@ using FluentAssertions;
 using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
@@ -13,6 +14,16 @@ namespace TestProject1;
 
 public class TestTools
 {
+
+    public static (EvaluationResult result, ImmutableArray<Diagnostic> diagnostics) Evaluate(string text)
+    {
+        var syntaxTree = SyntaxTree.Parse(text);
+        var compilation = Compilation.Create(syntaxTree);
+        var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
+        var diagnostics = result.Diagnostics.ToImmutableArray();
+        return (result, diagnostics);
+    }
+    
     public static void AssertDiagnosticsWithMessages(string text, string[] expectedDiagnosticTexts)
     {
         var annotatedText = AnnotatedText.Parse(text);
@@ -109,9 +120,10 @@ public class TestTools
             var function = $$"""
                 class Program
                 {
-                    Field : int;
+                    InstanceField : int;
+                    static StaticField : int;
                     
-                    function main()
+                    static function main()
                     {
                         {{ content.ReplaceLineEndings("\n        ") }} 
                     }
@@ -181,5 +193,45 @@ public class TestTools
         {
             yield return new[] { contextType };
         }
+    }
+
+    /// <summary>
+    /// Doesn't include abstract types
+    /// </summary>
+    /// <returns></returns>
+    public static List<Type> GetAllKindsOfSymbolTypes()
+    {
+        var symbolTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetTypes().Where(t => t.IsSubclassOf(typeof(Symbol)) && t.IsAbstract is false))
+            .ToList();
+
+        return symbolTypes;
+    }
+    
+    public static List<Symbol> GetAllKindsOfSymbols()
+    {
+        var result = new List<Symbol>();
+        var symbolTypes = GetAllKindsOfSymbolTypes();
+        foreach (var symbolType in symbolTypes)
+        {
+            if (symbolType == typeof(TypeSymbol))
+            {
+                result.Add(TypeSymbol.Int);
+            }
+            else if (symbolType == typeof(ParameterSymbol))
+            {
+                result.Add(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "parameter", null, TypeSymbol.Int));
+            }
+            else if (symbolType == typeof(VariableSymbol))
+            {
+                result.Add(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "variable", null, TypeSymbol.Int, false ));
+            }
+            else if (symbolType == typeof(FieldSymbol))
+            {
+                result.Add(new FieldSymbol(ImmutableArray<SyntaxNode>.Empty, false, "field",  null!, TypeSymbol.Int));
+            }
+        }
+
+        return result;
     }
 }

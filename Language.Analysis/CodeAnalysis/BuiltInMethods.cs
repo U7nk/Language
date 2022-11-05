@@ -12,16 +12,22 @@ internal static class BuiltInMethods
     public static readonly MethodSymbol 
         Print = new(
             ImmutableArray<SyntaxNode>.Empty,
-            "print",
-            ImmutableArray.Create(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "text", TypeSymbol.String)),
-            TypeSymbol.Void);
+            isStatic: true,
+            name: "print",
+            parameters: ImmutableArray.Create(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "text", 
+                                                                  containingType: null,
+                                                                  TypeSymbol.String)),
+            returnType: TypeSymbol.Void, 
+            containingType: null);
 
     public static readonly MethodSymbol
         Input = new(
-            ImmutableArray<SyntaxNode>.Empty, 
-            "input",
-            ImmutableArray<ParameterSymbol>.Empty,
-            TypeSymbol.String);
+            ImmutableArray<SyntaxNode>.Empty,
+            isStatic: true,
+            name: "input",
+            parameters: ImmutableArray<ParameterSymbol>.Empty,
+            returnType: TypeSymbol.String, 
+            containingType: null);
 
     public static IEnumerable<MethodSymbol> GetAll() =>
         typeof(BuiltInMethods).GetFields(BindingFlags.Public | BindingFlags.Static)

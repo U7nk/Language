@@ -7,6 +7,7 @@ using System.Threading;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Binding.Binders;
 using Language.Analysis.CodeAnalysis.Emit;
+using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
@@ -122,7 +123,7 @@ public sealed class Compilation
             return;
         }
         
-        type.MethodTable[method].NullGuard().WriteTo(writer);
+        type.MethodTable[method].NG().WriteTo(writer);
     }
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, 

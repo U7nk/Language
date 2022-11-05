@@ -11,7 +11,9 @@ internal class BoundUnaryOperator
     public TypeSymbol OperandType { get; }
     public TypeSymbol ResultType { get; }
 
-    BoundUnaryOperator(BoundUnaryOperatorKind kind, SyntaxKind syntaxKind, TypeSymbol operandType, TypeSymbol resultType)
+    BoundUnaryOperator(
+        BoundUnaryOperatorKind kind, SyntaxKind syntaxKind,
+        TypeSymbol operandType, TypeSymbol resultType)
     {
         Kind = kind;
         SyntaxKind = syntaxKind;

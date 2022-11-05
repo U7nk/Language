@@ -32,7 +32,9 @@ internal enum BoundNodeKind
     ObjectCreationExpression,
     MemberAccessExpression,
     MemberAssignmentExpression,
-    FieldExpression
+    FieldExpression,
+    NamedTypeExpression,
     
     #endregion
+     
 }

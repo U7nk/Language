@@ -35,7 +35,8 @@ sealed class MethodSignatureBinder
 
             parameters.Add(new ParameterSymbol(
                 ImmutableArray.Create<SyntaxNode>(parameter),
-                parameterName,
+                parameterName, 
+                containingType: null,
                 parameterType));
         }
 
@@ -53,9 +54,12 @@ sealed class MethodSignatureBinder
         }
         
         var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? TypeSymbol.Void;
-
+        
+        var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
         var methodSymbol = new MethodSymbol(
-            ImmutableArray.Create<SyntaxNode>(method), 
+            ImmutableArray.Create<SyntaxNode>(method),
+            _lookup.ContainingType,
+            isStatic,
             method.Identifier.Text, 
             parameters.ToImmutable(), 
             returnType);

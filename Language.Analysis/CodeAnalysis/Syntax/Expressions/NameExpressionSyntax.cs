@@ -2,11 +2,11 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public sealed class NameExpressionSyntax : ExpressionSyntax
 {
-    public NameExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken) : base(syntaxTree)
+    public NameExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier) : base(syntaxTree)
     {
-        IdentifierToken = identifierToken;
+        Identifier = identifier;
     }
 
     public override SyntaxKind Kind => SyntaxKind.NameExpression;
-    public SyntaxToken IdentifierToken { get; }
+    public SyntaxToken Identifier { get; }
 }

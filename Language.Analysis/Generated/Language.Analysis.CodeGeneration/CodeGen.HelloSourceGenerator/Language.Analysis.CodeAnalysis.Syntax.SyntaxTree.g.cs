@@ -88,14 +88,14 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax(this,identifier,type);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
+    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,functionKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
+       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax NewFieldDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax typeClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
+    public Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax NewFieldDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax typeClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax(this,identifier,typeClause,semicolonToken);
+       return new Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax(this,staticKeyword,identifier,typeClause,semicolonToken);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.UnaryExpressionSyntax NewUnaryExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken operatorToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax operand)
@@ -118,9 +118,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ObjectCreationExpressionSyntax(this,newKeyword,typeIdentifier,openParenthesis,closeParenthesis);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax NewNameExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifierToken)
+    public Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax NewNameExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax(this,identifierToken);
+       return new Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax(this,identifier);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.MethodCallExpressionSyntax NewMethodCallExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesis,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax> arguments,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesis)

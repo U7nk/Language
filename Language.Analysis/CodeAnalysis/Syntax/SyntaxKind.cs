@@ -51,6 +51,7 @@ public enum SyntaxKind
     ClassKeyword,
     ThisKeyword,
     NewKeyword,
+    StaticKeyword,
 
     // nodes
     CompilationUnit,
@@ -88,5 +89,5 @@ public enum SyntaxKind
     ContinueStatement,
     BreakStatement,
     ReturnStatement,
-    VariableDeclarationAssignmentStatement
+    VariableDeclarationAssignmentStatement,
 }

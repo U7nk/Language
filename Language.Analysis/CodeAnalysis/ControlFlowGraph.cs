@@ -303,7 +303,7 @@ class ControlFlowGraph
     {
         var graph = Create(body);
 
-        return graph.End.Incoming.All(x => x.From.Statements.Last() is BoundReturnStatement);
+        return graph.End.Incoming.All(x => x.From.Statements.LastOrDefault() is BoundReturnStatement);
     }
     
     public static void AllVariablesInitializedBeforeUse(BoundBlockStatement body, DiagnosticBag diagnostics)
@@ -326,8 +326,8 @@ class ControlFlowGraph
                     variableUseExpression);
                 if (!isInitialized)
                 {
-                    var syntax = (NameExpressionSyntax)variableUseExpression.Syntax.NullGuard();
-                    diagnostics.ReportCannotUseUninitializedVariable(syntax.IdentifierToken);
+                    var syntax = (NameExpressionSyntax)variableUseExpression.Syntax.NG();
+                    diagnostics.ReportCannotUseUninitializedVariable(syntax.Identifier);
                 }
             }
         }

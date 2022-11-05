@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
+using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
@@ -21,8 +22,10 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
-                [TypeName] : int;
+            class Program {
+                static function main(){
+                }
+                [Program] : int;
             } 
             """ ;
         
@@ -40,6 +43,8 @@ public class SymbolScopes
         const string text = """
             class Program
             {
+                static function main(){
+                }
                 function Foo([a] : int) {
                     var [a] : int = 0;
                 }
@@ -61,6 +66,8 @@ public class SymbolScopes
         const string text = $$"""
             class Program
             {
+                static function main(){
+                }
                 function Foo([a] : int, [a] : int) {
                     
                 }
@@ -182,8 +189,11 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
-                function [TypeName]() {
+            class Program {
+                static function main(){
+                }
+                
+                function [Program]() {
                     
                 }
             } 
@@ -202,7 +212,9 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
+            class Program {
+                static function main(){
+                }
                 [field] : int;
                 function [field]() {
                     
@@ -224,7 +236,9 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
+            class Program {
+                static function main(){
+                }
                 function [FunctionName]() {
                     
                 }
@@ -248,7 +262,10 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
+            class Program {
+                static function main(){
+                }
+                
                 [field] : int;
                 [field] : int;
             } 
@@ -269,7 +286,10 @@ public class SymbolScopes
         
         var text =
             """
-            class TypeName {
+            class Program {
+                static function main(){
+                }
+                
                 function [FunctionName]() {
                     
                 }
@@ -291,7 +311,10 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName {
+            class Program {
+                static function main(){
+                }
+                
                 field : int;
                 function FunctionName()
                 { 
@@ -310,7 +333,9 @@ public class SymbolScopes
     {
         var text =
             """
-            class TypeName { 
+            class Program { 
+                static function main(){
+                }
                 function FunctionName()
                 { 
                     var FunctionName : int;
@@ -328,7 +353,9 @@ public class SymbolScopes
     {
         var text =
             $$"""
-            class TypeName { 
+            class Program { 
+                static function main(){
+                }
                 function FunctionName()
                 { 
                     var TypeName : int;

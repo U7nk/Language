@@ -5,16 +5,22 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
+interface ITypedSymbol
+{ 
+    TypeSymbol Type { get; }
+}
 public abstract class Symbol
 {
     
-    private protected Symbol(ImmutableArray<SyntaxNode> declarationSyntax, string name)
+    private protected Symbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType)
     {
         DeclarationSyntax = declarationSyntax;
         Name = name;
+        ContainingType = containingType;
     }
 
     public ImmutableArray<SyntaxNode> DeclarationSyntax { get; private set; }
+    public TypeSymbol? ContainingType { get; private set; }
     public string Name { get; }
     public abstract SymbolKind Kind { get; }
 

@@ -11,7 +11,7 @@ namespace Language.Analysis;
 
 internal static class Extensions
 {
-        
+
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
 
     public ref struct RangeEnumerator
@@ -50,10 +50,19 @@ internal static class Extensions
         public int Current => _current;
     }
     
+    /// <summary>
+    /// Null guard
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="objExpression"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    [StackTraceHidden]
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: NotNull]
-    public static T NullGuard<T>(
+    public static T NG<T>(
         [NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
@@ -65,16 +74,17 @@ internal static class Extensions
         return obj;
     }
     
+    [StackTraceHidden]
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: NotNull]
-    public static T NullGuard<T>(
+    public static T NG<T>(
         [NotNull]this object? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
         if (obj is null)
         {
-            throw new ArgumentNullException(objExpression);
+            throw new ArgumentNullException($"{objExpression} " + $"\ntypeof(T) : {typeof(T)}");
         }
 
         return (T)obj;
@@ -93,9 +103,9 @@ internal static class Extensions
     }
         
     [DebuggerStepThrough]
-    internal static T As<T>(this object toCast)
+    internal static T As<T>(this object? toCast)
     {
-        return (T)toCast;
+        return (T)toCast!;
     }
 
     [DebuggerStepThrough]
@@ -188,11 +198,17 @@ internal static class Extensions
     
     public static bool ThrowIfFalse(
         [DoesNotReturnIf(false)] this bool condition, 
+        string? message = "",
         [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")
     {
-        if (condition == false)
+        if (!condition)
         {
-            throw new Exception($"Condition {conditionExpression} is {false}. But it should be {true}");
+            if (string.IsNullOrEmpty(message))
+            {
+                throw new Exception($"Condition '{conditionExpression}' is failed.");
+            }
+
+            throw new Exception($"Condition '{conditionExpression}' is failed: " + message);
         }
 
         return condition;
@@ -200,11 +216,17 @@ internal static class Extensions
     
     public static bool ThrowIfTrue(
         [DoesNotReturnIf(true)] this bool condition, 
+        string message = "",
         [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")
     {
         if (condition)
         {
-            throw new Exception($"Condition {conditionExpression} is {true}. But it should be {false}");
+            if (string.IsNullOrEmpty(message))
+            {
+                throw new Exception($"Condition {conditionExpression} is {true}. But it should be {false}");
+            }
+
+            throw new Exception($"Condition {conditionExpression} expected to be {false}: " + message);
         }
 
         return condition;

@@ -129,7 +129,7 @@ sealed class ProgramBinder
         if (globalStatementFunction is not null)
         {
             var functionBinder = new MethodBinder(_scope, IsScript, new MethodBinderLookup(
-                programType.NullGuard(),
+                programType.NG(),
                 _scope.GetDeclaredTypes(),
                 globalStatementFunction));
 
@@ -142,6 +142,10 @@ sealed class ProgramBinder
             _diagnostics.AddRange(functionBinder.Diagnostics);
         }
 
+        if (mainFunction is null && scriptMainFunction is null)
+        {
+            _diagnostics.ReportMainMethodShouldBeDeclared(_syntaxTrees.First().SourceText);
+        }
 
         return new BoundGlobalScope(
             _previous, _diagnostics.ToImmutableArray(),
@@ -156,7 +160,7 @@ sealed class ProgramBinder
             .Only<MethodDeclarationSyntax>()
             .ToImmutableArray();
         var methodSignatureBinder = new MethodSignatureBinder(
-            new MethodSignatureBinderLookup(_scope.GetDeclaredTypes(), mainFunctionType),
+            new MethodSignatureBinderLookup(_scope.GetDeclaredTypes(), mainFunctionType, isTopMethod: true), 
             _scope);
         foreach (var topMethodDeclaration in topMethodDeclarations)
         {
@@ -189,23 +193,30 @@ sealed class ProgramBinder
     static Result<(MethodSymbol Function, TypeSymbol Type), DiagnosticBag> GenerateMainMethod(BoundScope scope,
         bool isScript)
     {
+        var programType = TypeSymbol.New(SyntaxFacts.StartTypeName, ImmutableArray<SyntaxNode>.Empty, new MethodTable(),
+                                  new FieldTable());
+        
         var main = new MethodSymbol(
             ImmutableArray<SyntaxNode>.Empty,
-            SyntaxFacts.MainMethodName,
-            ImmutableArray<ParameterSymbol>.Empty,
-            TypeSymbol.Void);
+            isStatic: true,
+            name: SyntaxFacts.MainMethodName,
+            parameters: ImmutableArray<ParameterSymbol>.Empty,
+            returnType: TypeSymbol.Void, 
+            containingType: programType);
         if (isScript)
         {
             main = new MethodSymbol(
                 ImmutableArray<SyntaxNode>.Empty,
-                SyntaxFacts.ScriptMainMethodName,
-                ImmutableArray<ParameterSymbol>.Empty,
-                TypeSymbol.Any);
+                isStatic: true,
+                name: SyntaxFacts.ScriptMainMethodName,
+                parameters: ImmutableArray<ParameterSymbol>.Empty,
+                returnType: TypeSymbol.Any,
+                containingType: programType);
         }
 
-        var type = TypeSymbol.New(SyntaxFacts.StartTypeName, ImmutableArray<SyntaxNode>.Empty, new MethodTable { { main, null } },
-            new FieldTable());
-        if (!scope.TryDeclareType(type))
+        programType.MethodTable.Declare(main, null);
+        
+        if (!scope.TryDeclareType(programType))
         {
             var diagnostics = new DiagnosticBag();
             var alreadyDeclared = scope.GetDeclaredTypes()
@@ -214,14 +225,14 @@ sealed class ProgramBinder
             foreach (var syntax in alreadyDeclared.DeclarationSyntax.Cast<ClassDeclarationSyntax>())
             {
                 diagnostics.ReportCannotEmitGlobalStatementsBecauseTypeAlreadyExists(
-                    type.Name,
+                    programType.Name,
                     syntax.Identifier.Location);
             }
             
             return diagnostics;
         }
 
-        return (main, type);
+        return (main, programType);
     }
 
     MethodSymbol? TryFindMainMethod()
@@ -254,10 +265,11 @@ sealed class ProgramBinder
         foreach (var function in methods.Where(x => x.Name == "main"))
         {
             if (function.Parameters.Any()
-                || !Equals(function.ReturnType, TypeSymbol.Void))
+                || !Equals(function.ReturnType, TypeSymbol.Void) 
+                || !function.IsStatic )
             {
                 var identifierLocation = function.DeclarationSyntax
-                    .Cast<ClassDeclarationSyntax>()
+                    .Cast<MethodDeclarationSyntax>()
                     .First().Identifier.Location;
                 
                 _diagnostics.ReportMainMustHaveCorrectSignature(identifierLocation);

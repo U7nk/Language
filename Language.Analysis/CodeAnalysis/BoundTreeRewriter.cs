@@ -23,8 +23,14 @@ internal abstract class BoundTreeRewriter
             BoundNodeKind.MemberAssignmentExpression => RewriteMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
             BoundNodeKind.FieldExpression => RewriteFieldAccessExpression((BoundFieldExpression)node),
             BoundNodeKind.ErrorExpression => RewriteErrorExpression((BoundErrorExpression)node),
+            BoundNodeKind.NamedTypeExpression => RewriteNamedTypeExpression((BoundNamedTypeExpression)node),
             _ => throw new("Unexpected node " + node.Kind)
         };
+    }
+
+    protected virtual BoundExpression RewriteNamedTypeExpression(BoundNamedTypeExpression node)
+    {
+        return node;
     }
 
     protected virtual BoundExpression RewriteFieldAccessExpression(BoundFieldExpression node)
@@ -251,7 +257,7 @@ internal abstract class BoundTreeRewriter
         if (node.VariableDeclarationAssignment is not null)
             declaration = RewriteVariableDeclarationAssignmentStatement(node.VariableDeclarationAssignment);
         else
-            expression = RewriteExpression(node.Expression.NullGuard());
+            expression = RewriteExpression(node.Expression.NG());
 
         var condition = RewriteExpression(node.Condition);
         var mutation = RewriteExpression(node.Mutation);

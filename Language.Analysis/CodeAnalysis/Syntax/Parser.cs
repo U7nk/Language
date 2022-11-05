@@ -58,6 +58,16 @@ public class Parser
         return current;
     }
 
+    SyntaxToken? TryMatch(SyntaxKind kind)
+    {
+        if (Current.Kind == kind)
+        {
+            return NextToken();
+        }
+
+        return null;
+    }
+    
     SyntaxToken Match(SyntaxKind kind)
     {
         if (Current.Kind == kind)
@@ -159,10 +169,21 @@ public class Parser
     ImmutableArray<IClassMemberDeclarationSyntax> ParseClassMembers()
     {
         var members = ImmutableArray.CreateBuilder<IClassMemberDeclarationSyntax>();
-        while (Current.Kind is SyntaxKind.FunctionKeyword or SyntaxKind.IdentifierToken)
+        while (Current.Kind is SyntaxKind.FunctionKeyword or SyntaxKind.IdentifierToken or SyntaxKind.StaticKeyword)
         {
             switch (Current.Kind)
             {
+                case SyntaxKind.StaticKeyword:
+                    switch (Peek(1).Kind)
+                    {
+                        case SyntaxKind.FunctionKeyword:
+                            members.Add(ParseMethodDeclaration());
+                            break;
+                        case SyntaxKind.IdentifierToken:
+                            members.Add(ParseFieldDeclaration());
+                            break;
+                    }
+                    break;
                 case SyntaxKind.FunctionKeyword:
                     members.Add(ParseMethodDeclaration());
                     continue;
@@ -179,13 +200,15 @@ public class Parser
 
     FieldDeclarationSyntax ParseFieldDeclaration()
     {
+        var staticKeyword = TryMatch(SyntaxKind.StaticKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
         var typeClause = ParseTypeClause();
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
-        return _syntaxTree.NewFieldDeclaration(identifier, typeClause, semicolonToken);
+        return _syntaxTree.NewFieldDeclaration(staticKeyword, identifier, typeClause, semicolonToken);
     }
     MethodDeclarationSyntax ParseMethodDeclaration()
     {
+        var staticKeyword = TryMatch(SyntaxKind.StaticKeyword);
         var functionKeyword = Match(SyntaxKind.FunctionKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
         var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
@@ -193,9 +216,10 @@ public class Parser
         var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
         var type = ParseOptionalTypeClause();
         var body = ParseBlockStatement();
-        return new MethodDeclarationSyntax(
-                    _syntaxTree, functionKeyword, identifier, openParenthesisToken,
-                    parameters, closeParenthesisToken, type, body);
+        return _syntaxTree.NewMethodDeclaration(staticKeyword, functionKeyword,
+                                                identifier, openParenthesisToken,
+                                                parameters, closeParenthesisToken,
+                                                type, body);
     }
     
     GlobalStatementDeclarationSyntax ParseGlobalStatement()

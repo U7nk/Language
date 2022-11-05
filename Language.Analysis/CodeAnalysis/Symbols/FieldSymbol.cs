@@ -5,9 +5,13 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class FieldSymbol : MemberSymbol
 {
-    public FieldSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol type) 
-        : base(declarationSyntax,name, type)
-    { }
-    
+    public FieldSymbol(ImmutableArray<SyntaxNode> declarationSyntax, bool isStatic, string name,
+                       TypeSymbol containingType, TypeSymbol parameterType)
+        : base(declarationSyntax, name, containingType: containingType, parameterType)
+    {
+        IsStatic = isStatic;
+    }
+
+    public bool IsStatic { get; }
     public override SymbolKind Kind => SymbolKind.Field;
 }

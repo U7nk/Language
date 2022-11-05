@@ -102,6 +102,7 @@ internal static class SyntaxFacts
             "class" => SyntaxKind.ClassKeyword,
             "this" => SyntaxKind.ThisKeyword,
             "new" => SyntaxKind.NewKeyword,
+            "static" => SyntaxKind.StaticKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -152,6 +153,7 @@ internal static class SyntaxFacts
             SyntaxKind.ClassKeyword => "class",
             SyntaxKind.ThisKeyword => "this",
             SyntaxKind.NewKeyword => "new",
+            SyntaxKind.StaticKeyword => "static",
             _ => null
         };
     }

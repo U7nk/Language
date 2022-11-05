@@ -24,7 +24,11 @@ sealed class TypeBinder
     {
         var diagnostics = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
-
+        foreach (var (methodSymbol, _) in _lookup.CurrentType.MethodTable)
+            typeScope.TryDeclareMethod(methodSymbol, _lookup.CurrentType);
+        foreach (var fieldSymbol in _lookup.CurrentType.FieldTable)
+            typeScope.TryDeclareField(fieldSymbol, _lookup.CurrentType);
+        
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
             if (methodSymbol.DeclarationSyntax.Empty()
