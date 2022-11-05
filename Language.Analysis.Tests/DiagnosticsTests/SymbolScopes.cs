@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using FluentAssertions;
+using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
@@ -89,8 +90,10 @@ public class SymbolScopes
         const string text = """
             class Program
             {
-                function Foo(a : int, a : int) {
-                    var a : int = 5;
+                static function main(){
+                }
+                function Foo([a] : int, [a] : int) {
+                    var [a] : int = 5;
                 }
             }
             """ ;
@@ -100,44 +103,54 @@ public class SymbolScopes
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-        Assert.True(diagnostics.Any(x => x is {
+        diagnostics.Any(x => x is
+        {
             Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span: {
-                Start: 35,
-                End: 36
+            TextLocation.Span:
+            {
+                Start: 71,
+                End: 72
             }
-        }), $"Expected {DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE} at 34, 35");
-        Assert.True(diagnostics.Any(x => x is {
+        }).ThrowIfFalse();
+
+        diagnostics.Any(x => x is
+        {
             Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span: {
-                Start: 44,
-                End: 45
+            TextLocation.Span:
+            {
+                Start: 80,
+                End: 81
             }
-        }), $"Expected {DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE} at 44, 45");
+        }).ThrowIfFalse();
         
-        Assert.True(diagnostics.Any(x => x is {
+        diagnostics.Any(x => x is {
             Code: DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
             TextLocation.Span: {
-                Start: 35,
-                End: 36
+                Start: 71,
+                End: 72
             }
-        }), $"Expected {DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE} at 35, 36");
-        
-        Assert.True(diagnostics.Any(x => x is {
+        }).ThrowIfFalse();
+
+        diagnostics.Any(x => x is
+        {
             Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span: {
-                Start: 68,
-                End: 69
+            TextLocation.Span:
+            {
+                Start: 104,
+                End: 105
             }
-        }), $"Expected {DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE} at 68, 69");
-        
-        Assert.True(diagnostics.Any(x => x is {
+        }).ThrowIfFalse();
+
+        diagnostics.Any(x => x is
+        {
             Code: DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
-            TextLocation.Span: {
-                Start: 44,
-                End: 45
+            TextLocation.Span:
+            {
+                Start: 80,
+                End: 81
             }
-        }), $"Expected {DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE} at 44, 45");
+        }).ThrowIfFalse();
+        diagnostics.Length.Should().Be(5);
     }
     
     [Theory]
