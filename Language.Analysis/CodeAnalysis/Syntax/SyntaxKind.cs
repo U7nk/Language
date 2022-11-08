@@ -58,6 +58,7 @@ public enum SyntaxKind
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
     TypeClause,
+    InheritanceClause,
     ClassDeclaration,
     MethodDeclaration,
     FieldDeclaration,

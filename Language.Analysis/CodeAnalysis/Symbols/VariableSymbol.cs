@@ -9,7 +9,9 @@ public class VariableSymbol : Symbol, ITypedSymbol
 {
     public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
-    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType, TypeSymbol type, bool isReadonly) : base(declarationSyntax, name, containingType)
+    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax,
+                          string name, TypeSymbol? containingType, 
+                          TypeSymbol type, bool isReadonly) : base(declarationSyntax, name, containingType)
     {
         Type = type;
         IsReadonly = isReadonly;

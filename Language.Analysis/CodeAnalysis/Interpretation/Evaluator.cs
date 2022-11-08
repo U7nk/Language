@@ -290,7 +290,7 @@ class Evaluator
                    objectInstance);
         }
 
-        var methodBody = type.MethodTable[methodCallExpression.MethodSymbol].NG();
+        var methodBody = type.LookupMethodBody(methodCallExpression.MethodSymbol);
         var result = EvaluateStatement(methodBody);
         _stacks.Pop();
         return result;
@@ -357,6 +357,9 @@ class Evaluator
             return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).NG());
         
         if (Equals(node.Type, TypeSymbol.Any))
+            return value;
+
+        if (node.Expression.Type.IsSubClassOf(node.Type))
             return value;
 
         throw new Exception($"Unexpected type {node.Type}");

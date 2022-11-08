@@ -530,8 +530,8 @@ class Emitter
     Dictionary<MethodCallPlaceholder, int> _methodCallMarkers = new();
     Dictionary<MethodSymbol, List<Instruction>> _methodBodies = new();
     List<Instruction> _mainMethod = new();
-    FileStream _writer;
-    BoundProgram _program;
+    FileStream? _writer;
+    BoundProgram? _program;
     readonly Stack<Dictionary<VariableSymbol, int>> _stack = new();
 
     public ImmutableArray<Diagnostic> Emit(

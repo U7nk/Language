@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
@@ -12,22 +13,24 @@ sealed class TypeBinder
     readonly TypeBinderLookup _lookup;
     readonly BoundScope _scope;
     readonly bool _isScript;
+    readonly DiagnosticBag _diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
     public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup lookup)
     {
         _scope = scope;
         _isScript = isScript;
         _lookup = lookup;
+        _diagnostics = new DiagnosticBag();
     }
 
-    public ImmutableArray<Diagnostic> BindBody()
+    public void BindClassBody()
     {
-        var diagnostics = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
-        foreach (var (methodSymbol, _) in _lookup.CurrentType.MethodTable)
-            typeScope.TryDeclareMethod(methodSymbol, _lookup.CurrentType);
-        foreach (var fieldSymbol in _lookup.CurrentType.FieldTable)
-            typeScope.TryDeclareField(fieldSymbol, _lookup.CurrentType);
+        
+        var baseType = BindInheritanceClause(_lookup.CurrentType.InheritanceClauseSyntax);
+        CheckTypeDontInheritFromItself(_lookup.CurrentType, baseType);
+        _lookup.CurrentType.BaseType = baseType;
         
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
@@ -48,17 +51,51 @@ sealed class TypeBinder
             var loweredBody = Lowerer.Lower(body);
             
             if (!Equals(methodSymbol.ReturnType, TypeSymbol.Void) && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax
+                _diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax
                     .Cast<MethodDeclarationSyntax>()
                     .First().Identifier.Location);
 
-            ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, diagnostics);
+            ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, _diagnostics);
             
-            methodBinder.Diagnostics.AddRangeTo(diagnostics);
+            methodBinder.Diagnostics.AddRangeTo(_diagnostics);
 
             _lookup.CurrentType.MethodTable.Declare(methodSymbol, loweredBody);
         }
+    }
+
+    void CheckTypeDontInheritFromItself(TypeSymbol currentType, TypeSymbol? baseType)
+    {
+        if (baseType is null)
+            return;
         
-        return diagnostics.ToImmutableArray();
+        var currentBase = baseType;
+        while (currentBase != null)
+        {
+            if (currentBase == currentType)
+            {
+                foreach (var declarationSyntax in currentType.DeclarationSyntax.Cast<ClassDeclarationSyntax>())
+                {
+                    _diagnostics.ReportClassCannotInheritFromSelf(declarationSyntax.Identifier);
+                }
+                return;
+            }
+            currentBase = currentBase.BaseType;
+        }
+
+    }
+
+    TypeSymbol? BindInheritanceClause(InheritanceClauseSyntax? syntax)
+    {
+        if (syntax is null)
+            return null;
+        
+        var baseTypeName = syntax.BaseTypeIdentifier.Text;
+        if (!_scope.TryLookupType(baseTypeName, out var baseTypeSymbol))
+        {
+            _diagnostics.ReportUndefinedType(syntax.BaseTypeIdentifier.Location, baseTypeName);
+            return null;
+        }
+
+        return baseTypeSymbol;
     }
 }

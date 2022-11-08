@@ -17,7 +17,8 @@ sealed class TypeSignatureBinder
     public (ImmutableArray<Diagnostic> Diagnostics, TypeSymbol TypeSymbol) BindClassDeclaration(ClassDeclarationSyntax classDeclaration)
     {
         var name = classDeclaration.Identifier.Text;
-        var type = TypeSymbol.New(name, ImmutableArray.Create<SyntaxNode>(classDeclaration), new MethodTable(), new FieldTable());
+        var type = TypeSymbol.New(name, ImmutableArray.Create<SyntaxNode>(classDeclaration), 
+                                  classDeclaration.InheritanceClause, new MethodTable(), new FieldTable());
         if (_scope.TryDeclareType(type))
             return (ImmutableArray<Diagnostic>.Empty, type);
 

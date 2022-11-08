@@ -214,6 +214,8 @@ internal static class Extensions
         return condition;
     }
     
+    [DebuggerStepThrough]
+    [StackTraceHidden]
     public static bool ThrowIfTrue(
         [DoesNotReturnIf(true)] this bool condition, 
         string message = "",

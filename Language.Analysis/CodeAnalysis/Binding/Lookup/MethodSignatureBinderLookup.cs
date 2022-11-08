@@ -3,7 +3,7 @@ using Language.Analysis.CodeAnalysis.Symbols;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
-public class MethodSignatureBinderLookup : BaseBinderLookup
+public class MethodSignatureBinderLookup : BinderLookup
 {
     public MethodSignatureBinderLookup(ImmutableArray<TypeSymbol> availableTypes, TypeSymbol containingType,
                                        bool isTopMethod)

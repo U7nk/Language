@@ -7,7 +7,7 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 static class BinderHelp
 {
-    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BaseBinderLookup typesLookup)
+    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BinderLookup typesLookup)
     {
         if (syntax is null)
             return null;

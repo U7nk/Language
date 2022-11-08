@@ -398,4 +398,11 @@ public class DiagnosticBag : List<Diagnostic>
         var message = $"Cannot access static field '{identifierToken.Text}' on non-static member.";
         Report(identifierToken.Location, message, CANNOT_ACCESS_STATIC_ON_NON_STATIC);
     }
+    
+    public const string CLASS_CANNOT_INHERIT_FROM_SELF_CODE = "[0048:Error]";
+    public void ReportClassCannotInheritFromSelf(SyntaxToken classIdentifier)
+    {
+        var message = "Class cannot inherit from itself.";
+        Report(classIdentifier.Location, message, CLASS_CANNOT_INHERIT_FROM_SELF_CODE);
+    }
 }
