@@ -443,6 +443,27 @@ public class General
     }
     
     [Fact]
+    public void VariableDeclarationWithoutInitializationRequiresTypeClause()
+    {
+        var text =
+            """
+            class Program
+            {
+                static function main() {  
+                    var [x];
+                }
+                
+                
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.TYPE_CLAUSE_EXPECTED_CODE,
+        };
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
+    }
+    
+    [Fact]
     public void ThisCannotBeUsedInsideStaticMethod()
     {
         var text =

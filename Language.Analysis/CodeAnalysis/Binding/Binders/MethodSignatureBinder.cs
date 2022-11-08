@@ -64,11 +64,11 @@ sealed class MethodSignatureBinder
             parameters.ToImmutable(), 
             returnType);
         
-        if (!_scope.TryDeclareMethod(methodSymbol, _lookup.ContainingType))
+        if (!_lookup.ContainingType.TryDeclareMethod(methodSymbol))
         {
-            _scope.TryLookupMethod(methodSymbol.Name, out var existingMethod);
-            existingMethod?.AddDeclaration(method);
-            var existingDeclarations = existingMethod?.DeclarationSyntax.Cast<MethodDeclarationSyntax>().ToImmutableArray() 
+            var existingMethod = _lookup.ContainingType.LookupMethod(methodSymbol.Name);
+            existingMethod.FirstOrDefault()?.AddDeclaration(method);
+            var existingDeclarations = existingMethod.FirstOrDefault()?.DeclarationSyntax.Cast<MethodDeclarationSyntax>().ToImmutableArray() 
                                        ?? ImmutableArray<MethodDeclarationSyntax>.Empty;
             
             if (methodSymbol.Name == _lookup.ContainingType.Name)

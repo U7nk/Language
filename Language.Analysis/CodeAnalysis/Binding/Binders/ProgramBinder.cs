@@ -60,7 +60,7 @@ sealed class ProgramBinder
         });
 
         var typeMembersSignaturesBinder =
-            new TypeMembersSignaturesBinder(new BaseBinderLookup(_scope.GetDeclaredTypes()), _scope, IsScript);
+            new TypeMembersSignaturesBinder(new BinderLookup(_scope.GetDeclaredTypes()), _scope, IsScript);
         foreach (var (declaration, typeSymbol) in classDeclarationTypeMap)
         {
             typeMembersSignaturesBinder.BindMembersSignatures(declaration, typeSymbol).AddRangeTo(_diagnostics);
@@ -164,15 +164,8 @@ sealed class ProgramBinder
             _scope);
         foreach (var topMethodDeclaration in topMethodDeclarations)
         {
-            methodSignatureBinder.BindMethodSignature(topMethodDeclaration).AddRangeTo(_diagnostics);   
-        }
-
-        var topMethodSymbols = _scope.GetDeclaredMethods()
-            .Except(BuiltInMethods.GetAll())
-            .ToImmutableArray();
-        foreach (var topMethodSymbol in topMethodSymbols)
-        {
-            mainFunctionType.MethodTable.Declare(topMethodSymbol, null);
+            methodSignatureBinder.BindMethodSignature(topMethodDeclaration)
+                .AddRangeTo(_diagnostics);   
         }
     }
 
@@ -193,8 +186,8 @@ sealed class ProgramBinder
     static Result<(MethodSymbol Function, TypeSymbol Type), DiagnosticBag> GenerateMainMethod(BoundScope scope,
         bool isScript)
     {
-        var programType = TypeSymbol.New(SyntaxFacts.StartTypeName, ImmutableArray<SyntaxNode>.Empty, new MethodTable(),
-                                  new FieldTable());
+        var programType = TypeSymbol.New(SyntaxFacts.StartTypeName, ImmutableArray<SyntaxNode>.Empty,
+                                         inheritanceClauseSyntax: null , new MethodTable(), new FieldTable());
         
         var main = new MethodSymbol(
             ImmutableArray<SyntaxNode>.Empty,
@@ -326,8 +319,8 @@ sealed class ProgramBinder
         foreach (var type in typesToBind)
         {
             var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, typesToBind));
-            var typeBindingDiagnostic = binder.BindBody();
-            diagnostics.AddRange(typeBindingDiagnostic);
+            binder.BindClassBody();
+            diagnostics.AddRange(binder.Diagnostics);
         }
 
         if (globalScope.ScriptMainMethod is not null)

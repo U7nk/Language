@@ -223,19 +223,18 @@ sealed class MethodBinder
 
     BoundVariableDeclarationStatement BindVariableDeclarationSyntax(VariableDeclarationSyntax syntax, TypeSymbol? variableType)
     {
-        (syntax.TypeClause is null && variableType is null)
-            .ThrowIfTrue();
-        
+        if (syntax.TypeClause is null && variableType is null)
+            _diagnostics.ReportTypeClauseExpected(syntax.Identifier.Location);
         
         var isReadonly = syntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
         var type = BindTypeClause(syntax.TypeClause);
         
-        var name = syntax.IdentifierToken.Text;
+        var name = syntax.Identifier.Text;
         var variable = new VariableSymbol(
             ImmutableArray.Create<SyntaxNode>(syntax),
             name, 
             null,
-            (type ?? variableType).NG(),
+            (type ?? variableType) ?? TypeSymbol.Error,
             isReadonly);
 
         if (!_scope.TryDeclareVariable(variable))
@@ -255,15 +254,15 @@ sealed class MethodBinder
                         existingVariableIdentifier =
                             existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                        _diagnostics.ReportParameterAlreadyDeclared(syntax.IdentifierToken);
+                        _diagnostics.ReportParameterAlreadyDeclared(syntax.Identifier);
                         break;
                     }
                     case SymbolKind.Variable:
                     {
                         existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
-                            .First().IdentifierToken;
+                            .First().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                        _diagnostics.ReportVariableAlreadyDeclared(syntax.IdentifierToken);
+                        _diagnostics.ReportVariableAlreadyDeclared(syntax.Identifier);
                         break;
                     }
                     default:
@@ -412,8 +411,8 @@ sealed class MethodBinder
     /// <returns></returns>
     BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type, bool? isStatic)
     {
-        var method = type.MethodTable.Keys.SingleOrDefault(x => x.Name == syntax.Identifier.Text);
-        
+        var methods = type.LookupMethod(syntax.Identifier.Text);
+        var method = methods.FirstOrDefault();
         if (method is null)
         {
             _diagnostics.ReportUndefinedMethod(syntax.Identifier, type);
@@ -461,7 +460,7 @@ sealed class MethodBinder
         if (memberAccess.Left.Kind is SyntaxKind.NameExpression)
         {
             var nameExpression = (NameExpressionSyntax)memberAccess.Left;
-            var symbols = _scope.LookupSymbolsByName(nameExpression.Identifier.Text);
+            var symbols = BinderLookup.LookupSymbols(nameExpression.Identifier.Text, _scope, _lookup.CurrentType);
             if (symbols.Length == 0)
             {
                 _diagnostics.ReportUndefinedName(nameExpression.Identifier.Location, nameExpression.Identifier.Text);
@@ -733,8 +732,7 @@ sealed class MethodBinder
 
     BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
     {
-        
-        var boundExpression = BindExpression(syntax.Expression);
+        var boundExpression = BindNameExpression((NameExpressionSyntax)syntax.Expression, _lookup.CurrentType, isStatic: null);
         var name = syntax.IdentifierToken.Text;
 
         if (!_scope.TryLookupVariable(name, out var variable))
@@ -778,7 +776,7 @@ sealed class MethodBinder
         }
         
         
-        var field = type.FieldTable.SingleOrDefault(x => x.Name == name);
+        var field = type.LookupField(name);
 
         if (_scope.TryLookupVariable(name, out var variable))
         {

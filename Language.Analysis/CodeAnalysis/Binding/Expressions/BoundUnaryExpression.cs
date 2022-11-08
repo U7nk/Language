@@ -6,15 +6,13 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundUnaryExpression : BoundExpression
 {
-    internal UnaryExpressionSyntax? Syntax { get; }
     internal BoundUnaryOperator Op { get; }
     internal BoundExpression Operand { get; }
     internal override TypeSymbol Type => Operand.Type;
     internal override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
 
-    public BoundUnaryExpression(UnaryExpressionSyntax? syntax, BoundUnaryOperator op, BoundExpression operand) : base(syntax)
+    public BoundUnaryExpression(SyntaxNode? syntax, BoundUnaryOperator op, BoundExpression operand) : base(syntax)
     {
-        Syntax = syntax;
         Op = op;
         Operand = operand;
     }

@@ -335,9 +335,8 @@ class ControlFlowGraph
 
     static bool TraverseUpCheckVariableIsInitialized(BasicBlock variablesUsagesBlock, BoundVariableExpression variableUseExpressions)
     {
-        if (variableUseExpressions.Variable is ParameterSymbol)
+        if (variableUseExpressions.Variable.Kind is SymbolKind.Parameter)
             return true;
-        
         
         
         foreach (var boundStatement in variablesUsagesBlock.Statements)
@@ -345,7 +344,17 @@ class ControlFlowGraph
             var childrenFlatten = boundStatement.GetChildren(recursion: true).ToList();
             foreach (var child in childrenFlatten)
             {
-                if (child.Kind is BoundNodeKind.AssignmentExpression)
+                if (child.Kind is BoundNodeKind.MemberAssignmentExpression)
+                {
+                    var assignmentExpression = (BoundMemberAssignmentExpression)child;
+                    if (assignmentExpression.MemberAccess.Kind is BoundNodeKind.VariableExpression)
+                    {
+                        var variableExpression = (BoundVariableExpression)assignmentExpression.MemberAccess;
+                        if (Equals(variableExpression.Variable, variableUseExpressions.Variable))
+                            return true;
+                    }
+                }
+                else if (child.Kind is BoundNodeKind.AssignmentExpression)
                 {
                     var assignmentExpression = (BoundAssignmentExpression)child;
                     if (Equals(assignmentExpression.Variable, variableUseExpressions.Variable))

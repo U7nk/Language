@@ -156,14 +156,27 @@ public class Parser
     {
         var classKeyword = Match(SyntaxKind.ClassKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
+        var inheritanceClause = ParseOptionalInheritanceClause();
         var openBraceToken = Match(SyntaxKind.OpenBraceToken);
         var members = ParseClassMembers();
         var closeBraceToken = Match(SyntaxKind.CloseBraceToken);
+        
         return new ClassDeclarationSyntax(
                     _syntaxTree, classKeyword,
-                    identifier, openBraceToken,
+                    identifier, inheritanceClause,
+                    openBraceToken, 
                     members,
                     closeBraceToken);
+    }
+
+    InheritanceClauseSyntax? ParseOptionalInheritanceClause()
+    {
+        var colonToken = TryMatch(SyntaxKind.ColonToken);
+        if (colonToken is null)
+            return null;
+        
+        var baseTypeIdentifier = Match(SyntaxKind.IdentifierToken);
+        return new InheritanceClauseSyntax(_syntaxTree, colonToken, baseTypeIdentifier);
     }
 
     ImmutableArray<IClassMemberDeclarationSyntax> ParseClassMembers()

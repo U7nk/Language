@@ -453,6 +453,27 @@ public class EvaluatorTests
             isScript: false);
     }
 
+    
+    [Fact]
+    public void EvaluatorEvaluatesAssignmentToUninitializedVariable()
+    {
+        var val = Random.Shared.NextInt64(0, 115);
+        var source = $$"""
+            class Program
+            {                
+                static function main()
+                {  
+                    var variable : int;
+                    variable = {{val}};
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result => { result.NG().LiteralValue.Should().Be(val); },
+            isScript: false);
+    }
+    
     [Fact]
     public void EvaluatorEvaluatesMethodCallInsideClassWithoutThis()
     {

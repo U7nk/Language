@@ -8,9 +8,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax(this,members,endOfFileToken);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax NewVariableDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken keywordToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifierToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? typeClause)
+    public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax NewVariableDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken keywordToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? typeClause)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax(this,keywordToken,identifierToken,typeClause);
+       return new Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax(this,keywordToken,identifier,typeClause);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationAssignmentSyntax NewVariableDeclarationAssignment(Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax variableDeclaration,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken equalsToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax expression)
@@ -93,6 +93,11 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
     }
 
+    public Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax NewInheritanceClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken colonToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken baseTypeIdentifier)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax(this,colonToken,baseTypeIdentifier);
+    }
+
     public Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax NewFieldDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax typeClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax(this,staticKeyword,identifier,typeClause,semicolonToken);
@@ -158,8 +163,8 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax(this,elseKeyword,elseStatement);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax NewClassDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken classKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.IClassMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)
+    public Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax NewClassDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken classKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax? inheritanceClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.IClassMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax(this,classKeyword,identifier,openBraceToken,members,closeBraceToken);
+       return new Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax(this,classKeyword,identifier,inheritanceClause,openBraceToken,members,closeBraceToken);
     }
 }

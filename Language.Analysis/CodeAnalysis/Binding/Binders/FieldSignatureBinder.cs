@@ -39,7 +39,7 @@ public sealed class FieldSignatureBinder
                                     _lookup.ContainingType, 
                                     fieldType!);
         
-        if (!_scope.TryDeclareField(field, _lookup.ContainingType))
+        if (!_lookup.ContainingType.TryDeclareField(field))
         {
             if (field.Name == _lookup.ContainingType.Name)
                 diagnostics.ReportClassMemberCannotHaveNameOfClass(fieldDeclaration.Identifier);

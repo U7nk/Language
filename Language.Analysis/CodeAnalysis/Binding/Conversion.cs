@@ -38,6 +38,9 @@ internal sealed class Conversion
                 return Explicit;
         }
 
+        if (from.IsSubClassOf(to))
+            return Implicit;
+
         return None;
     }
 
