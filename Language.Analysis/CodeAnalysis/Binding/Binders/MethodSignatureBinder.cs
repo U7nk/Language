@@ -30,7 +30,7 @@ sealed class MethodSignatureBinder
             if (parameterType is null)
             {
                 diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
-                parameterType = TypeSymbol.Error;
+                parameterType = BuiltInTypeSymbols.Error;
             }
 
             parameters.Add(new ParameterSymbol(
@@ -53,7 +53,7 @@ sealed class MethodSignatureBinder
             }
         }
         
-        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? TypeSymbol.Void;
+        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? BuiltInTypeSymbols.Void;
         
         var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
         var methodSymbol = new MethodSymbol(

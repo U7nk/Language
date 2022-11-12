@@ -11,6 +11,38 @@ namespace Language.Analysis;
 
 internal static class Extensions
 {
+    public class Condition<T>
+    { 
+        public static implicit operator bool(Condition<T> c) => c.Value;
+        public static implicit operator Condition<T>(bool c) => new(c, default!);
+        public bool Value { get; internal set; }
+        public T Obj { get; }
+
+        public Condition(bool value, T obj)
+        {
+            Value = value;
+            Obj = obj;
+        }
+    }
+    public static Condition<T> OrEquals<T, TY>(this Condition<T> first, TY equalsTo)
+    {
+        first.Value = first.Value || first.Obj.NG().Equals(equalsTo);
+        return first;
+    }
+
+    public static Condition<T> Or<T>(this Condition<T> first, bool second)
+    {
+        first.Value = first.Value || second;
+        return first;
+    }
+    public static Condition<T> And<T>(this Condition<T> first, bool second)
+    {
+        first.Value = first.Value && second;
+        return first;
+    }
+
+    public static Condition<T> IsInside<T>(this T obj, IEnumerable<T> enumerable) => enumerable.Contains(obj);
+    public static Condition<T> IsOutside<T>(this T obj, IEnumerable<T> enumerable) => new(!enumerable.Contains(obj), obj);
 
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
 

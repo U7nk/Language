@@ -32,7 +32,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{TypeSymbol.Bool}' to '{TypeSymbol.Int}'.",
+            $"Cannot convert '{BuiltInTypeSymbols.Bool}' to '{BuiltInTypeSymbols.Int}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text,contextType),
@@ -51,7 +51,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"No implicit conversion from '{TypeSymbol.Int}' to '{TypeSymbol.String}'.",
+            $"No implicit conversion from '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.String}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
@@ -94,7 +94,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
+            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text,contextType), diagnostics);
     }
@@ -115,7 +115,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
+            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text, contextType),
@@ -138,7 +138,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
+            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
@@ -159,7 +159,7 @@ public class General
             """;
         var diagnostics = new[]
         {
-            $"Cannot convert '{TypeSymbol.Int}' to '{TypeSymbol.Bool}'.",
+            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }

@@ -180,7 +180,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportReturnStatementIsInvalidForVoidMethod(TextLocation location)
     {
-        var message = $"Return statement is invalid for {TypeSymbol.Void} method.";
+        var message = $"Return statement is invalid for {BuiltInTypeSymbols.Void} method.";
         Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_VOID_METHOD_CODE);
     }
 
@@ -244,7 +244,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
     {
-        var message = $"main method must have correct signature(main must be static, have return type {TypeSymbol.Void} and 0 parameters).";
+        var message = $"main method must have correct signature(main must be static, have return type {BuiltInTypeSymbols.Void} and 0 parameters).";
         Report(identifierLocation, message, MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE);
     }
 

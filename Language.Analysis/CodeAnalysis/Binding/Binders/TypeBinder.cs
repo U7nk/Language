@@ -29,6 +29,8 @@ sealed class TypeBinder
         var typeScope = new BoundScope(_scope);
         
         var baseType = BindInheritanceClause(_lookup.CurrentType.InheritanceClauseSyntax);
+        baseType ??= BuiltInTypeSymbols.Object;
+        
         CheckTypeDontInheritFromItself(_lookup.CurrentType, baseType);
         _lookup.CurrentType.BaseType = baseType;
         
@@ -50,7 +52,7 @@ sealed class TypeBinder
             var body = methodBinder.BindMethodBody(methodSymbol);
             var loweredBody = Lowerer.Lower(body);
             
-            if (!Equals(methodSymbol.ReturnType, TypeSymbol.Void) && !ControlFlowGraph.AllPathsReturn(loweredBody))
+            if (!Equals(methodSymbol.ReturnType, BuiltInTypeSymbols.Void) && !ControlFlowGraph.AllPathsReturn(loweredBody))
                 _diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax
                     .Cast<MethodDeclarationSyntax>()
                     .First().Identifier.Location);

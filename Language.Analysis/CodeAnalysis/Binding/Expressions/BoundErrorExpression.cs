@@ -10,6 +10,6 @@ internal class BoundErrorExpression : BoundExpression
     {
         
     }
-    internal override TypeSymbol Type => TypeSymbol.Error;
+    internal override TypeSymbol Type => BuiltInTypeSymbols.Error;
     internal override BoundNodeKind Kind => BoundNodeKind.ErrorExpression;
 }

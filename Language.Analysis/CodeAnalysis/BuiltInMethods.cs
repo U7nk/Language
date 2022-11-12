@@ -16,8 +16,8 @@ internal static class BuiltInMethods
             name: "print",
             parameters: ImmutableArray.Create(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "text", 
                                                                   containingType: null,
-                                                                  TypeSymbol.String)),
-            returnType: TypeSymbol.Void, 
+                                                                  BuiltInTypeSymbols.String)),
+            returnType: BuiltInTypeSymbols.Void, 
             containingType: null);
 
     public static readonly MethodSymbol
@@ -26,7 +26,7 @@ internal static class BuiltInMethods
             isStatic: true,
             name: "input",
             parameters: ImmutableArray<ParameterSymbol>.Empty,
-            returnType: TypeSymbol.String, 
+            returnType: BuiltInTypeSymbols.String, 
             containingType: null);
 
     public static IEnumerable<MethodSymbol> GetAll() =>

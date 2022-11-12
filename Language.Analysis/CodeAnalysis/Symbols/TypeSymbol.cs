@@ -7,57 +7,61 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
+static class BuiltInTypeSymbols
+{
+    public static readonly TypeSymbol Error = TypeSymbol.New("error", ImmutableArray<SyntaxNode>.Empty,
+                                                             inheritanceClauseSyntax: null,
+                                                             new MethodTable(),
+                                                             new FieldTable());
+
+    public static readonly TypeSymbol Void = TypeSymbol.New("void", ImmutableArray<SyntaxNode>.Empty,
+                                                            inheritanceClauseSyntax: null,
+                                                            new MethodTable(),
+                                                            new FieldTable());
+
+    public static readonly TypeSymbol Bool = TypeSymbol.New("bool", ImmutableArray<SyntaxNode>.Empty,
+                                                            inheritanceClauseSyntax: null,
+                                                            new MethodTable(),
+                                                            new FieldTable());
+
+    public static readonly TypeSymbol Int = TypeSymbol.New("int", ImmutableArray<SyntaxNode>.Empty,
+                                                           inheritanceClauseSyntax: null,
+                                                           new MethodTable(),
+                                                           new FieldTable());
+
+    public static readonly TypeSymbol String = TypeSymbol.New("string", ImmutableArray<SyntaxNode>.Empty,
+                                                              inheritanceClauseSyntax: null,
+                                                              new MethodTable(),
+                                                              new FieldTable());
+
+    public static readonly TypeSymbol Object = InitializeObject();
+    public static readonly IEnumerable<TypeSymbol> All = new[] { Error, Void, Bool, Int, String, Object };
+    
+
+    private static TypeSymbol InitializeObject()
+    {
+        var symbol = TypeSymbol.New("object", ImmutableArray<SyntaxNode>.Empty,
+                       inheritanceClauseSyntax: null,
+                       new MethodTable(),
+                       new FieldTable());
+
+        return symbol;
+    }
+}
 public class TypeSymbol : Symbol, ITypedSymbol
 {
-    public static readonly TypeSymbol Error = new("error", ImmutableArray<SyntaxNode>.Empty,
-                                                  inheritanceClauseSyntax: null,
-                                                  containingType: null,
-                                                  new MethodTable(),
-                                                  new FieldTable());
-
-    public static readonly TypeSymbol Any = new("any",
-                                                ImmutableArray<SyntaxNode>.Empty,
-                                                inheritanceClauseSyntax: null,
-                                                containingType: null,
-                                                new MethodTable(),
-                                                new FieldTable());
-
-    public static readonly TypeSymbol Void = new("void", ImmutableArray<SyntaxNode>.Empty,
-                                                 inheritanceClauseSyntax: null,
-                                                 containingType: null,
-                                                 new MethodTable(),
-                                                 new FieldTable());
-
-    public static readonly TypeSymbol Bool = new("bool", ImmutableArray<SyntaxNode>.Empty,
-                                                 inheritanceClauseSyntax: null,
-                                                 containingType: null,
-                                                 new MethodTable(),
-                                                 new FieldTable());
-
-    public static readonly TypeSymbol Int = new("int", ImmutableArray<SyntaxNode>.Empty,
-                                                inheritanceClauseSyntax: null,
-                                                containingType: null,
-                                                new MethodTable(),
-                                                new FieldTable());
-
-    public static readonly TypeSymbol String = new("string", ImmutableArray<SyntaxNode>.Empty,
-                                                   inheritanceClauseSyntax: null,
-                                                   containingType: null,
-                                                   new MethodTable(),
-                                                   new FieldTable());
-
     public static TypeSymbol FromLiteral(SyntaxToken literalToken)
     {
         if (literalToken.Kind is SyntaxKind.TrueKeyword or SyntaxKind.FalseKeyword)
-            return Bool;
+            return BuiltInTypeSymbols.Bool;
 
         if (literalToken.Kind is SyntaxKind.NumberToken)
-            return Int;
+            return BuiltInTypeSymbols.Int;
 
         if (literalToken.Kind is SyntaxKind.StringToken)
-            return String;
+            return BuiltInTypeSymbols.String;
 
-        return Error;
+        return BuiltInTypeSymbols.Error;
     }
 
     public static TypeSymbol New(string name, ImmutableArray<SyntaxNode> declaration,

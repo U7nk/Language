@@ -348,7 +348,7 @@ public class EvaluatorTests
                     result =>
                     {
                         Assert.NotNull(result);
-                        result.Type.Should().Be(TypeSymbol.Int);
+                        result.Type.Should().Be(BuiltInTypeSymbols.Int);
                         result.LiteralValue.Should().Be(10);
                     },
                     isScript: false);
@@ -396,7 +396,7 @@ public class EvaluatorTests
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NG().Type.Should().Be(TypeSymbol.Int);
+                        result.NG().Type.Should().Be(BuiltInTypeSymbols.Int);
                         result.LiteralValue.Should().Be(10);
                     },
                     isScript: false);
@@ -432,7 +432,7 @@ public class EvaluatorTests
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NG().Type.Should().Be(TypeSymbol.Int);
+                        result.NG().Type.Should().Be(BuiltInTypeSymbols.Int);
                         result.NG().LiteralValue.Should().Be(15);
                     },
                     isScript: false);
@@ -501,7 +501,7 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(TypeSymbol.Int);
+                result.Type.Should().Be(BuiltInTypeSymbols.Int);
                 result.LiteralValue.Should().Be(10);
             },
             isScript: false);
@@ -536,7 +536,7 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(TypeSymbol.Int);
+                result.Type.Should().Be(BuiltInTypeSymbols.Int);
                 result.LiteralValue.Should().Be(10);
             },
             isScript: false);
@@ -733,7 +733,7 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(TypeSymbol.Int);
+                result.Type.Should().Be(BuiltInTypeSymbols.Int);
                 result.LiteralValue.Should().Be(10);
             },
             isScript: false);

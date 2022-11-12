@@ -21,13 +21,22 @@ public sealed class Compilation
         IsScript = isScript;
         Previous = previous;
     }
+    public static Compilation Create(params SyntaxTree[] syntaxTrees)
+    {
+        return new Compilation(isScript: false, null, syntaxTrees);
+    }
+
+    public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees)
+    {
+        return new Compilation(isScript: true, previous, syntaxTrees);
+    }
+
 
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public bool IsScript { get; }
     public Compilation? Previous { get; }
 
     BoundGlobalScope? _globalScope;
-
     internal BoundGlobalScope GlobalScope
     {
         get
@@ -42,21 +51,18 @@ public sealed class Compilation
             return _globalScope;
         }
     }
-
-    public static Compilation Create(params SyntaxTree[] syntaxTrees)
-    {
-        return new Compilation(isScript: false, null, syntaxTrees);
-    }
-
-    public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees)
-    {
-        return new Compilation(isScript: true, previous, syntaxTrees);
-    }
-
+    
+    BoundProgram? _boundProgram;
+    
     BoundProgram GetProgram()
     {
         var previous = Previous?.GetProgram();
-        return ProgramBinder.BindProgram(IsScript, previous, GlobalScope);
+        if (_boundProgram is not null)
+            return _boundProgram;
+        
+        var program = ProgramBinder.BindProgram(IsScript, previous, GlobalScope);
+        Interlocked.CompareExchange(ref _boundProgram, program, null);
+        return _boundProgram;
     }
 
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, ObjectInstance?> variables)
@@ -119,15 +125,12 @@ public sealed class Compilation
         writer.WriteLine();
         var type = program.Types.SingleOrDefault(x => x.MethodTable.ContainsKey(method));
         if (type is null)
-        {
             return;
-        }
-        
+
         type.MethodTable[method].NG().WriteTo(writer);
     }
 
-    public ImmutableArray<Diagnostic> Emit(string moduleName, 
-        string[] refernces, string outputPaths)
+    public ImmutableArray<Diagnostic> Emit(string moduleName, string[] refernces, string outputPaths)
     {
         var program = GetProgram();
         return new Emitter().Emit(program, moduleName, refernces, outputPaths);

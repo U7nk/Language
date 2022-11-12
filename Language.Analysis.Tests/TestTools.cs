@@ -15,13 +15,13 @@ namespace TestProject1;
 public class TestTools
 {
 
-    public static (EvaluationResult result, ImmutableArray<Diagnostic> diagnostics) Evaluate(string text)
+    public static (ObjectInstance? result, ImmutableArray<Diagnostic> diagnostics) Evaluate(string text)
     {
         var syntaxTree = SyntaxTree.Parse(text);
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-        return (result, diagnostics);
+        return (result.Result, diagnostics);
     }
     
     public static void AssertDiagnosticsWithMessages(string text, string[] expectedDiagnosticTexts)
@@ -216,19 +216,19 @@ public class TestTools
         {
             if (symbolType == typeof(TypeSymbol))
             {
-                result.Add(TypeSymbol.Int);
+                result.Add(BuiltInTypeSymbols.Int);
             }
             else if (symbolType == typeof(ParameterSymbol))
             {
-                result.Add(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "parameter", null, TypeSymbol.Int));
+                result.Add(new ParameterSymbol(ImmutableArray<SyntaxNode>.Empty, "parameter", null, BuiltInTypeSymbols.Int));
             }
             else if (symbolType == typeof(VariableSymbol))
             {
-                result.Add(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "variable", null, TypeSymbol.Int, false ));
+                result.Add(new VariableSymbol(ImmutableArray<SyntaxNode>.Empty, "variable", null, BuiltInTypeSymbols.Int, false ));
             }
             else if (symbolType == typeof(FieldSymbol))
             {
-                result.Add(new FieldSymbol(ImmutableArray<SyntaxNode>.Empty, false, "field",  null!, TypeSymbol.Int));
+                result.Add(new FieldSymbol(ImmutableArray<SyntaxNode>.Empty, false, "field",  null!, BuiltInTypeSymbols.Int));
             }
         }
 

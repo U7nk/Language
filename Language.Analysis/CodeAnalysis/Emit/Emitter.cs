@@ -722,40 +722,40 @@ class Emitter
         
         var instructions = new List<Instruction>();
         instructions.AddRange(EmitExpression(conversionExpression.Expression));
-        if (Equals(conversionExpression.Expression.Type, TypeSymbol.Int))
+        if (Equals(conversionExpression.Expression.Type, BuiltInTypeSymbols.Int))
         {
-            if (Equals(conversionExpression.Type, TypeSymbol.String))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.String))
             {
                 instructions.Add(new Instruction(Bytecode.CASTINTSTRING));
                 return instructions;
             }
-            if (Equals(conversionExpression.Type, TypeSymbol.Bool))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.Bool))
             {
                 instructions.Add(new Instruction(Bytecode.CASTINTBOOL));
                 return instructions;
             }
         }
-        if (Equals(conversionExpression.Expression.Type, TypeSymbol.String))
+        if (Equals(conversionExpression.Expression.Type, BuiltInTypeSymbols.String))
         {
-            if (Equals(conversionExpression.Type, TypeSymbol.Int))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.Int))
             {
                 instructions.Add(new Instruction(Bytecode.CASTSTRINGINT));
                 return instructions;
             }
-            if (Equals(conversionExpression.Type, TypeSymbol.Bool))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.Bool))
             {
                 instructions.Add(new Instruction(Bytecode.CASTSTRINGBOOL));
                 return instructions;
             }
         }
-        if (Equals(conversionExpression.Expression.Type, TypeSymbol.Bool))
+        if (Equals(conversionExpression.Expression.Type, BuiltInTypeSymbols.Bool))
         {
-            if (Equals(conversionExpression.Type, TypeSymbol.Int))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.Int))
             {
                 instructions.Add(new Instruction(Bytecode.CASTBOOLINT));
                 return instructions;
             }
-            if (Equals(conversionExpression.Type, TypeSymbol.String))
+            if (Equals(conversionExpression.Type, BuiltInTypeSymbols.String))
             {
                 instructions.Add(new Instruction(Bytecode.CASTBOOLSTRING));
                 return instructions;
@@ -790,9 +790,9 @@ class Emitter
         var instructions = new List<Instruction>();
         instructions.AddRange(EmitExpression(boundExpression.Left));
         instructions.AddRange(EmitExpression(boundExpression.Right));
-        if (Equals(boundExpression.Left.Type, TypeSymbol.Bool))
+        if (Equals(boundExpression.Left.Type, BuiltInTypeSymbols.Bool))
         {
-            if (Equals(boundExpression.Right.Type, TypeSymbol.Bool))
+            if (Equals(boundExpression.Right.Type, BuiltInTypeSymbols.Bool))
             {
                 switch (boundExpression.Op.Kind)
                 {
@@ -812,9 +812,9 @@ class Emitter
             throw new Exception("Invalid binary expression");
         }
 
-        if (Equals(boundExpression.Left.Type, TypeSymbol.Int))
+        if (Equals(boundExpression.Left.Type, BuiltInTypeSymbols.Int))
         {
-            if (Equals(boundExpression.Right.Type, TypeSymbol.Int))
+            if (Equals(boundExpression.Right.Type, BuiltInTypeSymbols.Int))
             {
                 switch (boundExpression.Op.Kind)
                 {
@@ -849,9 +849,9 @@ class Emitter
             throw new Exception("Invalid binary expression");
         }
 
-        if (Equals(boundExpression.Left.Type, TypeSymbol.String))
+        if (Equals(boundExpression.Left.Type, BuiltInTypeSymbols.String))
         {
-            if (Equals(boundExpression.Right.Type, TypeSymbol.String))
+            if (Equals(boundExpression.Right.Type, BuiltInTypeSymbols.String))
             {
                 switch (boundExpression.Op.Kind)
                 {
@@ -876,15 +876,15 @@ class Emitter
 
     List<Instruction> EmitLiteralExpression(BoundLiteralExpression boundExpression)
     {
-        Debug.Assert(!Equals(boundExpression.Type, TypeSymbol.Any));
+        Debug.Assert(!Equals(boundExpression.Type, BuiltInTypeSymbols.Object));
 
         var instructions = new List<Instruction>();
-        if (Equals(boundExpression.Type, TypeSymbol.Int))
+        if (Equals(boundExpression.Type, BuiltInTypeSymbols.Int))
         {
             instructions.Add(new Instruction(Bytecode.ICONST));
             instructions.Add(new Instruction((int)boundExpression.Value!));
         }
-        else if (Equals(boundExpression.Type, TypeSymbol.String))
+        else if (Equals(boundExpression.Type, BuiltInTypeSymbols.String))
         {
             instructions.Add(new Instruction(Bytecode.SCONST));
             var str = (string)boundExpression.Value!;
@@ -896,7 +896,7 @@ class Emitter
             instructions.Add(new Instruction(0));
             instructions.Add(new Instruction(0));
         }
-        else if (Equals(boundExpression.Type, TypeSymbol.Bool))
+        else if (Equals(boundExpression.Type, BuiltInTypeSymbols.Bool))
         {
             instructions.Add(new Instruction(Bytecode.BCONST));
             instructions.Add(new Instruction(((bool)boundExpression.Value! ? 1 : 0)));
