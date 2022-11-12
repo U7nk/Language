@@ -2,7 +2,7 @@ using FluentAssertions;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 
-namespace TestProject1.CodeAnalysis;
+namespace Language.Analysis.Tests.CodeAnalysis;
 
 public class SyntaxFactTests
 {

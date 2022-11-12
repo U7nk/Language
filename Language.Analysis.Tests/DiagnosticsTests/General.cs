@@ -1,13 +1,10 @@
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Symbols;
-using Language.Analysis.CodeAnalysis.Syntax;
-using Language.Analysis.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
-namespace TestProject1.DiagnosticsTests;
+namespace Language.Analysis.Tests.DiagnosticsTests;
 
 [SuppressMessage("Usage", "xUnit1015:MemberData must reference an existing member")]
 public class General

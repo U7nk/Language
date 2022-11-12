@@ -1,16 +1,11 @@
-using System.Collections.Immutable;
-using Language;
-using Language.Analysis;
+using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
-using Language.Analysis.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
-namespace TestProject1;
-
-using FluentAssertions;
+namespace Language.Analysis.Tests.Evaluator;
 
 public class EvaluatorTests
 {
@@ -725,6 +720,45 @@ public class EvaluatorTests
                 
                 function TestMethod() {
                     Field = 10;
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                result.LiteralValue.Should().Be(10);
+            },
+            isScript: false);
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesMethodCallOnField()
+    {
+        var source = """
+            class MyClass
+            {
+                Field : MyClass;
+                function TestMethod() : int
+                {
+                    return 10;
+                }
+                
+                function TestMethodTwo()
+                { 
+                    this.Field.TestMethod();
+                }
+            }
+            class Program
+            {
+                Field : int;
+                static function main()
+                {
+                    var program = new MyClass();
+                    program.Field = new MyClass();
+                    program.TestMethodTwo();
                 }
             }
             """;

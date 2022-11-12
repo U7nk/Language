@@ -1,7 +1,7 @@
 using System.Text;
 using Xunit.Abstractions;
 
-namespace TestProject1;
+namespace Language.Analysis.Tests;
 
 public class XUnitTextWriter : TextWriter
 {

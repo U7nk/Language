@@ -1,8 +1,7 @@
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
 using Xunit.Abstractions;
 
-namespace TestProject1.DiagnosticsTests;
+namespace Language.Analysis.Tests.DiagnosticsTests;
 
 public class InheritanceTests
 {

@@ -1,12 +1,11 @@
 using System.CodeDom.Compiler;
-using FluentAssertions;
-using FluentAssertions.Common;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
-namespace TestProject1;
+
+namespace Language.Analysis.Tests;
 
 public class UnitTest1
 {

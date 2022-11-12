@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace TestProject1.CodeAnalysis;
+namespace Language.Analysis.Tests.CodeAnalysis;
 
 internal sealed class AssertingEnumerator : IDisposable
 {

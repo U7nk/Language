@@ -1,13 +1,12 @@
 using System.Collections.Immutable;
 using FluentAssertions;
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Xunit.Abstractions;
 
-namespace TestProject1.DiagnosticsTests;
+namespace Language.Analysis.Tests.DiagnosticsTests;
 
 public class SymbolScopes
 {
