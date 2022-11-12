@@ -1,9 +1,8 @@
 using System.Collections.Immutable;
 using System.Text;
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis.Text;
 
-namespace TestProject1;
+namespace Language.Analysis.Tests;
 
 internal class AnnotatedText
 {

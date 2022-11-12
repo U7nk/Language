@@ -1,9 +1,8 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Primitives;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
 
-namespace TestProject1.CodeAnalysis;
+namespace Language.Analysis.Tests.CodeAnalysis;
 
 public sealed class LexerTests
 {

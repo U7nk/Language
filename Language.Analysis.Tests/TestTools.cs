@@ -1,16 +1,13 @@
-using System.CodeDom.Compiler;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis;
-using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
 using Xunit.Abstractions;
 
-namespace TestProject1;
+namespace Language.Analysis.Tests;
 
 public class TestTools
 {

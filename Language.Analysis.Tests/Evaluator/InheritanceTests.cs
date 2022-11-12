@@ -1,7 +1,6 @@
 using FluentAssertions;
-using Language.Analysis;
 
-namespace TestProject1.Evaluator;
+namespace Language.Analysis.Tests.Evaluator;
 
 public class InheritanceTests 
 {

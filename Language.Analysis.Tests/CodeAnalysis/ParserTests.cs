@@ -1,9 +1,7 @@
 using FluentAssertions;
-using Language;
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace TestProject1.CodeAnalysis;
+namespace Language.Analysis.Tests.CodeAnalysis;
 
 public class ParserTests
 {

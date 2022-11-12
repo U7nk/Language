@@ -343,8 +343,6 @@ sealed class MethodBinder
                                           _lookup.CurrentMethod.IsStatic ? true : null);
             case SyntaxKind.ThisExpression:
                 return BindThisExpression((ThisExpressionSyntax)syntax);
-            case SyntaxKind.AssignmentExpression:
-                return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
                 return BindObjectCreationExpression((ObjectCreationExpressionSyntax)syntax);
             case SyntaxKind.MemberAccessExpression:
@@ -407,7 +405,7 @@ sealed class MethodBinder
     /// </summary>
     /// <param name="syntax"></param>
     /// <param name="type"></param>
-    /// <param name="isStatic">if null, dont perform check if it is static or instance method.</param>
+    /// <param name="isStatic">if null, dont perform static check.</param>
     /// <returns></returns>
     BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type, bool? isStatic)
     {
@@ -728,27 +726,6 @@ sealed class MethodBinder
         }
 
         return new BoundConversionExpression(null, type, expression);
-    }
-
-    BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
-    {
-        var boundExpression = BindNameExpression((NameExpressionSyntax)syntax.Expression, _lookup.CurrentType, isStatic: null);
-        var name = syntax.IdentifierToken.Text;
-
-        if (!_scope.TryLookupVariable(name, out var variable))
-        {
-            _diagnostics.VariableDoesntExistsInCurrentScope(syntax.IdentifierToken.Location, name);
-            return boundExpression;
-        }
-
-        if (variable.IsReadonly)
-        {
-            _diagnostics.ReportCannotAssignToReadonly(syntax.IdentifierToken);
-        }
-
-        boundExpression = BindConversion(boundExpression, variable.Type, syntax.Expression.Location);
-
-        return new BoundAssignmentExpression(syntax, variable, boundExpression);
     }
 
     BoundExpression BindNameExpressionFromSymbol(NameExpressionSyntax nameExpression, Symbol symbol)

@@ -1,9 +1,8 @@
 using FluentAssertions;
-using Language.Analysis;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Xunit.Abstractions;
 
-namespace TestProject1.Evaluator;
+namespace Language.Analysis.Tests.Evaluator;
 
 public class BaseObjectTypeTests 
 {

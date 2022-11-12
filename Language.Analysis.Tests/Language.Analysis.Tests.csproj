@@ -8,8 +8,6 @@
         <IsPackable>false</IsPackable>
 
         <LangVersion>preview</LangVersion>
-
-        <RootNamespace>TestProject1</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,8 +1,6 @@
 using FluentAssertions;
-using Language;
-using Language.Analysis;
 
-namespace TestProject1;
+namespace Language.Analysis.Tests;
 
 public class Extensions
 {

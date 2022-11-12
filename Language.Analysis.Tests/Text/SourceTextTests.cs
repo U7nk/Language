@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Language.Analysis.CodeAnalysis.Text;
 
-namespace TestProject1.Text;
+namespace Language.Analysis.Tests.Text;
 
 public class SourceTextTests
 {
