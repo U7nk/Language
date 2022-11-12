@@ -34,11 +34,11 @@ sealed class ProgramBinder
 
     void DeclareBuiltInTypes()
     {
-        _scope.TryDeclareType(TypeSymbol.Any);
-        _scope.TryDeclareType(TypeSymbol.Bool);
-        _scope.TryDeclareType(TypeSymbol.Int);
-        _scope.TryDeclareType(TypeSymbol.String);
-        _scope.TryDeclareType(TypeSymbol.Void);
+        _scope.TryDeclareType(BuiltInTypeSymbols.Object);
+        _scope.TryDeclareType(BuiltInTypeSymbols.Bool);
+        _scope.TryDeclareType(BuiltInTypeSymbols.Int);
+        _scope.TryDeclareType(BuiltInTypeSymbols.String);
+        _scope.TryDeclareType(BuiltInTypeSymbols.Void);
     }
 
     public BoundGlobalScope BindGlobalScope()
@@ -187,15 +187,17 @@ sealed class ProgramBinder
         bool isScript)
     {
         var programType = TypeSymbol.New(SyntaxFacts.StartTypeName, ImmutableArray<SyntaxNode>.Empty,
-                                         inheritanceClauseSyntax: null , new MethodTable(), new FieldTable());
+                                         inheritanceClauseSyntax: null , 
+                                         new MethodTable(), new FieldTable());
         
         var main = new MethodSymbol(
             ImmutableArray<SyntaxNode>.Empty,
             isStatic: true,
             name: SyntaxFacts.MainMethodName,
             parameters: ImmutableArray<ParameterSymbol>.Empty,
-            returnType: TypeSymbol.Void, 
+            returnType: BuiltInTypeSymbols.Void, 
             containingType: programType);
+        
         if (isScript)
         {
             main = new MethodSymbol(
@@ -203,7 +205,7 @@ sealed class ProgramBinder
                 isStatic: true,
                 name: SyntaxFacts.ScriptMainMethodName,
                 parameters: ImmutableArray<ParameterSymbol>.Empty,
-                returnType: TypeSymbol.Any,
+                returnType: BuiltInTypeSymbols.Object,
                 containingType: programType);
         }
 
@@ -258,7 +260,7 @@ sealed class ProgramBinder
         foreach (var function in methods.Where(x => x.Name == "main"))
         {
             if (function.Parameters.Any()
-                || !Equals(function.ReturnType, TypeSymbol.Void) 
+                || !Equals(function.ReturnType, BuiltInTypeSymbols.Void) 
                 || !function.IsStatic )
             {
                 var identifierLocation = function.DeclarationSyntax
@@ -314,11 +316,19 @@ sealed class ProgramBinder
 
         var diagnostics = new DiagnosticBag();
 
-        var typesToBind = globalScope.Types;
+        var typesToBind = globalScope.Types.Exclude(
+            x => x == BuiltInTypeSymbols.Object
+                 || x == BuiltInTypeSymbols.Void 
+                 || x == BuiltInTypeSymbols.Bool 
+                 || x == BuiltInTypeSymbols.Int 
+                 || x == BuiltInTypeSymbols.String 
+                 || x == BuiltInTypeSymbols.Error)
+            .ToImmutableArray();
+        var availableTypes = globalScope.Types;
 
         foreach (var type in typesToBind)
         {
-            var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, typesToBind));
+            var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, availableTypes));
             binder.BindClassBody();
             diagnostics.AddRange(binder.Diagnostics);
         }
@@ -328,7 +338,7 @@ sealed class ProgramBinder
             var statements = globalScope.Statement.Statements;
             var expressionStatement = statements[^1] as BoundExpressionStatement;
             var needsReturn = expressionStatement is not null
-                              && !Equals(expressionStatement.Expression.Type, TypeSymbol.Void);
+                              && !Equals(expressionStatement.Expression.Type, BuiltInTypeSymbols.Void);
             if (needsReturn)
             {
                 Debug.Assert(expressionStatement != null, nameof(expressionStatement) + " != null");
@@ -337,7 +347,7 @@ sealed class ProgramBinder
             }
             else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(null, statements)))
             {
-                var nullValue = new BoundLiteralExpression(null, "null", TypeSymbol.String);
+                var nullValue = new BoundLiteralExpression(null, "null", BuiltInTypeSymbols.String);
                 statements = statements.Add(new BoundReturnStatement(null, nullValue));
             }
 

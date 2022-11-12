@@ -151,5 +151,5 @@ public class InheritanceTests
         
         TestTools.AssertDiagnostics(code, diagnostics, Output);
     }
-    
+
 }

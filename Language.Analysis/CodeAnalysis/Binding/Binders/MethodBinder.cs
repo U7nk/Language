@@ -110,7 +110,7 @@ sealed class MethodBinder
             : BindExpression(syntax.Expression);
 
 
-        if (Equals(_lookup.CurrentMethod.ReturnType, TypeSymbol.Void))
+        if (Equals(_lookup.CurrentMethod.ReturnType, BuiltInTypeSymbols.Void))
         {
             if (expression is not null)
                 _diagnostics.ReportReturnStatementIsInvalidForVoidMethod(syntax.Location);
@@ -120,7 +120,7 @@ sealed class MethodBinder
             if (expression is null)
             {
                 if (_isScript)
-                    expression = new BoundLiteralExpression(null, "null", TypeSymbol.String);
+                    expression = new BoundLiteralExpression(null, "null", BuiltInTypeSymbols.String);
                 else
                 {
                     _diagnostics.ReportReturnStatementIsInvalidForNonVoidMethod(syntax.Location,
@@ -169,7 +169,7 @@ sealed class MethodBinder
         else
             expression = BindExpression(syntax.Expression.NG());
 
-        var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
+        var condition = BindExpression(syntax.Condition, BuiltInTypeSymbols.Bool);
         var mutation = BindExpression(syntax.Mutation);
 
         var body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
@@ -179,7 +179,7 @@ sealed class MethodBinder
 
     BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
     {
-        var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
+        var condition = BindExpression(syntax.Condition, BuiltInTypeSymbols.Bool);
         var body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
         return new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
     }
@@ -196,7 +196,7 @@ sealed class MethodBinder
 
     BoundStatement BindIfStatement(IfStatementSyntax syntax)
     {
-        var condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
+        var condition = BindExpression(syntax.Condition, BuiltInTypeSymbols.Bool);
         var thenStatement = BindStatement(syntax.ThenStatement);
         var elseStatement = syntax.ElseClause is null
             ? null
@@ -234,7 +234,7 @@ sealed class MethodBinder
             ImmutableArray.Create<SyntaxNode>(syntax),
             name, 
             null,
-            (type ?? variableType) ?? TypeSymbol.Error,
+            (type ?? variableType) ?? BuiltInTypeSymbols.Error,
             isReadonly);
 
         if (!_scope.TryDeclareVariable(variable))
@@ -315,7 +315,7 @@ sealed class MethodBinder
     BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
     {
         var result = BindExpressionInternal(syntax);
-        if (!canBeVoid && Equals(result.Type, TypeSymbol.Void))
+        if (!canBeVoid && Equals(result.Type, BuiltInTypeSymbols.Void))
         {
             _diagnostics.ReportExpressionMustHaveValue(syntax.Location);
             return new BoundErrorExpression(null);
@@ -716,7 +716,7 @@ sealed class MethodBinder
 
         if ((!conversion.IsImplicit && !allowExplicit) || !conversion.Exists)
         {
-            if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
+            if (expression.Type != BuiltInTypeSymbols.Error && type != BuiltInTypeSymbols.Error)
             {
                 if (!allowExplicit && !conversion.IsImplicit && conversion.Exists)
                     _diagnostics.ReportNoImplicitConversion(diagnosticLocation, expression.Type, type);
@@ -818,7 +818,7 @@ sealed class MethodBinder
         var operand = BindExpression(syntax.Operand);
         var unaryOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, operand.Type);
 
-        if (Equals(operand.Type, TypeSymbol.Error))
+        if (Equals(operand.Type, BuiltInTypeSymbols.Error))
             return new BoundErrorExpression(null);
 
         if (unaryOperator is null)
@@ -836,7 +836,7 @@ sealed class MethodBinder
         var left = BindExpression(syntax.Left);
         var right = BindExpression(syntax.Right);
 
-        if (Equals(left.Type, TypeSymbol.Error) || Equals(right.Type, TypeSymbol.Error))
+        if (Equals(left.Type, BuiltInTypeSymbols.Error) || Equals(right.Type, BuiltInTypeSymbols.Error))
             return new BoundErrorExpression(null);
 
         var binaryOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);

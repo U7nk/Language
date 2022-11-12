@@ -122,13 +122,13 @@ class Evaluator
     {
         var variable = assignmentStatement.Variable;
         var value = EvaluateDefaultValueObjectCreation(variable.Type);
-        Assign(variable, value);
+        _lastValue = Assign(variable, value);
     }
     
     void EvaluateVariableDeclarationAssignmentStatement(BoundVariableDeclarationAssignmentStatement assignmentStatement)
     {
         var value = EvaluateExpression(assignmentStatement.Initializer).NG<ObjectInstance>();
-        Assign(assignmentStatement.Variable, value);
+        _lastValue = Assign(assignmentStatement.Variable, value);
     }
 
     void EvaluateExpressionStatement(BoundExpressionStatement expressionStatement)
@@ -215,7 +215,7 @@ class Evaluator
             RuntimeObject instance;
             if (fieldExpression.FieldSymbol.IsStatic)
             {
-                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.Type);
+                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.ContainingType.NG());
             }
             else
             {
@@ -226,14 +226,14 @@ class Evaluator
             var value = EvaluateExpression(node.RightValue).NG<ObjectInstance>();
         
             var member = node.MemberAccess.NG<BoundFieldExpression>();
-            return instance.Fields[member.FieldSymbol.Name] = value;
+            return _lastValue = instance.Fields[member.FieldSymbol.Name] = value;
         }
         else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
         {
             var variable = node.MemberAccess.NG<BoundVariableExpression>().Variable;
             var rightValue = EvaluateExpression(node.RightValue)
                 .NG<ObjectInstance>();
-            return Assign(variable, rightValue);
+            return _lastValue = Assign(variable, rightValue);
         }
         else
         {
@@ -243,7 +243,7 @@ class Evaluator
 
             var member = memberAccess.Member.NG<BoundFieldExpression>();
 
-            return instance.Fields[member.FieldSymbol.Name] = value;
+            return _lastValue = instance.Fields[member.FieldSymbol.Name] = value;
         }
     }
 
@@ -347,16 +347,16 @@ class Evaluator
     {
         var value = EvaluateExpression(node.Expression).NG<ObjectInstance>();
 
-        if (Equals(node.Type, TypeSymbol.Bool)) 
-            return ObjectInstance.Literal(TypeSymbol.Bool, Convert.ToBoolean(value));
+        if (Equals(node.Type, BuiltInTypeSymbols.Bool)) 
+            return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, Convert.ToBoolean(value));
 
-        if (Equals(node.Type, TypeSymbol.Int))
-            return ObjectInstance.Literal(TypeSymbol.Int, Convert.ToInt32(value));
+        if (Equals(node.Type, BuiltInTypeSymbols.Int))
+            return ObjectInstance.Literal(BuiltInTypeSymbols.Int, Convert.ToInt32(value));
 
-        if (Equals(node.Type, TypeSymbol.String))
-            return ObjectInstance.Literal(TypeSymbol.String, Convert.ToString(value).NG());
+        if (Equals(node.Type, BuiltInTypeSymbols.String))
+            return ObjectInstance.Literal(BuiltInTypeSymbols.String, Convert.ToString(value).NG());
         
-        if (Equals(node.Type, TypeSymbol.Any))
+        if (Equals(node.Type, BuiltInTypeSymbols.Object))
             return value;
 
         if (node.Expression.Type.IsSubClassOf(node.Type))
@@ -366,102 +366,113 @@ class Evaluator
         
     }
 
-    ObjectInstance EvaluateBinaryExpression(BoundBinaryExpression b)
+    ObjectInstance EvaluateBinaryExpression(BoundBinaryExpression binary)
     {
-        var left = EvaluateExpression(b.Left).NG<ObjectInstance>();
-        var right = EvaluateExpression(b.Right).NG<ObjectInstance>();
+        var left = EvaluateExpression(binary.Left).NG<ObjectInstance>();
+        var right = EvaluateExpression(binary.Right).NG<ObjectInstance>();
         
-        if (Equals(b.Left.Type, TypeSymbol.Int))
+        if (Equals(binary.Left.Type, BuiltInTypeSymbols.Int))
         {
-            if (Equals(b.Right.Type, TypeSymbol.Int))
+            if (Equals(binary.Right.Type, BuiltInTypeSymbols.Int))
             {
                 var intRight = right.NG().LiteralValue.NG<int>();
                 var intLeft = left.NG().LiteralValue.NG<int>();
-                return b.Op.Kind switch
+                return binary.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.Int, intLeft + intRight),
-                    BoundBinaryOperatorKind.Subtraction => ObjectInstance.Literal(TypeSymbol.Int, intLeft - intRight),
-                    BoundBinaryOperatorKind.Multiplication => ObjectInstance.Literal(TypeSymbol.Int, intLeft * intRight),
-                    BoundBinaryOperatorKind.Division => ObjectInstance.Literal(TypeSymbol.Int, intLeft / intRight),
+                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft + intRight),
+                    BoundBinaryOperatorKind.Subtraction => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft - intRight),
+                    BoundBinaryOperatorKind.Multiplication => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft * intRight),
+                    BoundBinaryOperatorKind.Division => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft / intRight),
 
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.Int, intLeft == intRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.Int, intLeft != intRight),
-                    BoundBinaryOperatorKind.LessThan => ObjectInstance.Literal(TypeSymbol.Int, intLeft < intRight),
-                    BoundBinaryOperatorKind.LessThanOrEquals => ObjectInstance.Literal(TypeSymbol.Int, intLeft <= intRight),
-                    BoundBinaryOperatorKind.GreaterThan => ObjectInstance.Literal(TypeSymbol.Int, intLeft > intRight),
-                    BoundBinaryOperatorKind.GreaterThanOrEquals => ObjectInstance.Literal(TypeSymbol.Int, intLeft >= intRight),
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft == intRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft != intRight),
+                    BoundBinaryOperatorKind.LessThan => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft < intRight),
+                    BoundBinaryOperatorKind.LessThanOrEquals => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft <= intRight),
+                    BoundBinaryOperatorKind.GreaterThan => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft > intRight),
+                    BoundBinaryOperatorKind.GreaterThanOrEquals => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft >= intRight),
 
-                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(TypeSymbol.Int, intLeft & intRight),
-                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(TypeSymbol.Int, intLeft | intRight),
-                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(TypeSymbol.Int, intLeft ^ intRight),
-                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft & intRight),
+                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft | intRight),
+                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft ^ intRight),
+                    _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
 
-        if (Equals(b.Left.Type, TypeSymbol.String))
+        if (Equals(binary.Left.Type, BuiltInTypeSymbols.String))
         {
-            if (Equals(b.Right.Type, TypeSymbol.String))
+            if (Equals(binary.Right.Type, BuiltInTypeSymbols.String))
             {
                 var stringRight = right.NG().LiteralValue.NG<string>();
                 var stringLeft = left.NG().LiteralValue.NG<string>();
-                return b.Op.Kind switch
+                return binary.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.String, stringLeft + stringRight),
+                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft + stringRight),
                     
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.String, stringLeft == stringRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.String, stringLeft != stringRight),
-                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft == stringRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft != stringRight),
+                    _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
 
-        if (Equals(b.Left.Type, TypeSymbol.Bool))
+        if (Equals(binary.Left.Type, BuiltInTypeSymbols.Bool))
         {
-            if (Equals(b.Right.Type, TypeSymbol.Bool))
+            if (Equals(binary.Right.Type, BuiltInTypeSymbols.Bool))
             {
                 var boolRight = right.NG().LiteralValue.NG<bool>();
                 var boolLeft = left.NG().LiteralValue.NG<bool>();
-                return b.Op.Kind switch
+                return binary.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.String, boolLeft == boolRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.String, boolLeft != boolRight),
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft == boolRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft != boolRight),
                     
-                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(TypeSymbol.String, boolLeft & boolRight),
-                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(TypeSymbol.String, boolLeft | boolRight),
-                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(TypeSymbol.String, boolLeft ^ boolRight),
+                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft & boolRight),
+                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft | boolRight),
+                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft ^ boolRight),
                     
-                    BoundBinaryOperatorKind.LogicalAnd => ObjectInstance.Literal(TypeSymbol.String, boolLeft && boolRight),
-                    BoundBinaryOperatorKind.LogicalOr => ObjectInstance.Literal(TypeSymbol.String, boolLeft || boolRight),
-                    _ => throw new($"Unexpected binary operator {b.Op.Kind}")
+                    BoundBinaryOperatorKind.LogicalAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft && boolRight),
+                    BoundBinaryOperatorKind.LogicalOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft || boolRight),
+                    _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
         
-        throw new($"Unexpected binary operator {b.Op.Kind}");
+        // not built in types
+        if (binary.Left.Type.IsOutside(BuiltInTypeSymbols.All).OrEquals(BuiltInTypeSymbols.Object) 
+            && binary.Right.Type.IsOutside(BuiltInTypeSymbols.All).OrEquals(BuiltInTypeSymbols.Object))
+        {
+            if (binary.Op.Kind is BoundBinaryOperatorKind.Equality)
+                return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, ReferenceEquals(left, right));
+
+            if (binary.Op.Kind is BoundBinaryOperatorKind.Inequality)
+                return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, !ReferenceEquals(left, right));
+        }
+
+        throw new($"Unexpected binary operator {binary.Op.Kind}");
     }
 
     ObjectInstance EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
         var operand = EvaluateExpression(unary.Operand).NG<ObjectInstance>();
-        if (Equals(unary.Type, TypeSymbol.Int))
+        if (Equals(unary.Type, BuiltInTypeSymbols.Int))
         {
             var intOperand = operand.LiteralValue.NG<int>();
             return unary.Op.Kind switch
             {
-                BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(TypeSymbol.Int,  -intOperand),
-                BoundUnaryOperatorKind.Identity => ObjectInstance.Literal(TypeSymbol.Int,  +intOperand),
-                BoundUnaryOperatorKind.BitwiseNegation => ObjectInstance.Literal(TypeSymbol.Int,  ~intOperand),
+                BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  -intOperand),
+                BoundUnaryOperatorKind.Identity => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  +intOperand),
+                BoundUnaryOperatorKind.BitwiseNegation => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  ~intOperand),
                 _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }
 
-        if (Equals(unary.Type, TypeSymbol.Bool))
+        if (Equals(unary.Type, BuiltInTypeSymbols.Bool))
         {
             var boolOperand = operand.LiteralValue.NG<bool>();
             return unary.Op.Kind switch
             {
-                BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(TypeSymbol.Bool, !boolOperand),
+                BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(BuiltInTypeSymbols.Bool, !boolOperand),
                 _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }
@@ -472,8 +483,7 @@ class Evaluator
     ObjectInstance? EvaluateAssignmentExpression(BoundAssignmentExpression a)
     {
         var value = EvaluateExpression(a.Expression).NG<ObjectInstance>();
-        Assign(a.Variable, value);
-        return value;
+        return _lastValue = Assign(a.Variable, value);
     }
     
     ObjectInstance? EvaluateVariableExpression(BoundVariableExpression v)

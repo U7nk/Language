@@ -29,11 +29,11 @@ internal class BoundUnaryOperator
 
     static readonly List<BoundUnaryOperator> _operators = new()
     {
-        new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, TypeSymbol.Int),
-        new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, TypeSymbol.Int),
+        new(BoundUnaryOperatorKind.Identity, SyntaxKind.PlusToken, BuiltInTypeSymbols.Int),
+        new(BoundUnaryOperatorKind.Negation, SyntaxKind.MinusToken, BuiltInTypeSymbols.Int),
 
-        new(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, TypeSymbol.Bool),
-        new(BoundUnaryOperatorKind.BitwiseNegation, SyntaxKind.TildeToken, TypeSymbol.Int),
+        new(BoundUnaryOperatorKind.LogicalNegation, SyntaxKind.BangToken, BuiltInTypeSymbols.Bool),
+        new(BoundUnaryOperatorKind.BitwiseNegation, SyntaxKind.TildeToken, BuiltInTypeSymbols.Int),
     };
 
     internal static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol operandType)
