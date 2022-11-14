@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Binding;
-using Language.Analysis.CodeAnalysis.Binding.Binders;
 
 namespace Language.Analysis.CodeAnalysis;
 

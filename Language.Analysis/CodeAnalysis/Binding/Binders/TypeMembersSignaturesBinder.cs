@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;

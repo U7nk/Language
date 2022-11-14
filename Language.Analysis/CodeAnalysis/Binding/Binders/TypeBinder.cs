@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;

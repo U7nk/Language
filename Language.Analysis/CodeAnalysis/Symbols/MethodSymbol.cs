@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Syntax;
 
