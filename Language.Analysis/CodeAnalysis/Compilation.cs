@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Binding.Binders;
+using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Emit;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
@@ -44,7 +45,8 @@ public sealed class Compilation
             if (_globalScope is not null)
                 return _globalScope;
 
-            var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees);
+            var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, new DeclarationsBag());
+            var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
             var boundGlobalScope = programBinder.BindGlobalScope();
             Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
 
@@ -60,7 +62,10 @@ public sealed class Compilation
         if (_boundProgram is not null)
             return _boundProgram;
         
-        var program = ProgramBinder.BindProgram(IsScript, previous, GlobalScope);
+        
+        var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, GlobalScope.DeclarationsBag);
+        var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
+        var program = programBinder.BindProgram(IsScript, previous, GlobalScope);
         Interlocked.CompareExchange(ref _boundProgram, program, null);
         return _boundProgram;
     }

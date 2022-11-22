@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public abstract class MemberSymbol : Symbol, ITypedSymbol
 {
-    protected MemberSymbol(ImmutableArray<SyntaxNode> declarationSyntax, string name,TypeSymbol? containingType, TypeSymbol type) 
+    protected MemberSymbol(Option<SyntaxNode> declarationSyntax, string name,TypeSymbol? containingType, TypeSymbol type) 
         : base(declarationSyntax, name, containingType)
     {
         Type = type;

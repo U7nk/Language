@@ -34,7 +34,7 @@ sealed class MethodBinder
         methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
 
         var result = BindBlockStatement(
-            methodSymbol.DeclarationSyntax.Cast<MethodDeclarationSyntax>().First().Body);
+            methodSymbol.DeclarationSyntax.Unwrap().As<MethodDeclarationSyntax>().Body);
 
         _scope = _scope.Parent ?? throw new InvalidOperationException();
 
@@ -230,8 +230,8 @@ sealed class MethodBinder
         
         var name = syntax.Identifier.Text;
         var variable = new VariableSymbol(
-            ImmutableArray.Create<SyntaxNode>(syntax),
-            name, 
+            new Option<SyntaxNode>(syntax),
+            name,
             null,
             (type ?? variableType) ?? BuiltInTypeSymbols.Error,
             isReadonly);
@@ -251,15 +251,15 @@ sealed class MethodBinder
                     case SymbolKind.Parameter:
                     {
                         existingVariableIdentifier =
-                            existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
+                            existingVariable.DeclarationSyntax.Unwrap().As<ParameterSyntax>().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
                         _diagnostics.ReportParameterAlreadyDeclared(syntax.Identifier);
                         break;
                     }
                     case SymbolKind.Variable:
                     {
-                        existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
-                            .First().Identifier;
+                        existingVariableIdentifier = existingVariable.DeclarationSyntax
+                            .UnwrapAs<VariableDeclarationSyntax>().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
                         _diagnostics.ReportVariableAlreadyDeclared(syntax.Identifier);
                         break;

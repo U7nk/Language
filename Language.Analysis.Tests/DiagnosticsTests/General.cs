@@ -208,7 +208,7 @@ public class General
         {
             DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
 
     [Theory]
@@ -315,7 +315,7 @@ public class General
             DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
         };
         
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
     }
     
     [Theory]
@@ -338,7 +338,7 @@ public class General
             
         };
         
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
     }
     
     [Fact]
@@ -353,7 +353,7 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), false, diagnostics, Output);
     }
     
     [Fact]
@@ -382,7 +382,7 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -411,7 +411,7 @@ public class General
         {
             DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -436,7 +436,7 @@ public class General
         {
             DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -457,7 +457,7 @@ public class General
         {
             DiagnosticBag.TYPE_CLAUSE_EXPECTED_CODE,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -483,7 +483,7 @@ public class General
             DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
             DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -513,7 +513,7 @@ public class General
         {
             DiagnosticBag.AMBIGUOUS_MEMBER_ACCESS_CODE,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -532,9 +532,9 @@ public class General
         {
             DiagnosticBag.MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE,
         };
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
-    
+
     [Fact]
     public void MainMethodShouldBeDeclared()
     {
@@ -556,4 +556,22 @@ public class General
         diagnostics.Should().ContainSingle(diagnosticsExpected.Single());
     }
 
+    [Fact]
+    public void NoMainMethodAllowedInScriptMode()
+    {
+        var text =
+            """
+            class Program
+            {
+                static function [main]() {   
+                    var x = 1;   
+                } 
+            }
+            """ ;
+        var diagnostics = new[]
+        {
+            DiagnosticBag.NO_MAIN_METHOD_ALLOWED_IN_SCRIPT_MODE_CODE,
+        };
+        TestTools.AssertDiagnostics(text, isScript: true, diagnostics, Output);
+    }
 }

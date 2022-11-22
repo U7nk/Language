@@ -11,21 +11,21 @@ interface ITypedSymbol
 public abstract class Symbol
 {
     
-    private protected Symbol(ImmutableArray<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType)
+    private protected Symbol(Option<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType)
     {
         DeclarationSyntax = declarationSyntax;
         Name = name;
         ContainingType = containingType;
     }
 
-    public ImmutableArray<SyntaxNode> DeclarationSyntax { get; private set; }
+    public Option<SyntaxNode> DeclarationSyntax { get; private set; }
     public TypeSymbol? ContainingType { get; private set; }
     public string Name { get; }
     public abstract SymbolKind Kind { get; }
-
-    public void AddDeclaration(SyntaxNode syntax)
-        => DeclarationSyntax = DeclarationSyntax.Add(syntax);
     public override string ToString() => Name;
+
+    public virtual bool DeclarationEquals(Symbol other) => Equals(other);
+    public virtual int DeclarationHashCode() => GetHashCode();
     
     bool Equals(Symbol other)
     {
