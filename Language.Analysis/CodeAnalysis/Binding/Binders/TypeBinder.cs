@@ -35,7 +35,7 @@ sealed class TypeBinder
         
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
-            if (methodSymbol.DeclarationSyntax.Empty()
+            if (methodSymbol.DeclarationSyntax.IsNone
                 && (methodSymbol.Name == SyntaxFacts.MainMethodName || methodSymbol.Name == SyntaxFacts.ScriptMainMethodName)
                 && _lookup.CurrentType.Name == SyntaxFacts.StartTypeName)
             {
@@ -45,22 +45,25 @@ sealed class TypeBinder
             }
             
             var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
-                _lookup.CurrentType,
-                _lookup.AvailableTypes,
+                                                    _lookup.Declarations, 
+                                                    _lookup.CurrentType, 
+                                                    _lookup.AvailableTypes,
                 methodSymbol));
             var body = methodBinder.BindMethodBody(methodSymbol);
             var loweredBody = Lowerer.Lower(body);
-            
-            if (!Equals(methodSymbol.ReturnType, BuiltInTypeSymbols.Void) && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                _diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax
-                    .Cast<MethodDeclarationSyntax>()
-                    .First().Identifier.Location);
+
+            if (!Equals(methodSymbol.ReturnType, BuiltInTypeSymbols.Void) &&
+                !ControlFlowGraph.AllPathsReturn(loweredBody))
+            {
+                _diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>()
+                                                          .Identifier.Location);
+            }
 
             ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, _diagnostics);
-            
-            methodBinder.Diagnostics.AddRangeTo(_diagnostics);
 
-            _lookup.CurrentType.MethodTable.Declare(methodSymbol, loweredBody);
+            _diagnostics.MergeWith(methodBinder.Diagnostics);
+
+            _lookup.CurrentType.MethodTable.SetMethodBody(methodSymbol, loweredBody);
         }
     }
 
@@ -74,7 +77,8 @@ sealed class TypeBinder
         {
             if (currentBase == currentType)
             {
-                foreach (var declarationSyntax in currentType.DeclarationSyntax.Cast<ClassDeclarationSyntax>())
+                var existingDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(currentType);
+                foreach (var declarationSyntax in existingDeclarationSyntax)
                 {
                     _diagnostics.ReportClassCannotInheritFromSelf(declarationSyntax.Identifier);
                 }

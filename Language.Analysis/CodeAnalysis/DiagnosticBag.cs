@@ -13,12 +13,25 @@ public class DiagnosticBag : List<Diagnostic>
     public void Report(TextLocation textLocation, string message, string code)
     {
         var diagnostic = new Diagnostic(textLocation, message, code);
+        ReportDiagnostic(diagnostic);
+    }
+
+    void ReportDiagnostic(Diagnostic diagnostic)
+    {
         var diagnosticHash = diagnostic.GetHashCode();
         var sameHashDiagnostics = this.Where(d => d.GetHashCode() == diagnosticHash);
         if (sameHashDiagnostics.Any(sameHashDiagnostic => sameHashDiagnostic == diagnostic))
             return;
 
-        Add(new Diagnostic(textLocation, message, code));
+        Add(diagnostic);
+    }
+
+    public void MergeWith(IEnumerable<Diagnostic> diagnostics)
+    {
+        foreach (var diagnostic in diagnostics)
+        {
+            ReportDiagnostic(diagnostic);
+        }
     }
 
     public const string INVALID_NUMBER_CODE = "[0001:Error]";

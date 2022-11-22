@@ -19,12 +19,10 @@ sealed class TypeMembersSignaturesBinder
         _isScript = isScript;
     }
 
-    public ImmutableArray<Diagnostic> BindMembersSignatures(
-        ClassDeclarationSyntax classDeclaration,
-        TypeSymbol currentType)
+    public ImmutableArray<Diagnostic> BindMembersSignatures(TypeSymbol currentType)
     {
         _lookup.NG();
-
+        var classDeclaration = currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
         var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
         foreach (var member in classDeclaration.Members)
@@ -33,7 +31,7 @@ sealed class TypeMembersSignaturesBinder
             {
                 var method = (MethodDeclarationSyntax) member;
                 var methodSignatureBinder = new MethodSignatureBinder(
-                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType, isTopMethod: false),
+                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType, isTopMethod: false, _lookup.Declarations),
                     typeScope);
                 methodSignatureBinder.BindMethodSignature(method)
                     .AddRangeTo(diagnostics);
@@ -44,7 +42,7 @@ sealed class TypeMembersSignaturesBinder
                 var fieldBinder = new FieldSignatureBinder(
                     typeScope, 
                     _isScript,
-                    new FieldBinderLookup(_lookup.AvailableTypes, currentType));
+                    new FieldBinderLookup(_lookup.AvailableTypes, currentType, _lookup.Declarations));
                 fieldBinder.BindDeclaration(field).AddRangeTo(diagnostics);
             }
             else

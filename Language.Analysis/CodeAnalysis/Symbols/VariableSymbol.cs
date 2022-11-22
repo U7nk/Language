@@ -8,7 +8,7 @@ public class VariableSymbol : Symbol, ITypedSymbol
 {
     public TypeSymbol Type { get; }
     public bool IsReadonly { get; }
-    public VariableSymbol(ImmutableArray<SyntaxNode> declarationSyntax,
+    public VariableSymbol(Option<SyntaxNode> declarationSyntax,
                           string name, TypeSymbol? containingType, 
                           TypeSymbol type, bool isReadonly) : base(declarationSyntax, name, containingType)
     {

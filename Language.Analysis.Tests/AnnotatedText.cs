@@ -6,15 +6,37 @@ namespace Language.Analysis.Tests;
 
 internal class AnnotatedText
 {
-    public string Text { get; }
+    public string RawText { get; }
     public ImmutableArray<TextSpan> Spans { get; }
 
-    public AnnotatedText(string text, ImmutableArray<TextSpan> spans)
+    public AnnotatedText(string rawText, ImmutableArray<TextSpan> spans)
     {
-        Text = text;
+        RawText = rawText;
         Spans = spans;
     }
 
+    public static string Annotate(string text, IEnumerable<TextSpan> spans)
+    {
+        var spansList = spans.ToList();
+        var sb = new StringBuilder();
+        var pos = 0;
+        foreach (var c in text)
+        {
+            var matchingStarts = spansList.Where(s => s.Start == pos).ToArray();
+            var matchingEnds = spansList.Where(s => s.End == pos).ToArray();
+
+            foreach (var i in 0..matchingStarts.Length) 
+                sb.Append('[');
+
+            foreach (var i in 0..matchingEnds.Length) 
+                sb.Append(']');
+            
+            sb.Append(c);
+            pos++;
+        }
+        
+        return sb.ToString();
+    }
     public static AnnotatedText Parse(string text)
     {
         var textBuilder = new StringBuilder();

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis;
@@ -26,7 +27,7 @@ internal static class Extensions
     }
     public static Condition<T> OrEquals<T, TY>(this Condition<T> first, TY equalsTo)
     {
-        first.Value = first.Value || first.Obj.NG().Equals(equalsTo);
+        first.Value = first.Value || first.Obj.NG<TY>().Equals(equalsTo);
         return first;
     }
 
@@ -93,10 +94,11 @@ internal static class Extensions
     [StackTraceHidden]
     [DebuggerHidden]
     [DebuggerStepThrough]
-    [return: NotNull]
+    [return: System.Diagnostics.CodeAnalysis.NotNull]
     public static T NG<T>(
-        [NotNull]this T? obj,
+        [System.Diagnostics.CodeAnalysis.NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
+        where T : class
     {
         if (obj is null)
         {
@@ -106,12 +108,37 @@ internal static class Extensions
         return obj;
     }
     
+    /// <summary>
+    /// Null guard
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="objExpression"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     [StackTraceHidden]
     [DebuggerHidden]
     [DebuggerStepThrough]
-    [return: NotNull]
+    [return: System.Diagnostics.CodeAnalysis.NotNull]
     public static T NG<T>(
-        [NotNull]this object? obj,
+        [System.Diagnostics.CodeAnalysis.NotNull]this T? obj,
+        [CallerArgumentExpression("obj")] string objExpression = "")
+        where T : struct
+    {
+        if (obj is null)
+        {
+            throw new ArgumentNullException(objExpression);
+        }
+
+        return obj.Value;
+    }
+    
+    [StackTraceHidden]
+    [DebuggerHidden]
+    [DebuggerStepThrough]
+    [return: System.Diagnostics.CodeAnalysis.NotNull]
+    public static T NG<T>(
+        [System.Diagnostics.CodeAnalysis.NotNull]this object? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
     {
         if (obj is null)
@@ -121,7 +148,6 @@ internal static class Extensions
 
         return (T)obj;
     }
-
 
     internal static bool Empty<T>(this IEnumerable<T> enumerable) 
         => !enumerable.Any();
@@ -137,8 +163,15 @@ internal static class Extensions
     [DebuggerStepThrough]
     internal static T As<T>(this object? toCast)
     {
-        return (T)toCast!;
+
+#if DEBUG
+        if (toCast is not T)
+            throw new InvalidCastException();
+#endif
+        
+        return (T)toCast;
     }
+    
 
     [DebuggerStepThrough]
     internal static T AddTo<T>(this T obj, ICollection<T> collection)
@@ -228,6 +261,8 @@ internal static class Extensions
         return false;
     }
     
+    
+    [ContractAnnotation("condition:false => halt")]
     public static bool ThrowIfFalse(
         [DoesNotReturnIf(false)] this bool condition, 
         string? message = "",

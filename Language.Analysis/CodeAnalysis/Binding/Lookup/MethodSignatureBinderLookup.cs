@@ -6,8 +6,8 @@ namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 public class MethodSignatureBinderLookup : BinderLookup
 {
     public MethodSignatureBinderLookup(ImmutableArray<TypeSymbol> availableTypes, TypeSymbol containingType,
-                                       bool isTopMethod)
-        : base(availableTypes)
+                                       bool isTopMethod, DeclarationsBag declarationsBag)
+        : base(availableTypes, declarationsBag)
     {
         ContainingType = containingType;
         IsTopMethod = isTopMethod;

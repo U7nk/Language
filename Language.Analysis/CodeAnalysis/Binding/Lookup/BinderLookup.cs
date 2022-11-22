@@ -2,21 +2,77 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
+
+public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
+{
+    class DeclarationEqualityComparer : IEqualityComparer<Symbol>
+    {
+        public bool Equals(Symbol? left, Symbol? right)
+        {
+            left.NG("left symbol cannot be null");
+            right.NG("right symbol cannot be null");
+            
+            return left.DeclarationEquals(right);
+        }
+
+        public int GetHashCode(Symbol obj)
+        {
+            return obj.DeclarationHashCode();
+        }
+    }
+    public DeclarationsBag() : base(new DeclarationEqualityComparer())
+    {
+    }
+}
+
 public class BinderLookup
 {
-    public BinderLookup(ImmutableArray<TypeSymbol> availableTypes)
+    public BinderLookup(ImmutableArray<TypeSymbol> availableTypes, DeclarationsBag declarationsBag)
     {
         AvailableTypes = availableTypes;
+        Declarations = declarationsBag;
     }
     
     public ImmutableArray<TypeSymbol> AvailableTypes { get; }
-    
+    protected internal DeclarationsBag Declarations { get; } 
     public TypeSymbol? LookupType(string name)
     {
         return AvailableTypes.SingleOrDefault(t => t.Name == name);
+    }
+
+    /// <summary>
+    /// Retrieves all declarations(including redeclaration) for the given bound node. <br/>
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <returns>List of declarations</returns>
+    public ImmutableArray<SyntaxNode> LookupDeclarations(Symbol symbol) =>
+        Declarations.TryGetValue(symbol, out var declarations) 
+            ? declarations.ToImmutableArray() 
+            : ImmutableArray<SyntaxNode>.Empty;
+
+    /// <summary>
+    /// Retrieves all declarations(including redeclaration) for the given bound node. And casts them to T.<br/>
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <returns>List of declarations</returns>
+    public ImmutableArray<T> LookupDeclarations<T>(Symbol symbol) where T : SyntaxNode =>
+        Declarations.TryGetValue(symbol, out var declarations) 
+            ? declarations.Cast<T>().ToImmutableArray() 
+            : ImmutableArray<T>.Empty;
+
+    public void AddDeclaration(Symbol boundNode, SyntaxNode declaration)
+    {
+        if (!Declarations.TryGetValue(boundNode, out var declarations))
+        {
+            declarations = new List<SyntaxNode>();
+            Declarations.Add(boundNode, declarations);
+        }
+        
+        declarations.Add(declaration);
     }
 
     public static ImmutableArray<Symbol> LookupSymbols(string name, BoundScope scope, TypeSymbol type)

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
@@ -8,32 +9,38 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 sealed class TypeSignatureBinder
 {
     readonly BoundScope _scope;
+    readonly BinderLookup _lookup;
 
-    public TypeSignatureBinder(BoundScope scope)
+    public TypeSignatureBinder(BoundScope scope, BinderLookup lookup)
     {
         _scope = scope;
+        _lookup = lookup;
     }
 
-    public (ImmutableArray<Diagnostic> Diagnostics, TypeSymbol TypeSymbol) BindClassDeclaration(ClassDeclarationSyntax classDeclaration)
+    public ImmutableArray<Diagnostic> BindClassDeclaration(ClassDeclarationSyntax classDeclaration)
     {
         var name = classDeclaration.Identifier.Text;
-        var type = TypeSymbol.New(name, ImmutableArray.Create<SyntaxNode>(classDeclaration), 
-                                  classDeclaration.InheritanceClause, new MethodTable(), new FieldTable());
-        if (_scope.TryDeclareType(type))
-            return (ImmutableArray<Diagnostic>.Empty, type);
-
+        var typeSymbol = TypeSymbol.New(name,
+                                        Option<SyntaxNode>.Some(classDeclaration), 
+                                        classDeclaration.InheritanceClause,
+                                        new MethodTable(),
+                                        new FieldTable());
+        _lookup.AddDeclaration(typeSymbol, classDeclaration);
+        
         var diagnostics = new DiagnosticBag();
-        
-        _scope.TryLookupType(name, out var existingType).ThrowIfFalse();
-        existingType.NG().AddDeclaration(classDeclaration);
-        
-        foreach (var syntaxNode in existingType.DeclarationSyntax.Cast<ClassDeclarationSyntax>())
+        if (!_scope.TryDeclareType(typeSymbol))
         {
-            diagnostics.ReportClassWithThatNameIsAlreadyDeclared(
-                syntaxNode.Identifier.Location,
-                syntaxNode.Identifier.Text);
+            var existingClassDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(typeSymbol);
+            foreach (var syntaxNode in existingClassDeclarationSyntax)
+            {
+                diagnostics.ReportClassWithThatNameIsAlreadyDeclared(
+                    syntaxNode.Identifier.Location,
+                    syntaxNode.Identifier.Text);
+            }
+
+            return diagnostics.ToImmutableArray();
         }
-        
-        return (diagnostics.ToImmutableArray(), type);
+
+        return diagnostics.ToImmutableArray();
     }
 }
