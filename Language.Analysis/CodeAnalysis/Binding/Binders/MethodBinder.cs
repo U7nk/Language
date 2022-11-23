@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
@@ -31,14 +32,91 @@ sealed class MethodBinder
     public BoundBlockStatement BindMethodBody(MethodSymbol methodSymbol)
     {
         _scope = new(_scope);
-        methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
-
-        var result = BindBlockStatement(
-            methodSymbol.DeclarationSyntax.Cast<MethodDeclarationSyntax>().First().Body);
-
+        BoundBlockStatement result;
+        if (methodSymbol.Name is SyntaxFacts.MAIN_METHOD_NAME or SyntaxFacts.SCRIPT_MAIN_METHOD_NAME
+            && _lookup.CurrentType.Name is SyntaxFacts.START_TYPE_NAME)
+        {
+            // method may be generated from global statements
+            // so it needs special handling
+            result = BindMainMethodBody(methodSymbol);
+        }
+        else
+        {
+            result = BindMethodBodyInternal(methodSymbol);
+        }
+        
+        
         _scope = _scope.Parent ?? throw new InvalidOperationException();
 
         return result;
+    }
+
+    public BoundBlockStatement BindMethodBodyInternal(MethodSymbol methodSymbol)
+    {
+        methodSymbol.Parameters.ForEach(x => _scope.TryDeclareVariable(x));
+        var result = BindBlockStatement(methodSymbol.DeclarationSyntax.Unwrap().As<MethodDeclarationSyntax>().Body);
+        return result;
+    }
+    
+
+    BoundBlockStatement BindMainMethodBody(MethodSymbol mainMethodSymbol)
+    {
+        if (_isScript)
+        {
+            if (mainMethodSymbol.DeclarationSyntax.Unwrap() is not
+                CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax)
+            {
+                // main method declared in script mode, diagnostics should be already reported
+                // so we can proceed with binding declaration
+                return BindMethodBodyInternal(mainMethodSymbol);
+            }
+            
+            var globalStatements = mainMethodSymbol.DeclarationSyntax
+                .UnwrapAs<CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax>()
+                .Statements;
+            Debug.Assert(globalStatements.Any(), "globalStatements.Any()");
+            
+            var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+            foreach (var globalStatement in globalStatements)
+            {
+                var s = BindGlobalStatement(globalStatement.Statement);
+                statements.Add(s);
+            }
+            var expressionStatement = statements[^1] as BoundExpressionStatement;
+            var needsReturn = expressionStatement is not null
+                              && !Equals(expressionStatement.Expression.Type, BuiltInTypeSymbols.Void);
+            if (needsReturn)
+            {
+                Debug.Assert(expressionStatement != null, nameof(expressionStatement) + " != null");
+                statements.Insert(statements.Count - 1, new BoundReturnStatement(null, expressionStatement.Expression));
+            }
+            else if (!ControlFlowGraph.AllPathsReturn(new BoundBlockStatement(null, statements.ToImmutableArray())))
+            {
+                var nullValue = new BoundLiteralExpression(null, "null", BuiltInTypeSymbols.String);
+                statements.Add(new BoundReturnStatement(null, nullValue));
+            }
+            
+            return new BoundBlockStatement(null, statements.ToImmutableArray());
+        }
+
+        if (mainMethodSymbol.IsGeneratedFromGlobalStatements)
+        {
+            var globalStatements = mainMethodSymbol.DeclarationSyntax
+                .UnwrapAs<CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax>()
+                .Statements;
+            Debug.Assert(globalStatements.Any(), "globalStatements.Any()");
+            
+            var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+            foreach (var globalStatement in globalStatements)
+            {
+                var s = BindGlobalStatement(globalStatement.Statement);
+                statements.Add(s);
+            }
+            return new BoundBlockStatement(null, statements.ToImmutableArray());
+        }
+
+        // simple main method case
+        return BindMethodBodyInternal(mainMethodSymbol);
     }
 
     public BoundStatement BindGlobalStatement(StatementSyntax syntax) => BindStatement(syntax, isGlobal: true);
@@ -220,18 +298,18 @@ sealed class MethodBinder
     BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax) 
         => BindVariableDeclarationSyntax(syntax.VariableDeclaration, variableType: null);
 
-    BoundVariableDeclarationStatement BindVariableDeclarationSyntax(VariableDeclarationSyntax syntax, TypeSymbol? variableType)
+    BoundVariableDeclarationStatement BindVariableDeclarationSyntax(VariableDeclarationSyntax currentVariableDeclarationSyntax, TypeSymbol? variableType)
     {
-        if (syntax.TypeClause is null && variableType is null)
-            _diagnostics.ReportTypeClauseExpected(syntax.Identifier.Location);
+        if (currentVariableDeclarationSyntax.TypeClause is null && variableType is null)
+            _diagnostics.ReportTypeClauseExpected(currentVariableDeclarationSyntax.Identifier.Location);
         
-        var isReadonly = syntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
-        var type = BindTypeClause(syntax.TypeClause);
+        var isReadonly = currentVariableDeclarationSyntax.KeywordToken.Kind == SyntaxKind.LetKeyword;
+        var type = BindTypeClause(currentVariableDeclarationSyntax.TypeClause);
         
-        var name = syntax.Identifier.Text;
+        var name = currentVariableDeclarationSyntax.Identifier.Text;
         var variable = new VariableSymbol(
-            ImmutableArray.Create<SyntaxNode>(syntax),
-            name, 
+            currentVariableDeclarationSyntax,
+            name,
             null,
             (type ?? variableType) ?? BuiltInTypeSymbols.Error,
             isReadonly);
@@ -251,17 +329,17 @@ sealed class MethodBinder
                     case SymbolKind.Parameter:
                     {
                         existingVariableIdentifier =
-                            existingVariable.DeclarationSyntax.Cast<ParameterSyntax>().First().Identifier;
+                            existingVariable.DeclarationSyntax.Unwrap().As<ParameterSyntax>().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                        _diagnostics.ReportParameterAlreadyDeclared(syntax.Identifier);
+                        _diagnostics.ReportParameterAlreadyDeclared(currentVariableDeclarationSyntax.Identifier);
                         break;
                     }
                     case SymbolKind.Variable:
                     {
-                        existingVariableIdentifier = existingVariable.DeclarationSyntax.Cast<VariableDeclarationSyntax>()
-                            .First().Identifier;
+                        existingVariableIdentifier = existingVariable.DeclarationSyntax
+                            .UnwrapAs<VariableDeclarationSyntax>().Identifier;
                         _diagnostics.ReportVariableAlreadyDeclared(existingVariableIdentifier);
-                        _diagnostics.ReportVariableAlreadyDeclared(syntax.Identifier);
+                        _diagnostics.ReportVariableAlreadyDeclared(currentVariableDeclarationSyntax.Identifier);
                         break;
                     }
                     default:
@@ -271,7 +349,7 @@ sealed class MethodBinder
             
         }
 
-        return new BoundVariableDeclarationStatement(syntax, variable);
+        return new BoundVariableDeclarationStatement(currentVariableDeclarationSyntax, variable);
     }
     
     BoundVariableDeclarationAssignmentStatement BindVariableDeclarationAssignmentStatement(

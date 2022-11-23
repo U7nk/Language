@@ -38,7 +38,7 @@ public class InheritanceTests
             DiagnosticBag.UNDEFINED_METHOD_CODE,
         };
 
-        TestTools.AssertDiagnostics(code, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
     
     [Fact]
@@ -67,7 +67,7 @@ public class InheritanceTests
             DiagnosticBag.UNDEFINED_METHOD_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
     
     [Fact]
@@ -97,7 +97,7 @@ public class InheritanceTests
             DiagnosticBag.UNDEFINED_FIELD_ACCESS_CODE,
         };
 
-        TestTools.AssertDiagnostics(code, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
     
     [Fact]
@@ -126,7 +126,7 @@ public class InheritanceTests
             DiagnosticBag.UNDEFINED_FIELD_ACCESS_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
     
     [Fact]
@@ -148,7 +148,7 @@ public class InheritanceTests
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
 
 }

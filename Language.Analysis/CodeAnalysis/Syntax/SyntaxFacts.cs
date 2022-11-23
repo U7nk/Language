@@ -6,9 +6,9 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 internal static class SyntaxFacts
 {
 
-    public static string StartTypeName => "Program";
-    public static string MainMethodName => "main";
-    public static string ScriptMainMethodName => "$main";
+    public const string START_TYPE_NAME = "Program";
+    public const string MAIN_METHOD_NAME = "main";
+    public const string SCRIPT_MAIN_METHOD_NAME = "$main";
     
     public static int GetUnaryOperatorPrecedence(this SyntaxKind syntaxKind)
     {

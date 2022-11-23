@@ -19,15 +19,10 @@ public class MethodTable : Dictionary<MethodSymbol, BoundBlockStatement?>
     }
     public MethodTable()
     { }
-    public void Declare(MethodSymbol symbol, BoundBlockStatement? body)
+    public void SetMethodBody(MethodSymbol symbol, BoundBlockStatement? body)
     {
         if (ContainsKey(symbol))
         {
-            if (this[symbol] is { })
-            {
-                throw new Exception($"Function {symbol.Name} is already declared");
-            }
-
             this[symbol] = body;
         }
         else

@@ -33,37 +33,39 @@ public sealed class FieldSignatureBinder
 
         // if diagnostics are reported field should not be used later in binding
         // so we just let type to be null and try to gain more diagnostics
-        var field = new FieldSymbol(ImmutableArray.Create<SyntaxNode>(fieldDeclaration),
+        var fieldSymbol = new FieldSymbol(fieldDeclaration,
                                     fieldDeclaration.StaticKeyword is { },
                                     fieldDeclaration.Identifier.Text,
                                     _lookup.ContainingType, 
                                     fieldType!);
-        
-        if (!_lookup.ContainingType.TryDeclareField(field))
+        _lookup.AddDeclaration(fieldSymbol, fieldDeclaration);
+        if (!_lookup.ContainingType.TryDeclareField(fieldSymbol))
         {
-            if (field.Name == _lookup.ContainingType.Name)
+            if (fieldSymbol.Name == _lookup.ContainingType.Name)
                 diagnostics.ReportClassMemberCannotHaveNameOfClass(fieldDeclaration.Identifier);
-            
-            
-            var sameNameFields = _lookup.ContainingType.FieldTable.Symbols.Where(x => x.Name == field.Name).ToList();
-            if (sameNameFields.Any())
+
+            var existingFieldDeclarations = _lookup.LookupDeclarations<FieldDeclarationSyntax>(fieldSymbol);
+            if (existingFieldDeclarations.Length > 1)
             {
-                foreach (var sameNameField in sameNameFields)
-                    diagnostics.ReportFieldAlreadyDeclared(
-                        sameNameField.DeclarationSyntax.Cast<FieldDeclarationSyntax>().First().Identifier);
-                
-                diagnostics.ReportFieldAlreadyDeclared(fieldDeclaration.Identifier);
+                foreach (var existingFieldDeclaration in existingFieldDeclarations)
+                {
+                    diagnostics.ReportFieldAlreadyDeclared(existingFieldDeclaration.Identifier);
+                }
             }
 
             
-            var sameNameMethods = _lookup.ContainingType.MethodTable.Symbols.Where(x => x.Name == field.Name).ToList();
+            var sameNameMethods = _lookup.ContainingType.MethodTable.Symbols.Where(x => x.Name == fieldSymbol.Name).ToList();
             if (sameNameMethods.Any())
             {
-                foreach (var sameNameMethod in sameNameMethods)
-                    diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(
-                        sameNameMethod.DeclarationSyntax.Cast<MethodDeclarationSyntax>().First().Identifier);
-                
                 diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
+                foreach (var sameNameMethod in sameNameMethods)
+                {
+                    var sameNameMethodDeclarations = _lookup.LookupDeclarations<MethodDeclarationSyntax>(sameNameMethod);
+                    foreach (var sameNameMethodDeclaration in sameNameMethodDeclarations)
+                    {
+                        diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(sameNameMethodDeclaration.Identifier);    
+                    }
+                }
             }
         }
 

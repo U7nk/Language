@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
@@ -11,7 +12,7 @@ internal sealed class BoundGlobalScope
         MethodSymbol? scriptMainMethod,
         ImmutableArray<TypeSymbol> types,
         ImmutableArray<VariableSymbol> variables,
-        BoundBlockStatement statement)
+        DeclarationsBag declarationsBag)
     {
         Previous = previous;
         Diagnostics = diagnostics;
@@ -19,11 +20,11 @@ internal sealed class BoundGlobalScope
         ScriptMainMethod = scriptMainMethod;
         Types = types;
         Variables = variables;
-        Statement = statement;
+        DeclarationsBag = declarationsBag;
     }
 
     public BoundGlobalScope? Previous { get; }
-    public BoundBlockStatement Statement { get; }
+    public DeclarationsBag DeclarationsBag { get; }
     public ImmutableArray<VariableSymbol> Variables { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
     public MethodSymbol? MainMethod { get; }

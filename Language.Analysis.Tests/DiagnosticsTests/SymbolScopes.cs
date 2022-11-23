@@ -34,7 +34,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -57,7 +57,7 @@ public class SymbolScopes
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class SymbolScopes
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -168,7 +168,7 @@ public class SymbolScopes
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
     }
     
     [Theory]
@@ -190,7 +190,7 @@ public class SymbolScopes
         };
 
         TestTools.AssertDiagnostics(
-            TestTools.StatementsInContext(text, contextType), 
+            TestTools.StatementsInContext(text, contextType), false, 
             diagnostics, Output);
     }
     
@@ -216,7 +216,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -266,7 +266,7 @@ public class SymbolScopes
             DiagnosticBag.METHOD_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -289,7 +289,37 @@ public class SymbolScopes
             DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
         };
         
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void FieldCannotHaveNameOfFieldAndMethod()
+    {
+        var text =
+            """
+            class Program {
+                static function main(){
+                }
+                
+                function [field]() { }
+                
+                [[field]] : int;
+                [[field]] : int;
+            } 
+            """ ;
+
+        var diagnostics = new[]
+        {
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
+            
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
+            DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
+            
+            DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
+            DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
+        };
+        
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -315,7 +345,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
         };
         
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -337,7 +367,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -357,7 +387,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     
     [Fact]
@@ -377,7 +407,7 @@ public class SymbolScopes
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
 
 }

@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class FieldSymbol : MemberSymbol
 {
-    public FieldSymbol(ImmutableArray<SyntaxNode> declarationSyntax, bool isStatic, string name,
+    public FieldSymbol(Option<SyntaxNode> declarationSyntax, bool isStatic, string name,
                        TypeSymbol containingType, TypeSymbol parameterType)
         : base(declarationSyntax, name, containingType: containingType, parameterType)
     {
