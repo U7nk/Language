@@ -35,7 +35,7 @@ sealed class MethodSignatureBinder
             }
 
             parameters.Add(new ParameterSymbol(
-                               Option<SyntaxNode>.Some(parameter),
+                               parameter,
                                parameterName,
                                containingType: null,
                                parameterType));
@@ -58,7 +58,7 @@ sealed class MethodSignatureBinder
 
         var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
         var currentMethodSymbol = new MethodSymbol(
-            Option<SyntaxNode>.Some(method),
+            method,
             _lookup.ContainingType,
             isStatic,
             method.Identifier.Text,

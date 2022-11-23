@@ -248,15 +248,15 @@ public class TestTools
             }
             else if (symbolType == typeof(ParameterSymbol))
             {
-                result.Add(new ParameterSymbol(Option<SyntaxNode>.None, "parameter", null, BuiltInTypeSymbols.Int));
+                result.Add(new ParameterSymbol(Option.None, "parameter", null, BuiltInTypeSymbols.Int));
             }
             else if (symbolType == typeof(VariableSymbol))
             {
-                result.Add(new VariableSymbol(Option<SyntaxNode>.None, "variable", null, BuiltInTypeSymbols.Int, false ));
+                result.Add(new VariableSymbol(Option.None, "variable", null, BuiltInTypeSymbols.Int, false ));
             }
             else if (symbolType == typeof(FieldSymbol))
             {
-                result.Add(new FieldSymbol(Option<SyntaxNode>.None, false, "field",  null!, BuiltInTypeSymbols.Int));
+                result.Add(new FieldSymbol(Option.None, false, "field",  null!, BuiltInTypeSymbols.Int));
             }
         }
 

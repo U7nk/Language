@@ -9,27 +9,27 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 
 static class BuiltInTypeSymbols
 {
-    public static readonly TypeSymbol Error = TypeSymbol.New("error", Option<SyntaxNode>.None,
+    public static readonly TypeSymbol Error = TypeSymbol.New("error", Option.None,
                                                              inheritanceClauseSyntax: null,
                                                              new MethodTable(),
                                                              new FieldTable());
 
-    public static readonly TypeSymbol Void = TypeSymbol.New("void", Option<SyntaxNode>.None,
+    public static readonly TypeSymbol Void = TypeSymbol.New("void", Option.None,
                                                             inheritanceClauseSyntax: null,
                                                             new MethodTable(),
                                                             new FieldTable());
 
-    public static readonly TypeSymbol Bool = TypeSymbol.New("bool", Option<SyntaxNode>.None,
+    public static readonly TypeSymbol Bool = TypeSymbol.New("bool", Option.None,
                                                             inheritanceClauseSyntax: null,
                                                             new MethodTable(),
                                                             new FieldTable());
 
-    public static readonly TypeSymbol Int = TypeSymbol.New("int", Option<SyntaxNode>.None,
+    public static readonly TypeSymbol Int = TypeSymbol.New("int", Option.None,
                                                            inheritanceClauseSyntax: null,
                                                            new MethodTable(),
                                                            new FieldTable());
 
-    public static readonly TypeSymbol String = TypeSymbol.New("string", Option<SyntaxNode>.None,
+    public static readonly TypeSymbol String = TypeSymbol.New("string", Option.None,
                                                               inheritanceClauseSyntax: null,
                                                               new MethodTable(),
                                                               new FieldTable());
@@ -40,7 +40,7 @@ static class BuiltInTypeSymbols
 
     private static TypeSymbol InitializeObject()
     {
-        var symbol = TypeSymbol.New("object", Option<SyntaxNode>.None,
+        var symbol = TypeSymbol.New("object", Option.None,
                        inheritanceClauseSyntax: null,
                        new MethodTable(),
                        new FieldTable());

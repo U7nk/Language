@@ -1,12 +1,29 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Language.Analysis;
 
+public struct Unit { }
+public static class Option
+{
+    public static Option<T> Some<T>(T value) => new(value, hasValue: true);
+
+    public static Option<Unit> None { get; } = new(default, hasValue: false);
+
+    public static Option<T> NoneIfEmpty<T>(T value) where T : IEnumerable
+    {
+        if (value is ICollection collection)
+            return collection.Count == 0 ? None : Some(value);
+
+        var enumerator = value.GetEnumerator();
+        return enumerator.MoveNext() ? Some(value) : None;
+    }
+}
 public readonly struct Option<T>
 {
-    public static Option<T> None { get; } = new(default!, hasValue: false);
-    public static Option<T> Some(T value) => new(value, hasValue: true);
-    
+    static Option<T> None { get; } = new(default!, hasValue: false);
+
     public Option(T value, bool hasValue = true)
     {
         Value = value;
@@ -22,6 +39,11 @@ public readonly struct Option<T>
         
         return Value;
     }
+    
+    public T? UnwrapOrNull()
+    {
+        return Value;
+    }
 
     public TAs UnwrapAs<TAs>() where TAs : T 
     {
@@ -34,4 +56,14 @@ public readonly struct Option<T>
     public bool IsSome => HasValue;
 
     T? Value { get; }
+    
+    public static implicit operator Option<T>(T? value)
+    {
+        if (value is null)
+            return None;
+        
+        return Option.Some(value);
+    }
+    
+    public static implicit operator Option<T>(Option<Unit> value) => None;
 }

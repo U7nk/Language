@@ -11,10 +11,10 @@ internal static class BuiltInMethods
 {
     public static readonly MethodSymbol 
         Print = new(
-            Option<SyntaxNode>.None,
+            Option.None,
             isStatic: true,
             name: "print",
-            parameters: ImmutableArray.Create(new ParameterSymbol(Option<SyntaxNode>.None, "text", 
+            parameters: ImmutableArray.Create(new ParameterSymbol(Option.None, "text", 
                                                                   containingType: null,
                                                                   BuiltInTypeSymbols.String)),
             returnType: BuiltInTypeSymbols.Void, 
@@ -22,7 +22,7 @@ internal static class BuiltInMethods
 
     public static readonly MethodSymbol
         Input = new(
-            Option<SyntaxNode>.None,
+            Option.None,
             isStatic: true,
             name: "input",
             parameters: ImmutableArray<ParameterSymbol>.Empty,

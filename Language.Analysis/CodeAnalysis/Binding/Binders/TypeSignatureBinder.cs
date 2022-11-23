@@ -21,7 +21,7 @@ sealed class TypeSignatureBinder
     {
         var name = classDeclaration.Identifier.Text;
         var typeSymbol = TypeSymbol.New(name,
-                                        Option<SyntaxNode>.Some(classDeclaration), 
+                                        classDeclaration, 
                                         classDeclaration.InheritanceClause,
                                         new MethodTable(),
                                         new FieldTable());

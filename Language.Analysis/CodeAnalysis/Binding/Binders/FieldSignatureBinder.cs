@@ -33,7 +33,7 @@ public sealed class FieldSignatureBinder
 
         // if diagnostics are reported field should not be used later in binding
         // so we just let type to be null and try to gain more diagnostics
-        var fieldSymbol = new FieldSymbol(Option<SyntaxNode>.Some(fieldDeclaration),
+        var fieldSymbol = new FieldSymbol(fieldDeclaration,
                                     fieldDeclaration.StaticKeyword is { },
                                     fieldDeclaration.Identifier.Text,
                                     _lookup.ContainingType, 

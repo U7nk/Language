@@ -147,7 +147,7 @@ public class Parser
         
         if (Current.Kind == SyntaxKind.FunctionKeyword)
             return ParseMethodDeclaration();
-
+        
         return ParseGlobalStatement();
     }
 
