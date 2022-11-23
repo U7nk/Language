@@ -35,20 +35,12 @@ sealed class TypeBinder
         
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
-            if (methodSymbol.DeclarationSyntax.IsNone
-                && (methodSymbol.Name == SyntaxFacts.MainMethodName || methodSymbol.Name == SyntaxFacts.ScriptMainMethodName)
-                && _lookup.CurrentType.Name == SyntaxFacts.StartTypeName)
-            {
-                // function generated from global statements
-                // binding of this function should be done later to place proper returns;
-                continue;
-            }
-            
             var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
                                                     _lookup.Declarations, 
-                                                    _lookup.CurrentType, 
+                                                    _lookup.CurrentType,
                                                     _lookup.AvailableTypes,
-                methodSymbol));
+                                                    methodSymbol));
+            
             var body = methodBinder.BindMethodBody(methodSymbol);
             var loweredBody = Lowerer.Lower(body);
 

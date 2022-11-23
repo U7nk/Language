@@ -284,7 +284,7 @@ class Evaluator
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
         if (typeInstance is ObjectInstance objectInstance)
         {
-            Assign(new VariableSymbol(Option<SyntaxNode>.None, "this",
+            Assign(new VariableSymbol(Option.None, "this",
                                       containingType: null,
                                       type, isReadonly: true),
                    objectInstance);
@@ -336,9 +336,7 @@ class Evaluator
     ObjectInstance? EvaluateThisExpression(BoundThisExpression node)
     {
         return _stacks.Peek()[new VariableSymbol(
-            node.Syntax is null 
-                ? Option<SyntaxNode>.None 
-                : Option<SyntaxNode>.Some(node.Syntax),
+            node.Syntax,
             name: "this",
             type: node.Type,
             isReadonly: true, 

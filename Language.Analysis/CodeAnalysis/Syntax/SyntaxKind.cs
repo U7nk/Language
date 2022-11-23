@@ -91,4 +91,5 @@ public enum SyntaxKind
     BreakStatement,
     ReturnStatement,
     VariableDeclarationAssignmentStatement,
+    GlobalStatementsDeclarationsBlockStatement
 }
