@@ -88,9 +88,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax(this,identifier,type);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
+    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken virtualKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken overrideKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
+       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,virtualKeyword,overrideKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax NewInheritanceClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken colonToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken baseTypeIdentifier)
@@ -156,6 +156,11 @@ public partial class SyntaxTree {
     public Language.Analysis.CodeAnalysis.Syntax.BinaryExpressionSyntax NewBinaryExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax left,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken operatorToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax right)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.BinaryExpressionSyntax(this,left,operatorToken,right);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.CastExpressionSyntax NewCastExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesis,Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax nameExpression,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesis,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax castedExpression)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.CastExpressionSyntax(this,openParenthesis,nameExpression,closeParenthesis,castedExpression);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax NewElseClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken elseKeyword,Language.Analysis.CodeAnalysis.Syntax.StatementSyntax elseStatement)

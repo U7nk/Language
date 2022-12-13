@@ -222,6 +222,8 @@ public class Parser
     {
         var staticKeyword = TryMatch(SyntaxKind.StaticKeyword);
         var functionKeyword = Match(SyntaxKind.FunctionKeyword);
+        var virtualKeyword = TryMatch(SyntaxKind.VirtualKeyword);
+        var overrideKeyword = TryMatch(SyntaxKind.OverrideKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
         var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
         var parameters = ParseParameterList();
@@ -229,6 +231,7 @@ public class Parser
         var type = ParseOptionalTypeClause();
         var body = ParseBlockStatement();
         return _syntaxTree.NewMethodDeclaration(staticKeyword, functionKeyword,
+                                                virtualKeyword, overrideKeyword,
                                                 identifier, openParenthesisToken,
                                                 parameters, closeParenthesisToken,
                                                 type, body);
@@ -621,12 +624,26 @@ public class Parser
 
     ExpressionSyntax ParseParenthesizedExpression()
     {
-        var left = Match(SyntaxKind.OpenParenthesisToken);
-        var expression = ParseExpression();
-        var right = Match(SyntaxKind.CloseParenthesisToken);
-        return new ParenthesizedExpressionSyntax(_syntaxTree, left,
-            expression,
-            right);
+        var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
+        var nameExpression = ParseExpression();
+        var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
+        if (Current.Kind is SyntaxKind.DotToken or SyntaxKind.SemicolonToken or SyntaxKind.OpenBraceToken
+            || Current.Kind.GetBinaryOperatorPrecedence() > 0)
+        {
+            return _syntaxTree.NewParenthesizedExpression(openParenthesisToken, nameExpression, closeParenthesisToken);
+        }
+        
+        var castedExpression = ParseExpression();
+        if (nameExpression.Kind is not SyntaxKind.NameExpression)
+        {
+            _diagnostics.ReportUnexpectedExpressionToCast(nameExpression);
+            return castedExpression;
+        }
+        
+        return _syntaxTree.NewCastExpression(openParenthesisToken,
+                                             (NameExpressionSyntax)nameExpression, 
+                                             closeParenthesisToken,
+                                             castedExpression);
     }
 
     ExpressionSyntax ParseBooleanLiteralExpression()

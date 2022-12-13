@@ -161,9 +161,7 @@ class Evaluator
             BoundNodeKind.MemberAssignmentExpression =>
                 EvaluateMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
             BoundNodeKind.MethodCallExpression =>
-                EvaluateMethodCallExpression((BoundMethodCallExpression)node,
-                    _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value?.Type,
-                    _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value),
+                EvaluateMethodCallExpression((BoundMethodCallExpression)node, _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value),
             BoundNodeKind.FieldExpression =>
                 EvaluateFieldAccessExpression((BoundFieldExpression)node),
             BoundNodeKind.NamedTypeExpression =>
@@ -259,17 +257,16 @@ class Evaluator
         return typeStatic;
     }
 
-    ObjectInstance? EvaluateMethodCallExpression(BoundMethodCallExpression methodCallExpression, TypeSymbol? type, RuntimeObject? typeInstance)
+    ObjectInstance? EvaluateMethodCallExpression(BoundMethodCallExpression methodCallExpression, RuntimeObject? typeInstance)
     {
         if (!methodCallExpression.MethodSymbol.IsStatic)
         {
             var message = $"Method {methodCallExpression.MethodSymbol.Name} is not static";
-            type.NG(message + " and this expression should not be null");
             typeInstance.NG(message + " and this expression should not be null");
         }
         else
         {
-            type = methodCallExpression.MethodSymbol.ContainingType.NG();
+            var type = methodCallExpression.MethodSymbol.ContainingType.NG();
             typeInstance = GetTypeStaticInstance(type);
         }
 
@@ -282,15 +279,16 @@ class Evaluator
         }
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
+        BoundBlockStatement methodBody;
         if (typeInstance is ObjectInstance objectInstance)
         {
-            Assign(new VariableSymbol(Option.None, "this",
-                                      containingType: null,
-                                      type, isReadonly: true),
+            Assign(new VariableSymbol(Option.None, "this", containingType: null, objectInstance.Type, isReadonly: true), 
                    objectInstance);
         }
-
-        var methodBody = type.LookupMethodBody(methodCallExpression.MethodSymbol);
+        
+        methodBody =
+            methodCallExpression.MethodSymbol.ContainingType.LookupMethodBody(methodCallExpression.MethodSymbol);
+        
         var result = EvaluateStatement(methodBody);
         _stacks.Pop();
         return result;
@@ -303,7 +301,7 @@ class Evaluator
         var leftValue = EvaluateExpression(node.Left).NG();
 
         if (node.Member is BoundMethodCallExpression methodCall)
-            return EvaluateMethodCallExpression(methodCall, node.Left.Type, leftValue);
+            return EvaluateMethodCallExpression(methodCall, leftValue);
         
         if (node.Member is BoundFieldExpression fieldAccess)
         {

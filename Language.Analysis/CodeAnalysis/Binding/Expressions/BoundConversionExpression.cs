@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundConversionExpression : BoundExpression
 {
-    public BoundConversionExpression(SyntaxNode? syntax, TypeSymbol type, BoundExpression expression) : base(syntax)
+    public BoundConversionExpression(Option<SyntaxNode> syntax, TypeSymbol type, BoundExpression expression) : base(syntax)
     {
         Type = type;
         Expression = expression;

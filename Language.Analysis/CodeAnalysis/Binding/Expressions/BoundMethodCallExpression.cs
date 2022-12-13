@@ -9,7 +9,7 @@ internal class BoundMethodCallExpression : BoundExpression
     public MethodSymbol MethodSymbol { get; }
     public ImmutableArray<BoundExpression> Arguments { get; }
 
-    public BoundMethodCallExpression(SyntaxNode? syntax, MethodSymbol methodSymbol, ImmutableArray<BoundExpression> arguments) : base(syntax)
+    public BoundMethodCallExpression(Option<SyntaxNode> syntax, MethodSymbol methodSymbol, ImmutableArray<BoundExpression> arguments) : base(syntax)
     {
         MethodSymbol = methodSymbol;
         Arguments = arguments;

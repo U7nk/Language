@@ -7,7 +7,7 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-sealed class MethodSignatureBinder
+ class MethodSignatureBinder
 {
     readonly MethodSignatureBinderLookup _lookup;
     readonly BoundScope _scope;
@@ -57,10 +57,16 @@ sealed class MethodSignatureBinder
         var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? BuiltInTypeSymbols.Void;
 
         var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
+
+        var isVirtual = method.VirtualKeyword is { };
+        var isOverriding = method.OverrideKeyword is { };
+        
         var currentMethodSymbol = new MethodSymbol(
             method,
             _lookup.ContainingType,
             isStatic,
+            isVirtual,
+            isOverriding,
             method.Identifier.Text,
             parameters.ToImmutable(),
             returnType);
@@ -68,13 +74,24 @@ sealed class MethodSignatureBinder
         _lookup.AddDeclaration(currentMethodSymbol, method);
         if (!_lookup.ContainingType.TryDeclareMethod(currentMethodSymbol))
         {
-            ReportDeclarationDiagnostics(currentMethodSymbol, diagnostics);
+            ReportRedeclarationDiagnostics(currentMethodSymbol, diagnostics);
         }
+
+        ReportModifiersMisuseIfAny(currentMethodSymbol, diagnostics);
 
         return diagnostics.ToImmutableArray();
     }
 
-    void ReportDeclarationDiagnostics(MethodSymbol currentMethodSymbol, DiagnosticBag diagnostics)
+    private void ReportModifiersMisuseIfAny(MethodSymbol methodSymbol, DiagnosticBag diagnosticBag)
+    {
+        if (methodSymbol is { IsVirtual: true, IsOverriding: true })
+        {
+            var syntax = methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>(); 
+            diagnosticBag.ReportCannotUseVirtualWithOverride(syntax.VirtualKeyword, syntax.OverrideKeyword);
+        }
+    }
+
+    void ReportRedeclarationDiagnostics(MethodSymbol currentMethodSymbol, DiagnosticBag diagnostics)
     {
         if (currentMethodSymbol.Name == _lookup.ContainingType.Name)
         {

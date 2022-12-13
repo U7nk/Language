@@ -326,7 +326,7 @@ class ControlFlowGraph
                     variableUseExpression);
                 if (!isInitialized)
                 {
-                    var syntax = (NameExpressionSyntax)variableUseExpression.Syntax.NG();
+                    var syntax = variableUseExpression.Syntax.UnwrapAs<NameExpressionSyntax>();
                     diagnostics.ReportCannotUseUninitializedVariable(syntax.Identifier);
                 }
             }

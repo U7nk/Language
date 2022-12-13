@@ -409,7 +409,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
         TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
@@ -434,7 +434,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
         TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }

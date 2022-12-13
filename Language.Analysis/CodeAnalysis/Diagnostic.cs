@@ -16,7 +16,7 @@ public sealed class Diagnostic : IEquatable<Diagnostic>
         Code = code;
     }
     
-    public override string ToString() => Message;
+    public override string ToString() => $"{TextLocation.StartLine} - {TextLocation.EndLine}, {TextLocation.StartCharacter}..{TextLocation.EndCharacter}: " + Message;
 
     #region Equality 
     

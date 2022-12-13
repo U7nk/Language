@@ -12,10 +12,10 @@ internal sealed class BoundForStatement : BoundLoopStatement
     public BoundExpression Mutation { get; }
     public BoundStatement Body { get; }
 
-    public BoundForStatement(SyntaxNode? syntax, BoundVariableDeclarationAssignmentStatement? variableDeclarationAssignment,
-        BoundExpression? expression,
-        BoundExpression condition, BoundExpression mutation, BoundStatement body,
-        LabelSymbol breakLabel, LabelSymbol continueLabel)
+    public BoundForStatement(Option<SyntaxNode> syntax, BoundVariableDeclarationAssignmentStatement? variableDeclarationAssignment,
+                             BoundExpression? expression,
+                             BoundExpression condition, BoundExpression mutation, BoundStatement body,
+                             LabelSymbol breakLabel, LabelSymbol continueLabel)
         : base(syntax, breakLabel, continueLabel)
     {
         Condition = condition;

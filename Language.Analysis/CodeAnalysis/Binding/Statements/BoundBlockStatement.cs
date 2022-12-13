@@ -8,7 +8,7 @@ public sealed class BoundBlockStatement : BoundStatement
     public ImmutableArray<BoundStatement> Statements { get; }
     internal override BoundNodeKind Kind => BoundNodeKind.BlockStatement;
 
-    public BoundBlockStatement(SyntaxNode? syntax, ImmutableArray<BoundStatement> statements) : base(syntax)
+    public BoundBlockStatement(Option<SyntaxNode> syntax, ImmutableArray<BoundStatement> statements) : base(syntax)
     {
         Statements = statements;
     }

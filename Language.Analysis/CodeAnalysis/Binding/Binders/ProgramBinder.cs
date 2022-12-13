@@ -179,6 +179,8 @@ sealed class ProgramBinder
         var main = new MethodSymbol(
             mainMethodDeclarationSyntax.UnwrapOrNull(),
             isStatic: true,
+            isVirtual: false,
+            isOverriding: false,
             name: SyntaxFacts.MAIN_METHOD_NAME,
             parameters: ImmutableArray<ParameterSymbol>.Empty,
             returnType: BuiltInTypeSymbols.Void, 
@@ -189,6 +191,8 @@ sealed class ProgramBinder
             main = new MethodSymbol(
                 mainMethodDeclarationSyntax.UnwrapOrNull(),
                 isStatic: true,
+                isVirtual: false,
+                isOverriding: false,
                 name: SyntaxFacts.SCRIPT_MAIN_METHOD_NAME,
                 parameters: ImmutableArray<ParameterSymbol>.Empty,
                 returnType: BuiltInTypeSymbols.Object,

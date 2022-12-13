@@ -30,11 +30,11 @@ static class BoundNodePrinter
         writer.Write(methodSymbol.ReturnType);
     }
     
-    public static void WriteTo(this TypeSymbol functionSymbol, TextWriter writer)
+    public static void WriteTo(this TypeSymbol typeSymbol, TextWriter writer)
     {
         writer.Write(SyntaxFacts.GetText(SyntaxKind.ClassKeyword));
         writer.Write(" ");
-        writer.Write(functionSymbol.Name);
+        writer.Write(typeSymbol.Name);
     }
     
     public static void WriteTo(this BoundNode node, TextWriter writer)

@@ -7,7 +7,7 @@ internal sealed class BoundExpressionStatement : BoundStatement
     public BoundExpression Expression { get; }
     internal override BoundNodeKind Kind => BoundNodeKind.ExpressionStatement;
 
-    public BoundExpressionStatement(SyntaxNode? syntax, BoundExpression expression) : base(syntax)
+    public BoundExpressionStatement(Option<SyntaxNode> syntax, BoundExpression expression) : base(syntax)
     {
         Expression = expression;
     }

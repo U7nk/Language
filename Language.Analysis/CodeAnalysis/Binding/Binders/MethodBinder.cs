@@ -212,7 +212,7 @@ sealed class MethodBinder
         }
 
 
-        return new BoundReturnStatement(expression?.Syntax, expression);
+        return new BoundReturnStatement(expression.Syntax, expression);
     }
 
     BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
@@ -412,7 +412,9 @@ sealed class MethodBinder
             case SyntaxKind.BinaryOperatorExpression:
                 return BindBinaryExpression((BinaryExpressionSyntax)syntax);
             case SyntaxKind.ParenthesizedExpression:
-                return BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
+                return BindParenthesizedExpression(syntax.As<ParenthesizedExpressionSyntax>());
+            case SyntaxKind.CastExpression:
+                return BindCastExpression(syntax.As<CastExpressionSyntax>());
             case SyntaxKind.NameExpression:
                 return BindNameExpression((NameExpressionSyntax)syntax,
                                           type: _lookup.CurrentType,
@@ -434,6 +436,14 @@ sealed class MethodBinder
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    private BoundExpression BindCastExpression(CastExpressionSyntax castExpressionSyntax)
+    {
+        var castType = _lookup.LookupType(castExpressionSyntax.NameExpression.Identifier.Text);
+        var expression = BindExpression(castExpressionSyntax.CastedExpression, castType, true);
+        
+        return expression;
     }
 
     BoundExpression BindThisExpression(ThisExpressionSyntax syntax)

@@ -8,12 +8,12 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 public abstract class BoundNode
 {
-    public BoundNode(SyntaxNode? syntax)
+    public BoundNode(Option<SyntaxNode> syntax)
     {
         Syntax = syntax;
     }
     
-    public SyntaxNode? Syntax { get; }
+    public Option<SyntaxNode> Syntax { get; }
     internal abstract BoundNodeKind Kind { get; }
 
     internal IEnumerable<BoundNode> GetChildren(bool recursion = false)

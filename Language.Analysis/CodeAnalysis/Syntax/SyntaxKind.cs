@@ -52,7 +52,9 @@ public enum SyntaxKind
     ThisKeyword,
     NewKeyword,
     StaticKeyword,
-
+    VirtualKeyword,
+    OverrideKeyword,
+    
     // nodes
     CompilationUnit,
     VariableDeclarationSyntax,
@@ -77,6 +79,7 @@ public enum SyntaxKind
     MemberAccessExpression,
     MemberAssignmentExpression,
     ThisExpression,
+    CastExpression,
 
     // statements
     BlockStatement,
@@ -91,5 +94,5 @@ public enum SyntaxKind
     BreakStatement,
     ReturnStatement,
     VariableDeclarationAssignmentStatement,
-    GlobalStatementsDeclarationsBlockStatement
+    GlobalStatementsDeclarationsBlockStatement,
 }

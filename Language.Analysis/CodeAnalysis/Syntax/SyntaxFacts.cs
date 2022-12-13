@@ -103,6 +103,8 @@ internal static class SyntaxFacts
             "this" => SyntaxKind.ThisKeyword,
             "new" => SyntaxKind.NewKeyword,
             "static" => SyntaxKind.StaticKeyword,
+            "virtual" => SyntaxKind.VirtualKeyword,
+            "override" => SyntaxKind.OverrideKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -154,6 +156,8 @@ internal static class SyntaxFacts
             SyntaxKind.ThisKeyword => "this",
             SyntaxKind.NewKeyword => "new",
             SyntaxKind.StaticKeyword => "static",
+            SyntaxKind.VirtualKeyword => "virtual",
+            SyntaxKind.OverrideKeyword => "override",
             _ => null
         };
     }

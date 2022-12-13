@@ -6,12 +6,19 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 
 public class MethodSymbol : MemberSymbol
 {
-    public MethodSymbol(Option<SyntaxNode> declaration, TypeSymbol? containingType, bool isStatic,
-                        string name, ImmutableArray<ParameterSymbol> parameters,
-                        TypeSymbol returnType)
+    public MethodSymbol(Option<SyntaxNode> declaration, 
+                        TypeSymbol? containingType, 
+                        bool isStatic, 
+                        bool isVirtual,
+                        bool isOverriding,
+                        string name, 
+                        ImmutableArray<ParameterSymbol> parameters,
+                        TypeSymbol returnType) 
         : base(declaration, name, containingType, returnType)
     {
         Parameters = parameters;
+        IsVirtual = isVirtual;
+        IsOverriding = isOverriding;
         IsStatic = isStatic;
     }
 
@@ -20,6 +27,8 @@ public class MethodSymbol : MemberSymbol
                                                        CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax;
 
     public bool IsStatic { get; }
+    public bool IsVirtual { get; }
+    public bool IsOverriding { get; }
     public ImmutableArray<ParameterSymbol> Parameters { get; }
     public TypeSymbol ReturnType => Type;
     public override SymbolKind Kind => SymbolKind.Method;

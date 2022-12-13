@@ -188,4 +188,86 @@ public class InheritanceTests
         diagnostics.Should().BeEmpty();
         result.NG().LiteralValue.Should().Be(1);
     }
+
+
+    [Fact]
+    public void DerivedClassOverridingVirtualMethodReturnsDifferentResults()
+    {
+        var code =  $$""""
+                    class Base
+                    {
+                        function virtual MyMethod() : string
+                        {
+                            return "MyMethod";
+                        }
+                    }
+                    
+                    class Inheritor : Base
+                    {
+                        function override MyMethod() : string
+                        {
+                            return "OurMethod!";
+                        }
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let baseInstance = new Base();
+                            let inheritor = new Inheritor();
+                            var featureIsWorking = false;
+                            if baseInstance.MyMethod() != inheritor.MyMethod() 
+                            {
+                                featureIsWorking = true;
+                            }
+                            featureIsWorking = featureIsWorking;
+                        }
+                    }
+                    """";
+        
+        var (result, diagnostics) = TestTools.Evaluate(code);
+        diagnostics.Should().BeEmpty();
+        result.NG().LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void DerivedClassOverridingVirtualMethodReturnsDifferentResultsEvenIfCastedToBase()
+    {
+        var code =  $$""""
+                    class Base
+                    {
+                        function virtual MyMethod() : string
+                        {
+                            return "MyMethod";
+                        }
+                    }
+                    
+                    class Inheritor : Base
+                    {
+                        function override MyMethod() : string
+                        {
+                            return "OurMethod!";
+                        }
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let baseInstance = new Base();
+                            let inheritor = (Base)new Inheritor();
+                            var featureIsWorking = false;
+                            if baseInstance.MyMethod() != inheritor.MyMethod() 
+                            {
+                                featureIsWorking = true;
+                            }
+                            featureIsWorking = featureIsWorking;
+                        }
+                    }
+                    """";
+        
+        var (result, diagnostics) = TestTools.Evaluate(code);
+        diagnostics.Should().BeEmpty();
+        result.NG().LiteralValue.Should().Be(true);
+    }
+    
 }

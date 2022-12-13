@@ -8,7 +8,7 @@ internal class BoundAssignmentExpression : BoundExpression
     public VariableSymbol Variable { get; }
     public BoundExpression Expression { get; }
 
-    public BoundAssignmentExpression(SyntaxNode? syntax, VariableSymbol variable, BoundExpression expression) : base(syntax)
+    public BoundAssignmentExpression(Option<SyntaxNode> syntax, VariableSymbol variable, BoundExpression expression) : base(syntax)
     {
         Variable = variable;
         Expression = expression;
