@@ -244,7 +244,7 @@ sealed class MethodBinder
         if (syntax.VariableDeclaration is not null)
             variableDeclaration = BindVariableDeclarationAssignmentSyntax(syntax.VariableDeclaration);
         else
-            expression = BindExpression(syntax.Expression.NG());
+            expression = BindExpression(syntax.Expression.NullGuard());
 
         var condition = BindExpression(syntax.Condition, BuiltInTypeSymbols.Bool);
         var mutation = BindExpression(syntax.Mutation);
@@ -286,7 +286,7 @@ sealed class MethodBinder
         if (typeClause is null)
             return null;
 
-        _lookup.NG();
+        _lookup.NullGuard();
         var type = _lookup.AvailableTypes.SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
@@ -324,7 +324,7 @@ sealed class MethodBinder
             foreach (var existingVariable in existingVariables)
             {
                 SyntaxToken? existingVariableIdentifier;
-                switch (existingVariable.NG().Kind)
+                switch (existingVariable.NullGuard().Kind)
                 {
                     case SymbolKind.Parameter:
                     {
@@ -343,7 +343,7 @@ sealed class MethodBinder
                         break;
                     }
                     default:
-                        throw new Exception($"Unexpected symbol {existingVariable.NG().Kind}");
+                        throw new Exception($"Unexpected symbol {existingVariable.NullGuard().Kind}");
                 }
             }
             
@@ -567,7 +567,7 @@ sealed class MethodBinder
                                                                             memberAccess.Right, out var bestMatchSymbol);
                 if (inferResult is InferResult.Success)
                 {
-                    bestMatchSymbol.NG();
+                    bestMatchSymbol.NullGuard();
                     left = BindNameExpressionFromSymbol(nameExpression, bestMatchSymbol);
                     isStatic = bestMatchSymbol.Kind is SymbolKind.Type;
                 }
@@ -587,7 +587,7 @@ sealed class MethodBinder
                 {
                     // do not report diagnostics, because we will report undefined name error later
                     // when we try to bind the right side
-                    bestMatchSymbol.NG();
+                    bestMatchSymbol.NullGuard();
                     left = BindNameExpressionFromSymbol(nameExpression, bestMatchSymbol);
                 }
             }
@@ -753,7 +753,7 @@ sealed class MethodBinder
 
     BoundExpression BindObjectCreationExpression(ObjectCreationExpressionSyntax syntax)
     {
-        _lookup.NG();
+        _lookup.NullGuard();
 
         var typeName = syntax.TypeIdentifier.Text;
         var matchingTypes = _lookup.AvailableTypes

@@ -22,7 +22,7 @@ public sealed class FieldSignatureBinder
     public ImmutableArray<Diagnostic> BindDeclaration(FieldDeclarationSyntax fieldDeclaration)
     {
         var diagnostics = new DiagnosticBag();
-        _lookup.NG();
+        _lookup.NullGuard();
         var fieldType = _lookup.LookupType(fieldDeclaration.TypeClause.Identifier.Text);
         if (fieldType == null)
         {

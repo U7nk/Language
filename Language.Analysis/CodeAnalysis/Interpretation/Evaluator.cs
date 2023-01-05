@@ -39,7 +39,7 @@ class Evaluator
                                                        programType);
         _types.Add(programType, programTypeStatic);
         
-        var body = programType.MethodTable[function].NG();
+        var body = programType.MethodTable[function].NullGuard();
         return EvaluateStatement(body);
     }
 
@@ -90,7 +90,7 @@ class Evaluator
                 }
                 case BoundNodeKind.ConditionalGotoStatement:
                     var cgs = (BoundConditionalGotoStatement)statement;
-                    var condition = (bool)(EvaluateExpression(cgs.Condition).NG<ObjectInstance>().LiteralValue 
+                    var condition = (bool)(EvaluateExpression(cgs.Condition).NullGuard<ObjectInstance>().LiteralValue 
                                            ?? throw new InvalidOperationException());
                     if (condition == cgs.JumpIfTrue)
                         i = labelToIndex[cgs.Label];
@@ -127,7 +127,7 @@ class Evaluator
     
     void EvaluateVariableDeclarationAssignmentStatement(BoundVariableDeclarationAssignmentStatement assignmentStatement)
     {
-        var value = EvaluateExpression(assignmentStatement.Initializer).NG<ObjectInstance>();
+        var value = EvaluateExpression(assignmentStatement.Initializer).NullGuard<ObjectInstance>();
         _lastValue = Assign(assignmentStatement.Variable, value);
     }
 
@@ -195,11 +195,11 @@ class Evaluator
         RuntimeObject instance;
         if (node.FieldSymbol.IsStatic)
         {
-            instance = GetTypeStaticInstance(node.FieldSymbol.ContainingType.NG());
+            instance = GetTypeStaticInstance(node.FieldSymbol.ContainingType.NullGuard());
         }
         else
         {
-            instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NG();
+            instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard();
         }
         
         return instance.Fields[node.FieldSymbol.Name];
@@ -215,33 +215,33 @@ class Evaluator
             RuntimeObject instance;
             if (fieldExpression.FieldSymbol.IsStatic)
             {
-                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.ContainingType.NG());
+                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.ContainingType.NullGuard());
             }
             else
             {
-                instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NG();    
+                instance = _stacks.Peek().Single(x => x.Key.Name == "this").Value.NullGuard();    
             }
             
             
-            var value = EvaluateExpression(node.RightValue).NG<ObjectInstance>();
+            var value = EvaluateExpression(node.RightValue).NullGuard<ObjectInstance>();
         
-            var member = node.MemberAccess.NG<BoundFieldExpression>();
+            var member = node.MemberAccess.NullGuard<BoundFieldExpression>();
             return _lastValue = instance.Fields[member.FieldSymbol.Name] = value;
         }
         else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
         {
-            var variable = node.MemberAccess.NG<BoundVariableExpression>().Variable;
+            var variable = node.MemberAccess.NullGuard<BoundVariableExpression>().Variable;
             var rightValue = EvaluateExpression(node.RightValue)
-                .NG<ObjectInstance>();
+                .NullGuard<ObjectInstance>();
             return _lastValue = Assign(variable, rightValue);
         }
         else
         {
             var memberAccess = (BoundMemberAccessExpression)node.MemberAccess;
-            var instance = EvaluateExpression(memberAccess.Left).NG();
-            var value = EvaluateExpression(node.RightValue).NG<ObjectInstance>();
+            var instance = EvaluateExpression(memberAccess.Left).NullGuard();
+            var value = EvaluateExpression(node.RightValue).NullGuard<ObjectInstance>();
 
-            var member = memberAccess.Member.NG<BoundFieldExpression>();
+            var member = memberAccess.Member.NullGuard<BoundFieldExpression>();
 
             return _lastValue = instance.Fields[member.FieldSymbol.Name] = value;
         }
@@ -264,12 +264,12 @@ class Evaluator
         if (!methodCallExpression.MethodSymbol.IsStatic)
         {
             var message = $"Method {methodCallExpression.MethodSymbol.Name} is not static";
-            type.NG(message + " and this expression should not be null");
-            typeInstance.NG(message + " and this expression should not be null");
+            type.NullGuard(message + " and this expression should not be null");
+            typeInstance.NullGuard(message + " and this expression should not be null");
         }
         else
         {
-            type = methodCallExpression.MethodSymbol.ContainingType.NG();
+            type = methodCallExpression.MethodSymbol.ContainingType.NullGuard();
             typeInstance = GetTypeStaticInstance(type);
         }
 
@@ -278,7 +278,7 @@ class Evaluator
         foreach (var i in 0..methodCallExpression.Arguments.Length)
         {
             locals.Add(parameters[i], 
-                       EvaluateExpression(methodCallExpression.Arguments[i]).NG<ObjectInstance>());
+                       EvaluateExpression(methodCallExpression.Arguments[i]).NullGuard<ObjectInstance>());
         }
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
@@ -300,7 +300,7 @@ class Evaluator
     {
         // should return object.
         // objects is represented as Dictionary<string, object>
-        var leftValue = EvaluateExpression(node.Left).NG();
+        var leftValue = EvaluateExpression(node.Left).NullGuard();
 
         if (node.Member is BoundMethodCallExpression methodCall)
             return EvaluateMethodCallExpression(methodCall, node.Left.Type, leftValue);
@@ -345,7 +345,7 @@ class Evaluator
 
     ObjectInstance EvaluateConversionExpression(BoundConversionExpression node)
     {
-        var value = EvaluateExpression(node.Expression).NG<ObjectInstance>();
+        var value = EvaluateExpression(node.Expression).NullGuard<ObjectInstance>();
 
         if (Equals(node.Type, BuiltInTypeSymbols.Bool)) 
             return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, Convert.ToBoolean(value));
@@ -354,7 +354,7 @@ class Evaluator
             return ObjectInstance.Literal(BuiltInTypeSymbols.Int, Convert.ToInt32(value));
 
         if (Equals(node.Type, BuiltInTypeSymbols.String))
-            return ObjectInstance.Literal(BuiltInTypeSymbols.String, Convert.ToString(value).NG());
+            return ObjectInstance.Literal(BuiltInTypeSymbols.String, Convert.ToString(value).NullGuard());
         
         if (Equals(node.Type, BuiltInTypeSymbols.Object))
             return value;
@@ -368,15 +368,15 @@ class Evaluator
 
     ObjectInstance EvaluateBinaryExpression(BoundBinaryExpression binary)
     {
-        var left = EvaluateExpression(binary.Left).NG<ObjectInstance>();
-        var right = EvaluateExpression(binary.Right).NG<ObjectInstance>();
+        var left = EvaluateExpression(binary.Left).NullGuard<ObjectInstance>();
+        var right = EvaluateExpression(binary.Right).NullGuard<ObjectInstance>();
         
         if (Equals(binary.Left.Type, BuiltInTypeSymbols.Int))
         {
             if (Equals(binary.Right.Type, BuiltInTypeSymbols.Int))
             {
-                var intRight = right.NG().LiteralValue.NG<int>();
-                var intLeft = left.NG().LiteralValue.NG<int>();
+                var intRight = right.NullGuard().LiteralValue.NG<int>();
+                var intLeft = left.NullGuard().LiteralValue.NG<int>();
                 return binary.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft + intRight),
@@ -403,8 +403,8 @@ class Evaluator
         {
             if (Equals(binary.Right.Type, BuiltInTypeSymbols.String))
             {
-                var stringRight = right.NG().LiteralValue.NG<string>();
-                var stringLeft = left.NG().LiteralValue.NG<string>();
+                var stringRight = right.NullGuard().LiteralValue.NullGuard<string>();
+                var stringLeft = left.NullGuard().LiteralValue.NullGuard<string>();
                 return binary.Op.Kind switch
                 {
                     BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft + stringRight),
@@ -420,15 +420,16 @@ class Evaluator
         {
             if (Equals(binary.Right.Type, BuiltInTypeSymbols.Bool))
             {
-                var boolRight = right.NG().LiteralValue.NG<bool>();
-                var boolLeft = left.NG().LiteralValue.NG<bool>();
+                var boolRight = right.NullGuard().LiteralValue.NG<bool>();
+                var boolLeft = left.NullGuard().LiteralValue.NG<bool>();
                 return binary.Op.Kind switch
                 {
+                    // TODO: this should return bool literal, not string
                     BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft == boolRight),
                     BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft != boolRight),
                     
-                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft & boolRight),
-                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft | boolRight),
+                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft & boolRight), //-V3093
+                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft | boolRight), //-V3093
                     BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft ^ boolRight),
                     
                     BoundBinaryOperatorKind.LogicalAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft && boolRight),
@@ -454,7 +455,7 @@ class Evaluator
 
     ObjectInstance EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
-        var operand = EvaluateExpression(unary.Operand).NG<ObjectInstance>();
+        var operand = EvaluateExpression(unary.Operand).NullGuard<ObjectInstance>();
         if (Equals(unary.Type, BuiltInTypeSymbols.Int))
         {
             var intOperand = operand.LiteralValue.NG<int>();
@@ -482,7 +483,7 @@ class Evaluator
 
     ObjectInstance? EvaluateAssignmentExpression(BoundAssignmentExpression a)
     {
-        var value = EvaluateExpression(a.Expression).NG<ObjectInstance>();
+        var value = EvaluateExpression(a.Expression).NullGuard<ObjectInstance>();
         return _lastValue = Assign(a.Variable, value);
     }
     
@@ -492,7 +493,7 @@ class Evaluator
     }
 
     ObjectInstance EvaluateLiteralExpression(BoundLiteralExpression l) =>
-        ObjectInstance.Literal(l.Type, l.Value.NG());
+        ObjectInstance.Literal(l.Type, l.Value.NullGuard());
 
     ObjectInstance? Assign(VariableSymbol variableSymbol, ObjectInstance? value)
     { 

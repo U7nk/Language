@@ -124,7 +124,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
         foreach (var (method, body) in sameName)
         {
             if (method.ReturnType == methodSymbol.ReturnType && method.Parameters.SequenceEqual(methodSymbol.Parameters))
-                return body.NG();
+                return body.NullGuard();
         }
         
         var baseMethod = BaseType?.LookupMethodBody(methodSymbol);

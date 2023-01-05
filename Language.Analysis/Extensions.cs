@@ -27,7 +27,10 @@ internal static class Extensions
     }
     public static Condition<T> OrEquals<T, TY>(this Condition<T> first, TY equalsTo)
     {
-        first.Value = first.Value || first.Obj.NG<TY>().Equals(equalsTo);
+        if (first.Obj is null)
+            throw new ArgumentNullException(nameof(first));
+        
+        first.Value = first.Value || first.Obj.As<TY>().Equals(equalsTo);
         return first;
     }
 
@@ -95,7 +98,7 @@ internal static class Extensions
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: System.Diagnostics.CodeAnalysis.NotNull]
-    public static T NG<T>(
+    public static T NullGuard<T>(
         [System.Diagnostics.CodeAnalysis.NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
         where T : class
@@ -120,7 +123,7 @@ internal static class Extensions
     [DebuggerHidden]
     [DebuggerStepThrough]
     [return: System.Diagnostics.CodeAnalysis.NotNull]
-    public static T NG<T>(
+    public static T NullGuard<T>(
         [System.Diagnostics.CodeAnalysis.NotNull]this T? obj,
         [CallerArgumentExpression("obj")] string objExpression = "")
         where T : struct
@@ -133,21 +136,7 @@ internal static class Extensions
         return obj.Value;
     }
     
-    [StackTraceHidden]
-    [DebuggerHidden]
-    [DebuggerStepThrough]
-    [return: System.Diagnostics.CodeAnalysis.NotNull]
-    public static T NG<T>(
-        [System.Diagnostics.CodeAnalysis.NotNull]this object? obj,
-        [CallerArgumentExpression("obj")] string objExpression = "")
-    {
-        if (obj is null)
-        {
-            throw new ArgumentNullException($"{objExpression} " + $"\ntypeof(T) : {typeof(T)}");
-        }
-
-        return (T)obj;
-    }
+    
 
     internal static bool Empty<T>(this IEnumerable<T> enumerable) 
         => !enumerable.Any();
@@ -161,15 +150,10 @@ internal static class Extensions
     }
         
     [DebuggerStepThrough]
+    [return: NotNullIfNotNull(nameof(toCast))]
     internal static T As<T>(this object? toCast)
     {
-
-#if DEBUG
-        if (toCast is not T)
-            throw new InvalidCastException();
-#endif
-        
-        return (T)toCast;
+        return ((T)toCast!);
     }
     
 

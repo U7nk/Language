@@ -23,11 +23,6 @@ public class HelloSourceGenerator : ISourceGenerator
 {
     public void Execute(GeneratorExecutionContext context)
     {
-        // if (!Debugger.IsAttached)
-        // {
-        //     Debugger.Launch();
-        // }
-        
         var syntaxTreeType = context.Compilation.GetTypeByMetadataName("Language.Analysis.CodeAnalysis.Syntax.SyntaxTree");
         var syntaxNodeType = context.Compilation.GetTypeByMetadataName("Language.Analysis.CodeAnalysis.Syntax.SyntaxNode");
         if (syntaxNodeType is not { })

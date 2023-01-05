@@ -13,8 +13,8 @@ public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
     {
         public bool Equals(Symbol? left, Symbol? right)
         {
-            left.NG("left symbol cannot be null");
-            right.NG("right symbol cannot be null");
+            left.NullGuard("left symbol cannot be null");
+            right.NullGuard("right symbol cannot be null");
             
             return left.DeclarationEquals(right);
         }
