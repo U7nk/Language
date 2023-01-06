@@ -153,6 +153,7 @@ internal static class Extensions
     [return: NotNullIfNotNull(nameof(toCast))]
     internal static T As<T>(this object? toCast)
     {
+        toCast.NullGuard();
         return ((T)toCast!);
     }
     

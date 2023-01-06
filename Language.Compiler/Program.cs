@@ -80,7 +80,7 @@ static class Program
             outputPath = sourcePaths[0].ChangeExtension(".exe");
 
         ConsoleEx.WriteLine(outputPath);
-        var emitDiagnostics = compilation.Emit(moduleName, references.ToArray(), outputPath);
+        var emitDiagnostics = compilation.Emit(moduleName ?? throw new Exception(), references.ToArray(), outputPath);
 
         if (emitDiagnostics.Any())
         {
