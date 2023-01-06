@@ -8,7 +8,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 public abstract class BoundNode
 {
-    public BoundNode(Option<SyntaxNode> syntax)
+    protected BoundNode(Option<SyntaxNode> syntax)
     {
         Syntax = syntax;
     }
@@ -48,7 +48,7 @@ public abstract class BoundNode
             {
                 
                 var value = ((IEnumerable<BoundNode>?)property.GetValue(this))
-                    .NG()
+                    .NullGuard()
                     .ToList();
 
                 foreach (var child in value)

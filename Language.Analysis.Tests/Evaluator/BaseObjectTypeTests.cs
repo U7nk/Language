@@ -34,9 +34,9 @@ public class BaseObjectTypeTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG();
+        result.NullGuard();
         result.Type.Name.Should().Be("MyClass");
-        result.Type.BaseType.NG().Name.Should().Be("object");
+        result.Type.BaseType.NullGuard().Name.Should().Be("object");
     }
     
     [Fact]
@@ -60,9 +60,9 @@ public class BaseObjectTypeTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG();
+        result.NullGuard();
         result.Type.Name.Should().Be("MyClass");
-        result.Type.BaseType.NG().Name.Should().Be("object");
+        result.Type.BaseType.NullGuard().Name.Should().Be("object");
     }
     
     [Fact]
@@ -87,7 +87,7 @@ public class BaseObjectTypeTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG();
+        result.NullGuard();
         result.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
         result.LiteralValue.Should().Be(true);
     }
@@ -113,7 +113,7 @@ public class BaseObjectTypeTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG();
+        result.NullGuard();
         result.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
         result.LiteralValue.Should().Be(false);
     }

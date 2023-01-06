@@ -22,10 +22,9 @@ static class Program
             {
                 result.UnionWith(Directory.EnumerateFiles(path, "*.ln", SearchOption.AllDirectories));
             }
-            else if (File.Exists(path))
+            else if (File.Exists(path) && Path.GetExtension(path) == ".ln")
             {
-                if (Path.GetExtension(path) == ".ln")
-                    result.Add(path);
+                result.Add(path);
             }
         }
     
@@ -81,7 +80,7 @@ static class Program
             outputPath = sourcePaths[0].ChangeExtension(".exe");
 
         ConsoleEx.WriteLine(outputPath);
-        var emitDiagnostics = compilation.Emit(moduleName, references.ToArray(), outputPath);
+        var emitDiagnostics = compilation.Emit(moduleName ?? throw new Exception(), references.ToArray(), outputPath);
 
         if (emitDiagnostics.Any())
         {

@@ -132,7 +132,7 @@ public sealed class Compilation
         if (type is null)
             return;
 
-        type.MethodTable[method].NG().WriteTo(writer);
+        type.MethodTable[method].NullGuard().WriteTo(writer);
     }
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, string[] refernces, string outputPaths)

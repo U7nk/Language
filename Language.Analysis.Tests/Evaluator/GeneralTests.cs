@@ -306,7 +306,7 @@ public class EvaluatorTests
                         var resultObject = Assert.IsType<ObjectInstance>(result);
                         var field = Assert.Single(resultObject.Fields);
                         field.Key.Should().Be("Fieldo");
-                        field.Value.NG().LiteralValue.Should().Be(10);
+                        field.Value.NullGuard().LiteralValue.Should().Be(10);
                     }, isScript: false);
     }
 
@@ -391,7 +391,7 @@ public class EvaluatorTests
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NG().Type.Should().Be(BuiltInTypeSymbols.Int);
+                        result.NullGuard().Type.Should().Be(BuiltInTypeSymbols.Int);
                         result.LiteralValue.Should().Be(10);
                     },
                     isScript: false);
@@ -427,8 +427,8 @@ public class EvaluatorTests
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NG().Type.Should().Be(BuiltInTypeSymbols.Int);
-                        result.NG().LiteralValue.Should().Be(15);
+                        result.NullGuard().Type.Should().Be(BuiltInTypeSymbols.Int);
+                        result.NullGuard().LiteralValue.Should().Be(15);
                     },
                     isScript: false);
     }
@@ -465,7 +465,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
     
@@ -581,7 +581,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
 
@@ -603,7 +603,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
 
@@ -624,7 +624,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
 
@@ -646,7 +646,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
 
@@ -676,7 +676,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { result.NG().LiteralValue.Should().Be(val); },
+            result => { result.NullGuard().LiteralValue.Should().Be(val); },
             isScript: false);
     }
     
@@ -789,7 +789,7 @@ public class EvaluatorTests
 
     static void AssertValue(string expression, object expectedValue, bool isScript)
     {
-        EvaluateValue(expression, isScript).NG().LiteralValue.Should().Be(expectedValue);
+        EvaluateValue(expression, isScript).NullGuard().LiteralValue.Should().Be(expectedValue);
     }
 
     static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript)

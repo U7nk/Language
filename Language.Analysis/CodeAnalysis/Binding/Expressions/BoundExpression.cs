@@ -7,7 +7,7 @@ public abstract class BoundExpression : BoundNode
 {
     internal abstract TypeSymbol Type { get; }
 
-    public BoundExpression(Option<SyntaxNode> syntax) : base(syntax)
+    protected BoundExpression(Option<SyntaxNode> syntax) : base(syntax)
     {
     }
 }

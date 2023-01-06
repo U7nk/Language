@@ -62,7 +62,7 @@ public class UnitTest1
         }
         else
         {
-            return evaluation.Result;
+            return evaluation.Result ?? throw new Exception();
         }
 
         return evaluation.Diagnostics;

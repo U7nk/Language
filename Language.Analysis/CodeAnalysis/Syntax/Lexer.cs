@@ -74,7 +74,6 @@ public class Lexer
             case '+':
                 Next();
                 _kind = SyntaxKind.PlusToken;
-                _kind = (SyntaxKind.PlusToken);
                 break;
             case '-':
                 Next();

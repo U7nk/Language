@@ -190,8 +190,7 @@ class Linker
     readonly Dictionary<LabelSymbol, int> _labelAddresses = new();
     readonly List<Instruction> _gotoAddresses = new();
     readonly List<Instruction> _methodCallAdresses = new();
-    int _counter = 0;
-    
+
     public Linker(List<Instruction> mainMethod, Dictionary<MethodSymbol, List<Instruction>> methodBodies)
     {
         _mainMethod = mainMethod;
@@ -927,9 +926,9 @@ class Emitter
 
             if (_methodOffsets.ContainsKey(statement.MethodSymbol))
             {
-                _writer.WriteByte(Bytecode.CALL);
-                _writer.WriteByte((byte)_methodOffsets[statement.MethodSymbol]);
-                _writer.WriteByte((byte)_methodParameters[statement.MethodSymbol]);
+                _writer?.WriteByte(Bytecode.CALL);
+                _writer?.WriteByte((byte)_methodOffsets[statement.MethodSymbol]);
+                _writer?.WriteByte((byte)_methodParameters[statement.MethodSymbol]);
             }
             else
             {

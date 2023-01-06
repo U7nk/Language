@@ -21,7 +21,7 @@ sealed class TypeMembersSignaturesBinder
 
     public ImmutableArray<Diagnostic> BindMembersSignatures(TypeSymbol currentType)
     {
-        _lookup.NG();
+        _lookup.NullGuard();
         var classDeclaration = currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
         var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);

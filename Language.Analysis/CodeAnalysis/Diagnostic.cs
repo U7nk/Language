@@ -29,7 +29,7 @@ public sealed class Diagnostic : IEquatable<Diagnostic>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj) || obj is Diagnostic other && Equals(other);
+        return ReferenceEquals(this, obj) || obj is Diagnostic other && Equals(other); //-V3130
     }
 
     public override int GetHashCode()

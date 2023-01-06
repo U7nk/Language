@@ -32,7 +32,7 @@ public class InheritanceTests
 
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -60,7 +60,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -95,7 +95,7 @@ public class InheritanceTests
 
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -127,7 +127,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -156,7 +156,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -186,7 +186,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(1);
+        result.NullGuard().LiteralValue.Should().Be(1);
     }
 
 
