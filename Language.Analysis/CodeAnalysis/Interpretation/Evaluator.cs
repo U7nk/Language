@@ -265,7 +265,7 @@ class Evaluator
         }
         else
         {
-            var type = methodCallExpression.MethodSymbol.ContainingType.NG();
+            var type = methodCallExpression.MethodSymbol.ContainingType.NullGuard();
             typeInstance = GetTypeStaticInstance(type);
         }
 

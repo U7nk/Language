@@ -227,7 +227,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(true);
+        result.NullGuard().LiteralValue.Should().Be(true);
     }
     
     [Fact]
@@ -267,7 +267,7 @@ public class InheritanceTests
         
         var (result, diagnostics) = TestTools.Evaluate(code);
         diagnostics.Should().BeEmpty();
-        result.NG().LiteralValue.Should().Be(true);
+        result.NullGuard().LiteralValue.Should().Be(true);
     }
     
 }
