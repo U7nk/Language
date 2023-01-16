@@ -435,4 +435,6 @@ public class DiagnosticBag : List<Diagnostic>
         var message = "Unexpected expression inside cast expression";
         Report(toCastExpression.Location, message, UNEXPECTED_EXPRESSION_INSIDE_CAST_EXPRESSION_CODE);
     }
+    
+    public const string INHERITANCE_DIAMOND_PROBLEM_CODE = "[0050:Error]";
 }

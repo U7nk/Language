@@ -3,16 +3,16 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Language.Analysis;
 
-public class Result<TSuccess, TFail> 
+public class Result<TOk, TFail> 
 {
-    readonly TSuccess? _success;
+    readonly TOk _success;
     readonly TFail? _fail;
 
-    public TSuccess? Success
+    public TOk Ok
     {
         get
         {
-            if (IsSuccess)
+            if (IsOk)
             {
                 return _success;
             }
@@ -21,11 +21,11 @@ public class Result<TSuccess, TFail>
         }
     }
 
-    public TFail? Fail
+    public TFail? Error
     {
         get
         {
-            if (IsFail)
+            if (IsError)
             {
                 return _fail;
             }
@@ -34,21 +34,21 @@ public class Result<TSuccess, TFail>
         }
     }
 
-    [MemberNotNullWhen(true, nameof(Success))]
-    public bool IsSuccess => _success is not null;
-    [MemberNotNullWhen(true, nameof(Fail))]
-    public bool IsFail => _fail is not null;
+    [MemberNotNullWhen(true, nameof(Ok))]
+    public bool IsOk => _success is not null;
+    [MemberNotNullWhen(true, nameof(Error))]
+    public bool IsError => _fail is not null;
 
     public Result(TFail fail)
     {
         _fail = fail;
     }
 
-    public Result(TSuccess success)
+    public Result(TOk success)
     {
         _success = success;
     }
     
-    public static implicit operator Result<TSuccess, TFail>(TSuccess success) => new(success);
-    public static implicit operator Result<TSuccess, TFail>(TFail fail) => new(fail);
+    public static implicit operator Result<TOk, TFail>(TOk success) => new(success);
+    public static implicit operator Result<TOk, TFail>(TFail fail) => new(fail);
 }

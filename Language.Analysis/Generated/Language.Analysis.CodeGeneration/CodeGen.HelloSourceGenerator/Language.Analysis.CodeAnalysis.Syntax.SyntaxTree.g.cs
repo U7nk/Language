@@ -93,9 +93,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,virtualKeyword,overrideKeyword,identifier,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax NewInheritanceClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken colonToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken baseTypeIdentifier)
+    public Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax NewInheritanceClause(Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> baseTypes)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax(this,colonToken,baseTypeIdentifier);
+       return new Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax(this,baseTypes);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax NewFieldDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken? staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax typeClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)

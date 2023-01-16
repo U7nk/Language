@@ -552,8 +552,10 @@ public class General
             DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE,
         };
         
-        var (result, diagnostics) = TestTools.Evaluate(text);
-        diagnostics.Should().ContainSingle(diagnosticsExpected.Single());
+        var result = TestTools.Evaluate(text);
+        (result is { IsOk: false }).Should().BeTrue();
+        
+        result.Error.Should().ContainSingle(diagnosticsExpected.Single());
     }
 
     [Fact]

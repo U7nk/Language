@@ -174,8 +174,27 @@ public class Parser
         if (colonToken is null)
             return null;
         
-        var baseTypeIdentifier = Match(SyntaxKind.IdentifierToken);
-        return new InheritanceClauseSyntax(_syntaxTree, colonToken, baseTypeIdentifier);
+        var baseTypes = ImmutableArray.CreateBuilder<SyntaxToken>();
+        var currentToken = Match(SyntaxKind.IdentifierToken);
+        baseTypes.Add(currentToken);
+        currentToken = TryMatch(SyntaxKind.CommaToken);
+        if (currentToken is { })
+        {
+            baseTypes.Add(currentToken);
+        }
+        
+        while (currentToken is { Kind: SyntaxKind.CommaToken })
+        {
+            var baseTypeIdentifier = Match(SyntaxKind.IdentifierToken);
+            baseTypes.Add(baseTypeIdentifier);
+            currentToken = TryMatch(SyntaxKind.ColonToken);
+            if (currentToken is { }) 
+                baseTypes.Add(currentToken);
+        }
+        
+        
+        var baseTypeList = new SeparatedSyntaxList<SyntaxToken>(baseTypes.ToImmutable());
+        return new InheritanceClauseSyntax(_syntaxTree, baseTypeList);
     }
 
     ImmutableArray<IClassMemberDeclarationSyntax> ParseClassMembers()
@@ -246,7 +265,7 @@ public class Parser
     SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
     {
         if (Current.Kind is SyntaxKind.CloseParenthesisToken)
-            return new SeparatedSyntaxList<ParameterSyntax>(ImmutableArray<SyntaxNode>.Empty);
+            return new SeparatedSyntaxList<ParameterSyntax>(ImmutableArray<ParameterSyntax>.Empty);
 
         var parameters = ImmutableArray.CreateBuilder<SyntaxNode>();
         while (true)

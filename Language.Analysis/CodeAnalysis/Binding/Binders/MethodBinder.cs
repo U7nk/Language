@@ -438,7 +438,7 @@ sealed class MethodBinder
         }
     }
 
-    private BoundExpression BindCastExpression(CastExpressionSyntax castExpressionSyntax)
+    BoundExpression BindCastExpression(CastExpressionSyntax castExpressionSyntax)
     {
         var castType = _lookup.LookupType(castExpressionSyntax.NameExpression.Identifier.Text);
         var expression = BindExpression(castExpressionSyntax.CastedExpression, castType, true);

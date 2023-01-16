@@ -81,14 +81,14 @@ sealed class ProgramBinder
             if (globalStatements.Any())
             {
                 var mainMethodGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainMethodGeneration.IsFail)
+                if (mainMethodGeneration.IsError)
                 {
-                    _diagnostics.MergeWith(mainMethodGeneration.Fail);
+                    _diagnostics.MergeWith(mainMethodGeneration.Error);
                 }
                 else
                 {
-                    scriptMainMethod = mainMethodGeneration.Success.Function;
-                    var mainFunctionType = mainMethodGeneration.Success.Type;
+                    scriptMainMethod = mainMethodGeneration.Ok.Function;
+                    var mainFunctionType = mainMethodGeneration.Ok.Type;
                     BindTopMethodsSignatures(mainFunctionType);
                 }
             }
@@ -108,14 +108,14 @@ sealed class ProgramBinder
             if (mainMethod is null && globalStatements.Any())
             {
                 var mainFunctionGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainFunctionGeneration.IsFail)
+                if (mainFunctionGeneration.IsError)
                 {
-                    _diagnostics.AddRange(mainFunctionGeneration.Fail);
+                    _diagnostics.AddRange(mainFunctionGeneration.Error);
                 }
                 else
                 {
-                    mainMethod = mainFunctionGeneration.Success.Function;
-                    var mainFunctionType = mainFunctionGeneration.Success.Type;
+                    mainMethod = mainFunctionGeneration.Ok.Function;
+                    var mainFunctionType = mainFunctionGeneration.Ok.Type;
                     BindTopMethodsSignatures(mainFunctionType);
                 }
             }

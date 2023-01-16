@@ -1,9 +1,16 @@
 using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.Evaluator;
 
 public class InheritanceTests 
 {
+    readonly ITestOutputHelper _output;
+
+    public InheritanceTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
     [Fact]
     public void MethodDeclaredInBaseClassCanBeCalledOnDerivedClass()
     {
@@ -30,9 +37,9 @@ public class InheritanceTests
             }
             """;
 
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -58,9 +65,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -93,9 +100,9 @@ public class InheritanceTests
             }
             """;
 
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -125,9 +132,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -154,9 +161,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -184,9 +191,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
 
 
@@ -225,9 +232,9 @@ public class InheritanceTests
                     }
                     """";
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(true);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
     }
     
     [Fact]
@@ -265,9 +272,54 @@ public class InheritanceTests
                     }
                     """";
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(true);
+        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
     }
     
+    [Fact]
+    public void ClassCanDeriveFromTwoDifferentClasses()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+
+                    class BaseTwo
+                    {
+                        function MethodTwo() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    
+                    class Inheritor : BaseOne, BaseTwo
+                    {
+                    
+                    }
+
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let inheritor = new Inheritor();
+                            var featureIsWorking = false;
+                            if inheritor.MethodOne() == "Base1" && inheritor.MethodTwo() == "Base2"
+                            {
+                                featureIsWorking = true;
+                            }
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
 }

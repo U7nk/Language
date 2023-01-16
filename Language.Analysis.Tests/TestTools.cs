@@ -9,16 +9,43 @@ using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests;
 
-public class TestTools
+public static class TestTools
 {
+    public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> IfErrorOutputDiagnosticsAndThrow(this Result<ObjectInstance?, ImmutableArray<Diagnostic>> result, ITestOutputHelper output)
+    {
+        if (result.IsOk)
+            return result;
+        
+        var diagnostics = result.Error;
+        var firstDiagnostic = diagnostics.First();
+        var sourceText = firstDiagnostic.TextLocation.Text.ToString();
+        var enumeratedLines = sourceText.Split(Environment.NewLine).ToList();
+        enumeratedLines = enumeratedLines.Select((x, i) => $"{i}: {x}").ToList();
+        
+        sourceText = string.Join(Environment.NewLine, enumeratedLines);
+        
+        output.WriteLine(sourceText);
+        
+        foreach (var diagnostic in diagnostics)
+        {
+            output.WriteLine(diagnostic.ToString());
+        }
 
-    public static (ObjectInstance? result, ImmutableArray<Diagnostic> diagnostics) Evaluate(string text)
+        throw new InvalidOperationException("Compilation failed");
+    }
+
+    public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> Evaluate(string text)
     {
         var syntaxTree = SyntaxTree.Parse(text);
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-        return (result.Result, diagnostics);
+        if (diagnostics.Length > 0)
+        {
+            return result.Diagnostics;
+        }
+        
+        return result.Result;
     }
     
     public static void AssertDiagnosticsWithMessages(string text, string[] expectedDiagnosticTexts)

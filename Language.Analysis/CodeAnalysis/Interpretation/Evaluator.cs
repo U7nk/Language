@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
-using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Interpretation;
 
@@ -278,16 +276,25 @@ class Evaluator
         
         _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
         BoundBlockStatement methodBody;
+        ObjectInstance? result;
         if (typeInstance is ObjectInstance objectInstance)
         {
-            Assign(new VariableSymbol(Option.None, "this", containingType: null, objectInstance.Type, isReadonly: true), 
-                   objectInstance);
+            var variableSymbol = new VariableSymbol(
+                declarationSyntax: Option.None,
+                name: "this",
+                containingType: null, 
+                objectInstance.Type,
+                isReadonly: true);
+            Assign(variableSymbol, objectInstance);
+            methodBody = objectInstance.Type.LookupMethodBody(methodCallExpression.MethodSymbol);
+            result = EvaluateStatement(methodBody);
         }
-        
-        methodBody =
-            methodCallExpression.MethodSymbol.ContainingType.LookupMethodBody(methodCallExpression.MethodSymbol);
-        
-        var result = EvaluateStatement(methodBody);
+        else
+        {
+            methodBody = methodCallExpression.MethodSymbol.ContainingType.LookupMethodBody(methodCallExpression.MethodSymbol);
+            result = EvaluateStatement(methodBody);
+        }
+
         _stacks.Pop();
         return result;
     }

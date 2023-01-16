@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Common;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
@@ -78,26 +79,16 @@ public class TypeSymbol : Symbol, ITypedSymbol
         MethodTable = methodTable;
         FieldTable = fieldTable;
         InheritanceClauseSyntax = inheritanceClauseSyntax;
+        BaseTypes = new SingleOccurenceList<TypeSymbol>();
     }
 
     public MethodTable MethodTable { get; }
     public FieldTable FieldTable { get; }
 
-    public TypeSymbol? BaseType
-    {
-        get => _baseType;
-        internal set
-        {
-            if (_baseType is null)
-                _baseType = value;
-            else
-                throw new InvalidOperationException("Base type is already set.");
-        }
-    }
+    public SingleOccurenceList<TypeSymbol> BaseTypes { get; }
 
     public InheritanceClauseSyntax? InheritanceClauseSyntax { get; }
     TypeSymbol ITypedSymbol.Type => this;
-    TypeSymbol? _baseType;
 
     public override SymbolKind Kind => SymbolKind.Type;
 
@@ -120,6 +111,15 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public BoundBlockStatement LookupMethodBody(MethodSymbol methodSymbol)
     {
+        var method = LookupMethodBodyNullIfNotFound(methodSymbol);
+        if (method is null)
+            throw new InvalidOperationException($"'{methodSymbol.Name}' method body not found.");
+
+        return method;
+    }
+
+    BoundBlockStatement? LookupMethodBodyNullIfNotFound(MethodSymbol methodSymbol)
+    {
         var sameName = MethodTable.Where(x => x.Key.Name == methodSymbol.Name).ToList();
         foreach (var (method, body) in sameName)
         {
@@ -127,20 +127,20 @@ public class TypeSymbol : Symbol, ITypedSymbol
                 return body.NullGuard();
         }
         
-        var baseMethod = BaseType?.LookupMethodBody(methodSymbol);
-        if (baseMethod is { })
-            return baseMethod;
-
-        throw new InvalidOperationException($"'{methodSymbol.Name}' method body not found.");
+        var baseMethod = BaseTypes.Select(x => x.LookupMethodBodyNullIfNotFound(methodSymbol))
+            .Exclude(x=> x is null)
+            .SingleOrDefault();
+        
+        return baseMethod;
     }
     public List<MethodSymbol> LookupMethod(string name)
     {
         var result = new List<MethodSymbol>();
         var methods = MethodTable.Symbols.Where(x => x.Name == name).ToList();
         result.AddRange(methods);
-        
-        var baseTypesMethods = BaseType?.LookupMethod(name);
-        if (baseTypesMethods is { })
+
+        var baseTypesMethods = BaseTypes.Select(x => x.LookupMethod(name)).SelectMany(x => x).ToList();
+        if (baseTypesMethods.Any())
             result.AddRange(baseTypesMethods);
 
         return result;
@@ -165,7 +165,10 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public FieldSymbol? LookupField(string fieldName)
     {
-        var baseTypeField = BaseType?.LookupField(fieldName);
+        var baseTypeField = BaseTypes.Select(x => x.LookupField(fieldName))
+            .Exclude(x => x is null)
+            .SingleOrDefault();
+        
         if (baseTypeField is not null)
             return baseTypeField;
         
@@ -178,12 +181,15 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public bool IsSubClassOf(TypeSymbol other)
     {
-        if (BaseType is null)
-            return false;
+        foreach (var baseType in BaseTypes)
+        {
+            if (baseType == other)
+                return true;
+        }
 
-        if (BaseType == other)
+        if (BaseTypes.Any(x => x.IsSubClassOf(other)))
             return true;
-        
-        return BaseType.IsSubClassOf(other);
+
+        return false;
     }
 }

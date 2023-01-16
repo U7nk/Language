@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
 using Xunit.Abstractions;
 
@@ -149,6 +150,102 @@ public class InheritanceTests
         };
         
         TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void ClassDiamondProblemWithMethodsReportsAmbiguity()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+                    class BaseTwo
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    class Inheritor : [BaseOne], [BaseTwo]
+                    {
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                        }
+                    }
+                    """";
+        TestTools.AssertDiagnostics(code, false, new []
+        {
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
+        }, Output);
+    }
+    
+    [Fact]
+    public void ClassDiamondProblemWithMethodAndFieldReportsAmbiguity()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+                    class BaseTwo
+                    {
+                        MethodOne : string;
+                    }
+                    class Inheritor : [BaseOne], [BaseTwo]
+                    {
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                        }
+                    }
+                    """";
+        TestTools.AssertDiagnostics(code, false, new []
+        {
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
+        }, Output);
+    }
+    
+    [Fact]
+    public void ClassDiamondProblemWithFieldsReportsAmbiguity()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        FieldOne : string;
+                    }
+                    class BaseTwo
+                    {
+                        FieldOne : string;
+                    }
+                    class Inheritor : [BaseOne], [BaseTwo]
+                    {
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                        }
+                    }
+                    """";
+        TestTools.AssertDiagnostics(code, false, new []
+        {
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
+        }, Output);
     }
 
 }
