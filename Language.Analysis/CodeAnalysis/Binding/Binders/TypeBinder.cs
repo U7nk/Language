@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
@@ -26,13 +27,7 @@ sealed class TypeBinder
     public void BindClassBody()
     {
         var typeScope = new BoundScope(_scope);
-        
-        var baseType = BindInheritanceClause(_lookup.CurrentType.InheritanceClauseSyntax);
-        baseType ??= BuiltInTypeSymbols.Object;
-        
-        CheckTypeDontInheritFromItself(_lookup.CurrentType, baseType);
-        _lookup.CurrentType.BaseType = baseType;
-        
+
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
             var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
@@ -57,42 +52,5 @@ sealed class TypeBinder
 
             _lookup.CurrentType.MethodTable.SetMethodBody(methodSymbol, loweredBody);
         }
-    }
-
-    void CheckTypeDontInheritFromItself(TypeSymbol currentType, TypeSymbol? baseType)
-    {
-        if (baseType is null)
-            return;
-        
-        var currentBase = baseType;
-        while (currentBase != null)
-        {
-            if (currentBase == currentType)
-            {
-                var existingDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(currentType);
-                foreach (var declarationSyntax in existingDeclarationSyntax)
-                {
-                    _diagnostics.ReportClassCannotInheritFromSelf(declarationSyntax.Identifier);
-                }
-                return;
-            }
-            currentBase = currentBase.BaseType;
-        }
-
-    }
-
-    TypeSymbol? BindInheritanceClause(InheritanceClauseSyntax? syntax)
-    {
-        if (syntax is null)
-            return null;
-        
-        var baseTypeName = syntax.BaseTypeIdentifier.Text;
-        if (!_scope.TryLookupType(baseTypeName, out var baseTypeSymbol))
-        {
-            _diagnostics.ReportUndefinedType(syntax.BaseTypeIdentifier.Location, baseTypeName);
-            return null;
-        }
-
-        return baseTypeSymbol;
     }
 }

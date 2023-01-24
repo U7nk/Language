@@ -1,9 +1,16 @@
 using FluentAssertions;
+using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.Evaluator;
 
 public class InheritanceTests 
 {
+    readonly ITestOutputHelper _output;
+
+    public InheritanceTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
     [Fact]
     public void MethodDeclaredInBaseClassCanBeCalledOnDerivedClass()
     {
@@ -30,9 +37,9 @@ public class InheritanceTests
             }
             """;
 
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -58,9 +65,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -93,9 +100,9 @@ public class InheritanceTests
             }
             """;
 
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -125,9 +132,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -154,9 +161,9 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
     }
     
     [Fact]
@@ -184,8 +191,294 @@ public class InheritanceTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard().LiteralValue.Should().Be(1);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(1);
+    }
+
+
+    [Fact]
+    public void DerivedClassOverridingVirtualMethodReturnsDifferentResults()
+    {
+        var code =  $$""""
+                    class Base
+                    {
+                        function virtual MyMethod() : string
+                        {
+                            return "MyMethod";
+                        }
+                    }
+                    
+                    class Inheritor : Base
+                    {
+                        function override MyMethod() : string
+                        {
+                            return "OurMethod!";
+                        }
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let baseInstance = new Base();
+                            let inheritor = new Inheritor();
+                            var featureIsWorking = false;
+                            if baseInstance.MyMethod() != inheritor.MyMethod() 
+                            {
+                                featureIsWorking = true;
+                            }
+                            featureIsWorking = featureIsWorking;
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void DerivedClassOverridingVirtualMethodReturnsDifferentResultsEvenIfCastedToBase()
+    {
+        var code =  $$""""
+                    class Base
+                    {
+                        function virtual MyMethod() : string
+                        {
+                            return "MyMethod";
+                        }
+                    }
+                    
+                    class Inheritor : Base
+                    {
+                        function override MyMethod() : string
+                        {
+                            return "OurMethod!";
+                        }
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let baseInstance = new Base();
+                            let inheritor = (Base)new Inheritor();
+                            var featureIsWorking = false;
+                            if baseInstance.MyMethod() != inheritor.MyMethod() 
+                            {
+                                featureIsWorking = true;
+                            }
+                            featureIsWorking = featureIsWorking;
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void ClassCanDeriveFromTwoDifferentClasses()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+
+                    class BaseTwo
+                    {
+                        function MethodTwo() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    
+                    class Inheritor : BaseOne, BaseTwo
+                    {
+                    
+                    }
+
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let inheritor = new Inheritor();
+                            var featureIsWorking = false;
+                            if inheritor.MethodOne() == "Base1" && inheritor.MethodTwo() == "Base2"
+                            {
+                                featureIsWorking = true;
+                            }
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
+
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void ClassCanOverrideVirtualMethodsWithMultipleInheritance()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function virtual MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+
+                    class BaseTwo
+                    {
+                        function virtual MethodTwo() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    
+                    class Inheritor : BaseOne, BaseTwo
+                    {
+                        function override MethodOne() : string
+                        {
+                            return "Inheritor1";
+                        }
+
+                        function override MethodTwo() : string
+                        {
+                            return "Inheritor2";
+                        }
+                    }
+
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let inheritor = new Inheritor();
+                            var featureIsWorking = false;
+                            if inheritor.MethodOne() == "Inheritor1" && inheritor.MethodTwo() == "Inheritor2"
+                            {
+                                featureIsWorking = true;
+                            }
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
+
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void TypeCanBeCastedToAnyOfBaseTypesWhenMultipleInheritance()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+
+                    class BaseTwo
+                    {
+                        function MethodTwo() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    
+                    class Inheritor : BaseOne, BaseTwo
+                    {
+                    }
+
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let inheritor = new Inheritor();
+                            let inheritorAsBaseOne = (BaseOne)inheritor;
+                            let inheritorAsBaseTwo = (BaseTwo)inheritor;
+
+                            var featureIsWorking = false;
+                            if inheritorAsBaseOne.MethodOne() == "Base1" && inheritorAsBaseTwo.MethodTwo() == "Base2"
+                            {
+                                featureIsWorking = true;
+                            }
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
+
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
+    }
+    
+    [Fact]
+    public void TypeCanBeCastedToAnyOfBaseTypesAndOverrideMethodsReturningOverridingValueWhenMultipleInheritance()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        function virtual MethodOne() : string
+                        {
+                            return "Base1";
+                        }
+                    }
+
+                    class BaseTwo
+                    {
+                        function virtual MethodTwo() : string
+                        {
+                            return "Base2";
+                        }
+                    }
+                    
+                    class Inheritor : BaseOne, BaseTwo
+                    {
+                        function override MethodOne() : string
+                        {
+                            return "Inheritor1";
+                        }
+
+                        function override MethodTwo() : string
+                        {
+                            return "Inheritor2";
+                        }
+                    }
+
+                    class Program
+                    {
+                        static function main()
+                        {
+                            let inheritor = new Inheritor();
+                            let inheritorAsBaseOne = (BaseOne)inheritor;
+                            let inheritorAsBaseTwo = (BaseTwo)inheritor;
+
+                            var featureIsWorking = false;
+                            if inheritorAsBaseOne.MethodOne() == "Inheritor1" && inheritorAsBaseTwo.MethodTwo() == "Inheritor2"
+                            {
+                                featureIsWorking = true;
+                            }
+                        }
+                    }
+                    """";
+        
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
+
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        result.Ok.LiteralValue.Should().Be(true);
     }
 }

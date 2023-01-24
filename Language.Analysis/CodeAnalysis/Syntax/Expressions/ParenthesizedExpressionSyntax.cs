@@ -15,11 +15,7 @@ public sealed class ParenthesizedExpressionSyntax : ExpressionSyntax
         Expression = expression;
         CloseParenthesisToken = closeParenthesisToken;
     }
-
-    public SyntaxToken CloseParenthesisToken { get; }
-
-    public ExpressionSyntax Expression { get; }
-
     public SyntaxToken OpenParenthesisToken { get; }
-    
+    public ExpressionSyntax Expression { get; }
+    public SyntaxToken CloseParenthesisToken { get; }
 }

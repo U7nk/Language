@@ -8,7 +8,7 @@ internal class BoundLiteralExpression : BoundExpression
     internal override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
     internal override TypeSymbol Type { get; }
     internal object? Value { get; }
-    internal BoundLiteralExpression(SyntaxNode? syntax, object? value, TypeSymbol type) : base(syntax)
+    internal BoundLiteralExpression(Option<SyntaxNode> syntax, object? value, TypeSymbol type) : base(syntax)
     {
         Value = value;
         Type = type;

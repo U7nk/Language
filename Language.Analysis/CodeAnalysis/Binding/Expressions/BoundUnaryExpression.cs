@@ -11,7 +11,7 @@ internal class BoundUnaryExpression : BoundExpression
     internal override TypeSymbol Type => Operand.Type;
     internal override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
 
-    public BoundUnaryExpression(SyntaxNode? syntax, BoundUnaryOperator op, BoundExpression operand) : base(syntax)
+    public BoundUnaryExpression(Option<SyntaxNode> syntax, BoundUnaryOperator op, BoundExpression operand) : base(syntax)
     {
         Op = op;
         Operand = operand;

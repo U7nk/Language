@@ -8,7 +8,7 @@ internal class BoundIfStatement : BoundStatement
     public BoundStatement ThenStatement { get; }
     public BoundStatement? ElseStatement { get; }
 
-    public BoundIfStatement(SyntaxNode? syntax, BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement) : base(syntax)
+    public BoundIfStatement(Option<SyntaxNode> syntax, BoundExpression condition, BoundStatement thenStatement, BoundStatement? elseStatement) : base(syntax)
     {
         Condition = condition;
         ThenStatement = thenStatement;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Language.Analysis;
 
@@ -20,7 +21,7 @@ public static class Option
         return enumerator.MoveNext() ? Some(value) : None;
     }
 }
-public readonly struct Option<T>
+public readonly struct Option<T> : IEquatable<Option<T>>
 {
     static Option<T> None { get; } = new(default!, hasValue: false);
 
@@ -32,6 +33,17 @@ public readonly struct Option<T>
 
     bool HasValue { get; }
 
+    public T SomeOr(T defaultValue)
+    {
+        return Value ?? defaultValue;
+    }
+    
+    public T SomeOr(Func<T> defaultValue)
+    {
+        return Value ?? defaultValue();
+    }
+    
+    [StackTraceHidden]
     public T Unwrap()
     {
         if (Value is null)
@@ -44,7 +56,8 @@ public readonly struct Option<T>
     {
         return Value;
     }
-
+    
+    [StackTraceHidden]
     public TAs UnwrapAs<TAs>() where TAs : T 
     {
         return Value is TAs value 
@@ -66,4 +79,18 @@ public readonly struct Option<T>
     }
     
     public static implicit operator Option<T>(Option<Unit> value) => None;
+
+    public bool Equals(Option<T> other) 
+        => HasValue == other.HasValue 
+           && EqualityComparer<T?>.Default.Equals(Value, other.Value);
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Option<T> other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(HasValue, Value);
+    }
 }

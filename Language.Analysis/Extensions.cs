@@ -166,14 +166,15 @@ internal static class Extensions
     }
     
     [DebuggerStepThrough]
-    internal static IEnumerable<T> AddRangeTo<T>(this ICollection<T> enumerable, ICollection<T> collection)
+    internal static IEnumerable<T> AddRangeTo<T>(this IEnumerable<T> enumerable, ICollection<T> collection)
     {
-        foreach (var obj in enumerable)
+        var list = enumerable.ToList();
+        foreach (var obj in list)
         {
             collection.Add(obj);
         }
         
-        return enumerable;
+        return list;
     }
     
     [DebuggerStepThrough]
@@ -248,7 +249,7 @@ internal static class Extensions
     
     
     [ContractAnnotation("condition:false => halt")]
-    public static bool ThrowIfFalse(
+    public static bool EnsureTrue(
         [DoesNotReturnIf(false)] this bool condition, 
         string? message = "",
         [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")
@@ -268,7 +269,7 @@ internal static class Extensions
     
     [DebuggerStepThrough]
     [StackTraceHidden]
-    public static bool ThrowIfTrue(
+    public static bool EnsureFalse(
         [DoesNotReturnIf(true)] this bool condition, 
         string message = "",
         [CallerArgumentExpression(nameof(condition))] string conditionExpression = "")

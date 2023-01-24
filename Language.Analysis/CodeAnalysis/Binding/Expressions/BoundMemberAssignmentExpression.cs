@@ -8,7 +8,7 @@ class BoundMemberAssignmentExpression : BoundExpression
     public BoundExpression MemberAccess { get; }
     public BoundExpression RightValue { get; }
 
-    public BoundMemberAssignmentExpression(SyntaxNode? syntax, BoundExpression memberAccess, BoundExpression rightValue) : base(syntax)
+    public BoundMemberAssignmentExpression(Option<SyntaxNode> syntax, BoundExpression memberAccess, BoundExpression rightValue) : base(syntax)
     {
         MemberAccess = memberAccess;
         RightValue = rightValue;

@@ -409,7 +409,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
         TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
@@ -434,7 +434,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC,
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
         TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
@@ -552,8 +552,10 @@ public class General
             DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE,
         };
         
-        var (result, diagnostics) = TestTools.Evaluate(text);
-        diagnostics.Should().ContainSingle(diagnosticsExpected.Single());
+        var result = TestTools.Evaluate(text);
+        (result is { IsOk: false }).Should().BeTrue();
+        
+        result.Error.Should().ContainSingle(diagnosticsExpected.Single());
     }
 
     [Fact]

@@ -7,7 +7,7 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-sealed class MethodSignatureBinder
+ class MethodSignatureBinder
 {
     readonly MethodSignatureBinderLookup _lookup;
     readonly BoundScope _scope;
@@ -57,55 +57,35 @@ sealed class MethodSignatureBinder
         var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? BuiltInTypeSymbols.Void;
 
         var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
+
+        var isVirtual = method.VirtualKeyword.IsSome;
+        var isOverriding = method.OverrideKeyword.IsSome;
+        
         var currentMethodSymbol = new MethodSymbol(
             method,
             _lookup.ContainingType,
             isStatic,
+            isVirtual,
+            isOverriding,
             method.Identifier.Text,
             parameters.ToImmutable(),
             returnType);
 
         _lookup.AddDeclaration(currentMethodSymbol, method);
-        if (!_lookup.ContainingType.TryDeclareMethod(currentMethodSymbol))
-        {
-            ReportDeclarationDiagnostics(currentMethodSymbol, diagnostics);
-        }
+        _lookup.ContainingType.TryDeclareMethod(currentMethodSymbol, diagnostics, _lookup);
+
+        ReportModifiersMisuseIfAny(currentMethodSymbol, diagnostics);
 
         return diagnostics.ToImmutableArray();
     }
 
-    void ReportDeclarationDiagnostics(MethodSymbol currentMethodSymbol, DiagnosticBag diagnostics)
+    void ReportModifiersMisuseIfAny(MethodSymbol methodSymbol, DiagnosticBag diagnosticBag)
     {
-        if (currentMethodSymbol.Name == _lookup.ContainingType.Name)
+        if (methodSymbol is { IsVirtual: true, IsOverriding: true })
         {
-            diagnostics.ReportClassMemberCannotHaveNameOfClass(
-                currentMethodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier);
-        }
-
-        var existingMethodDeclarations = _lookup.LookupDeclarations<MethodDeclarationSyntax>(currentMethodSymbol);
-        if (existingMethodDeclarations.Length > 1)
-        {
-            foreach (var existingMethodDeclaration in existingMethodDeclarations)
-            {
-                diagnostics.ReportMethodAlreadyDeclared(existingMethodDeclaration.Identifier);
-            }
-        }
-
-
-        var sameNameFields = _lookup.ContainingType.FieldTable.Symbols
-            .Where(f => f.Name == currentMethodSymbol.Name)
-            .ToList();
-        if (sameNameFields.Count > 0)
-        {
-            diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(
-                currentMethodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier);
-            foreach (var sameNameField in sameNameFields)
-            {
-                var fieldDeclarations = _lookup.LookupDeclarations<FieldDeclarationSyntax>(sameNameField)
-                    .Add(sameNameField.DeclarationSyntax.UnwrapAs<FieldDeclarationSyntax>());
-                foreach (var fieldDeclaration in fieldDeclarations)
-                    diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
-            }
+            var syntax = methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>(); 
+            diagnosticBag.ReportCannotUseVirtualWithOverride(
+                syntax.VirtualKeyword.Unwrap(), syntax.OverrideKeyword.Unwrap());
         }
     }
 }

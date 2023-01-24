@@ -9,16 +9,98 @@ using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests;
 
-public class TestTools
+public static class TestTools
 {
+    /// <summary>
+    /// Doesn't work when diagnostics are from different SourceText's
+    /// </summary>
+    /// <param name="diagnostics"></param>
+    /// <returns></returns>
+    static string GetEnumeratedTextWithDiagnostics(ImmutableArray<Diagnostic> diagnostics)
+    {
+        var firstDiagnostic = diagnostics.FirstOrDefault().NullGuard();
+        var sourceText = firstDiagnostic.TextLocation.Text.ToString();
+        var lines = sourceText.Split(Environment.NewLine)
+            .Select(x=> new {IsError = false, Text = x})
+            .ToList();
 
-    public static (ObjectInstance? result, ImmutableArray<Diagnostic> diagnostics) Evaluate(string text)
+        var inserts = new List<(int Index, string Text)>();
+        foreach (var diagnostic in diagnostics)
+        {
+            inserts.Add((diagnostic.TextLocation.StartLine + 1, $"Error: {diagnostic.Message}"));
+            var startLine  = lines[diagnostic.TextLocation.StartLine];
+            var endLine = lines[diagnostic.TextLocation.EndLine];
+            if (startLine == endLine)
+            {
+                var line = lines[diagnostic.TextLocation.StartLine];
+                var start = diagnostic.TextLocation.StartCharacter;
+                var end = diagnostic.TextLocation.EndCharacter;
+                var newLine = line.Text.Insert(start, "[");
+                newLine = newLine.Insert(end + 1, "]");
+                lines[diagnostic.TextLocation.StartLine] = new {IsError = false, Text = newLine};
+            }
+            else
+            {
+                startLine = new
+                {
+                    IsError = false,
+                    Text = startLine.Text[..diagnostic.TextLocation.StartCharacter] + "[" +
+                           startLine.Text[diagnostic.TextLocation.StartCharacter..]
+                };
+                endLine = new 
+                {
+                    IsError = false,
+                    Text = endLine.Text[..diagnostic.TextLocation.EndCharacter] + "]" + endLine.Text[diagnostic.TextLocation.EndCharacter..]
+                };
+                lines[diagnostic.TextLocation.StartLine] = startLine;
+                lines[diagnostic.TextLocation.EndLine] = endLine;
+            }
+        }
+
+        var insertedLines = 0;
+        foreach (var insert in inserts)
+        {
+            lines.Insert(insert.Index + insertedLines, new {IsError = true, Text = insert.Text});
+            insertedLines++;
+        }
+        // enumerate lines
+        var lineCounter = 0;
+        var enumeratedLines = lines.Select(line =>
+        {
+            if (line.IsError)
+                return line.Text;
+            
+            var newText = $"{lineCounter}: {line.Text}";
+            lineCounter++;
+            return newText;
+        }).ToList();
+        
+        sourceText = string.Join(Environment.NewLine, enumeratedLines);
+        return sourceText;
+    }
+    public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> AssertNoDiagnostics(this Result<ObjectInstance?, ImmutableArray<Diagnostic>> result, ITestOutputHelper output)
+    {
+        if (result.IsOk)
+            return result;
+        
+        var diagnostics = result.Error;
+        var sourceText = GetEnumeratedTextWithDiagnostics(diagnostics);
+        output.WriteLine(sourceText);
+        throw new InvalidOperationException("Compilation failed");
+    }
+
+    public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> Evaluate(string text)
     {
         var syntaxTree = SyntaxTree.Parse(text);
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-        return (result.Result, diagnostics);
+        if (diagnostics.Length > 0)
+        {
+            return result.Diagnostics;
+        }
+        
+        return result.Result;
     }
     
     public static void AssertDiagnosticsWithMessages(string text, string[] expectedDiagnosticTexts)
@@ -43,7 +125,7 @@ public class TestTools
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        foreach (var i in 0..expectedDiagnosticTexts.Length)
+        foreach (var i in ..expectedDiagnosticTexts.Length)
         {
             var expectedMessage = expectedDiagnosticTexts[i];
             var actualMessage = diagnostics[i].Message;
@@ -61,7 +143,7 @@ public class TestTools
         var annotatedText = AnnotatedText.Parse(text);
         var syntaxTree = SyntaxTree.Parse(annotatedText.RawText);
         var compilation = isScript 
-            ? Compilation.CreateScript(null, syntaxTree) 
+            ? Compilation.CreateScript(null, syntaxTree)
             : Compilation.Create(syntaxTree);
         
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
@@ -82,10 +164,16 @@ public class TestTools
         
         if (diagnostics.Length != diagnosticsCodes.Length)
         {
-            Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
-                        $"Expected: \n{string.Join(",\n", expectedDiagnosticsTexts)}\n\n" +
-                        $"======".Replace("=","=================") + "\n\n" +
-                        $"Actual: \n{string.Join(",\n", actualDiagnosticsTexts)}");
+            if (diagnostics.Any())
+            {
+                var actualText = GetEnumeratedTextWithDiagnostics(diagnostics);
+                Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
+                            $"Expected: \n{string.Join(",\n", expectedDiagnosticsTexts)}\n\n" +
+                            $"{new string('=', 69)}" + $"{Environment.NewLine}{Environment.NewLine}" +
+                            $"Actual: {Environment.NewLine}" +
+                            $"{actualText}");
+            }
+
             diagnostics.Length.Should().Be(diagnosticsCodes.Length);
         }
         

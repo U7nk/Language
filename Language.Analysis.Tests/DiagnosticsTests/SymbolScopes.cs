@@ -110,7 +110,7 @@ public class SymbolScopes
                 Start: 71,
                 End: 72
             }
-        }).ThrowIfFalse();
+        }).EnsureTrue();
 
         diagnostics.Any(x => x is
         {
@@ -120,7 +120,7 @@ public class SymbolScopes
                 Start: 80,
                 End: 81
             }
-        }).ThrowIfFalse();
+        }).EnsureTrue();
         
         diagnostics.Any(x => x is {
             Code: DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
@@ -128,7 +128,7 @@ public class SymbolScopes
                 Start: 71,
                 End: 72
             }
-        }).ThrowIfFalse();
+        }).EnsureTrue();
 
         diagnostics.Any(x => x is
         {
@@ -138,7 +138,7 @@ public class SymbolScopes
                 Start: 104,
                 End: 105
             }
-        }).ThrowIfFalse();
+        }).EnsureTrue();
 
         diagnostics.Any(x => x is
         {
@@ -148,7 +148,7 @@ public class SymbolScopes
                 Start: 80,
                 End: 81
             }
-        }).ThrowIfFalse();
+        }).EnsureTrue();
         diagnostics.Length.Should().Be(5);
     }
     
@@ -193,9 +193,7 @@ public class SymbolScopes
             TestTools.StatementsInContext(text, contextType), false, 
             diagnostics, Output);
     }
-    
-    
-    
+
     [Fact]
     public void MethodCannotHaveSameNameAsType()
     {
@@ -266,6 +264,104 @@ public class SymbolScopes
             DiagnosticBag.METHOD_ALREADY_DECLARED_CODE
         };
 
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+    }
+
+    [Fact]
+    public void MethodCannotHaveNameOfVirtualMethodFromBaseClass()
+    {
+        var text =
+            """
+            class Base {
+                function virtual FunctionName() { }
+            }
+            class Inherited : Base {
+                function [FunctionName]() { }
+            } 
+            class Program {
+                static function main(){
+                }
+            } 
+            """ ;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE,
+        };
+
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void OverrideMethodDoesntReturnDiagnosticWhenHaveNameOfVirtualMethodFromBaseClass()
+    {
+        var text =
+            """
+            class Base {
+                function virtual FunctionName() { }
+            }
+            class Inherited : Base {
+                function override [FunctionName]() { }
+                function virtual [[FunctionName]]() { }
+            } 
+            class Program {
+                static function main(){
+                }
+            } 
+            """ ;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.METHOD_ALREADY_DECLARED_CODE,
+            DiagnosticBag.METHOD_ALREADY_DECLARED_CODE,
+            DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE,
+        };
+
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void OverrideMethodCanHaveNameOfVirtualMethodFromBaseClass()
+    {
+        var text =
+            """
+            class Base {
+                function virtual FunctionName() { }
+            }
+            class Inherited : Base {
+                function override FunctionName() { }
+            } 
+            class Program {
+                static function main(){
+                }
+            } 
+            """;
+
+        TestTools.Evaluate(text).AssertNoDiagnostics(Output);
+    }
+    
+    [Fact]
+    public void MethodCannotHaveSameNameOfMethodInBaseClass()
+    {
+        var text =
+            """
+            class BaseClass {
+                function FunctionName() { }
+            }
+
+            class DerivedClass : BaseClass {
+                function [FunctionName]() { }
+            }
+
+            class Program {
+                static function main() { }
+            } 
+            """;
+
+        var diagnostics = new[]
+        {
+            DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE
+        };
         TestTools.AssertDiagnostics(text, false, diagnostics, Output);
     }
     

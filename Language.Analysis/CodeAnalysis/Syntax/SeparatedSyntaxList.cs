@@ -19,6 +19,11 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
         SeparatorsAndNodes.MinBy(x=> x.Span.Start)?.Span.Start ?? throw new InvalidOperationException(),
         SeparatorsAndNodes.MaxBy(x=> x.Span.End)?.Span.End ?? throw new InvalidOperationException());
 
+    public SeparatedSyntaxList(ImmutableArray<T> separatorsAndNodes)
+    {
+        SeparatorsAndNodes = separatorsAndNodes.CastArray<SyntaxNode>();
+    }
+    
     public SeparatedSyntaxList(ImmutableArray<SyntaxNode> separatorsAndNodes)
     {
         SeparatorsAndNodes = separatorsAndNodes;

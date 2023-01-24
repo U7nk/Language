@@ -8,7 +8,7 @@ internal sealed class BoundGlobalScope
 {
     public BoundGlobalScope(BoundGlobalScope? previous,
         ImmutableArray<Diagnostic> diagnostics,
-        MethodSymbol? mainMethod,
+        Option<MethodSymbol> mainMethod,
         MethodSymbol? scriptMainMethod,
         ImmutableArray<TypeSymbol> types,
         ImmutableArray<VariableSymbol> variables,
@@ -27,7 +27,7 @@ internal sealed class BoundGlobalScope
     public DeclarationsBag DeclarationsBag { get; }
     public ImmutableArray<VariableSymbol> Variables { get; }
     public ImmutableArray<Diagnostic> Diagnostics { get; }
-    public MethodSymbol? MainMethod { get; }
+    public Option<MethodSymbol> MainMethod { get; }
     public MethodSymbol? ScriptMainMethod { get; }
     public ImmutableArray<TypeSymbol> Types { get; }
 }

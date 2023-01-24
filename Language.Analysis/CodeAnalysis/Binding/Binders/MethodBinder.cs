@@ -212,7 +212,7 @@ sealed class MethodBinder
         }
 
 
-        return new BoundReturnStatement(expression?.Syntax, expression);
+        return new BoundReturnStatement(expression.NullGuard().Syntax, expression);
     }
 
     BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
@@ -318,7 +318,7 @@ sealed class MethodBinder
         {
 
             _scope.TryLookupVariable(variable.Name, out var existingSymbol)
-                .ThrowIfFalse();
+                .EnsureTrue();
             var existingVariables = _lookup.CurrentMethod.Parameters.Append(existingSymbol);
 
             foreach (var existingVariable in existingVariables)
@@ -412,7 +412,9 @@ sealed class MethodBinder
             case SyntaxKind.BinaryOperatorExpression:
                 return BindBinaryExpression((BinaryExpressionSyntax)syntax);
             case SyntaxKind.ParenthesizedExpression:
-                return BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
+                return BindParenthesizedExpression(syntax.As<ParenthesizedExpressionSyntax>());
+            case SyntaxKind.CastExpression:
+                return BindCastExpression(syntax.As<CastExpressionSyntax>());
             case SyntaxKind.NameExpression:
                 return BindNameExpression((NameExpressionSyntax)syntax,
                                           type: _lookup.CurrentType,
@@ -434,6 +436,14 @@ sealed class MethodBinder
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
+    }
+
+    BoundExpression BindCastExpression(CastExpressionSyntax castExpressionSyntax)
+    {
+        var castType = _lookup.LookupType(castExpressionSyntax.NameExpression.Identifier.Text).NullGuard();
+        var expression = BindExpression(castExpressionSyntax.CastedExpression, castType, true);
+        
+        return expression;
     }
 
     BoundExpression BindThisExpression(ThisExpressionSyntax syntax)
@@ -661,7 +671,7 @@ sealed class MethodBinder
                                                                    out Symbol? matchingSymbol)
     {
         var symbolList = symbols.ToList();
-        symbolList.Any().ThrowIfFalse("No symbols to infer from.");
+        symbolList.Any().EnsureTrue("No symbols to infer from.");
         symbolList.All(
             x => x.Kind 
                 is SymbolKind.Field 
@@ -669,10 +679,10 @@ sealed class MethodBinder
                 or SymbolKind.Variable 
                 or SymbolKind.Type
                 && x is ITypedSymbol)
-            .ThrowIfFalse("Unexpected symbol kind.");
+            .EnsureTrue("Unexpected symbol kind.");
         
         (right.Kind is SyntaxKind.NameExpression or SyntaxKind.MethodCallExpression)
-            .ThrowIfFalse($"Unexpected right side expression {right.Kind}");
+            .EnsureTrue($"Unexpected right side expression {right.Kind}");
         
         if (symbolList.Count is 1)
         {

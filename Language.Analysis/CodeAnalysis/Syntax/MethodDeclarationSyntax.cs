@@ -1,3 +1,6 @@
+using System;
+using System.Diagnostics;
+
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
 
@@ -6,7 +9,9 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
 {
     public MethodDeclarationSyntax(SyntaxTree syntaxTree,
                                    SyntaxToken? staticKeyword, 
-                                   SyntaxToken functionKeyword, 
+                                   SyntaxToken functionKeyword,
+                                   Option<SyntaxToken> virtualKeyword,
+                                   Option<SyntaxToken> overrideKeyword,
                                    SyntaxToken identifier,
                                    SyntaxToken openParenthesisToken,
                                    SeparatedSyntaxList<ParameterSyntax> parameters, 
@@ -17,6 +22,8 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
     {
         StaticKeyword = staticKeyword;
         FunctionKeyword = functionKeyword;
+        VirtualKeyword = virtualKeyword;
+        OverrideKeyword = overrideKeyword;
         Identifier = identifier;
         OpenParenthesisToken = openParenthesisToken;
         Parameters = parameters;
@@ -27,6 +34,8 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
 
     public SyntaxToken? StaticKeyword { get; }
     public SyntaxToken FunctionKeyword { get; }
+    public Option<SyntaxToken> VirtualKeyword { get; }
+    public Option<SyntaxToken> OverrideKeyword { get; }
     public SyntaxToken Identifier { get; }
     public SyntaxToken OpenParenthesisToken { get; }
     public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }

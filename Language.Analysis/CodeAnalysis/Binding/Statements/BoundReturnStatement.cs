@@ -4,7 +4,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 class BoundReturnStatement : BoundStatement
 {
-    public BoundReturnStatement(SyntaxNode? syntax, BoundExpression? expression) : base(syntax)
+    public BoundReturnStatement(Option<SyntaxNode> syntax, BoundExpression? expression) : base(syntax)
     {
         Expression = expression;
     }

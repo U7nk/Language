@@ -56,15 +56,29 @@ sealed class ProgramBinder
             var typeSignatureBindDiagnostics = typeSignatureBinder.BindClassDeclaration(classDeclaration); 
             _diagnostics.MergeWith(typeSignatureBindDiagnostics);
         }
+        var typesToBind = _scope.GetDeclaredTypes().Except(BuiltInTypeSymbols.All).ToImmutableArray();
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeSignatureBinder.BindInheritanceClause(typeSymbol, _diagnostics);
+        }
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeSignatureBinder.DiagnoseTypeDontInheritFromItself(typeSymbol, _diagnostics);
+        }
 
         var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
             new BinderLookup(_scope.GetDeclaredTypes(), _lookup.Declarations),
             _scope,
             IsScript);
-        foreach (var typeSymbol in _scope.GetDeclaredTypes().Except(BuiltInTypeSymbols.All))
+        foreach (var typeSymbol in typesToBind)
         {
             var membersSignaturesBindDiagnostics = typeMembersSignaturesBinder.BindMembersSignatures(typeSymbol);
             _diagnostics.MergeWith(membersSignaturesBindDiagnostics);
+        }
+
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeMembersSignaturesBinder.DiagnoseDiamondProblem(typeSymbol, _diagnostics);
         }
 
         DiagnoseGlobalStatementsUsage();
@@ -81,14 +95,14 @@ sealed class ProgramBinder
             if (globalStatements.Any())
             {
                 var mainMethodGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainMethodGeneration.IsFail)
+                if (mainMethodGeneration.IsError)
                 {
-                    _diagnostics.MergeWith(mainMethodGeneration.Fail);
+                    _diagnostics.MergeWith(mainMethodGeneration.Error);
                 }
                 else
                 {
-                    scriptMainMethod = mainMethodGeneration.Success.Function;
-                    var mainFunctionType = mainMethodGeneration.Success.Type;
+                    scriptMainMethod = mainMethodGeneration.Ok.Function;
+                    var mainFunctionType = mainMethodGeneration.Ok.Type;
                     BindTopMethodsSignatures(mainFunctionType);
                 }
             }
@@ -108,14 +122,14 @@ sealed class ProgramBinder
             if (mainMethod is null && globalStatements.Any())
             {
                 var mainFunctionGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainFunctionGeneration.IsFail)
+                if (mainFunctionGeneration.IsError)
                 {
-                    _diagnostics.AddRange(mainFunctionGeneration.Fail);
+                    _diagnostics.AddRange(mainFunctionGeneration.Error);
                 }
                 else
                 {
-                    mainMethod = mainFunctionGeneration.Success.Function;
-                    var mainFunctionType = mainFunctionGeneration.Success.Type;
+                    mainMethod = mainFunctionGeneration.Ok.Function;
+                    var mainFunctionType = mainFunctionGeneration.Ok.Type;
                     BindTopMethodsSignatures(mainFunctionType);
                 }
             }
@@ -179,6 +193,8 @@ sealed class ProgramBinder
         var main = new MethodSymbol(
             mainMethodDeclarationSyntax.UnwrapOrNull(),
             isStatic: true,
+            isVirtual: false,
+            isOverriding: false,
             name: SyntaxFacts.MAIN_METHOD_NAME,
             parameters: ImmutableArray<ParameterSymbol>.Empty,
             returnType: BuiltInTypeSymbols.Void, 
@@ -189,6 +205,8 @@ sealed class ProgramBinder
             main = new MethodSymbol(
                 mainMethodDeclarationSyntax.UnwrapOrNull(),
                 isStatic: true,
+                isVirtual: false,
+                isOverriding: false,
                 name: SyntaxFacts.SCRIPT_MAIN_METHOD_NAME,
                 parameters: ImmutableArray<ParameterSymbol>.Empty,
                 returnType: BuiltInTypeSymbols.Object,

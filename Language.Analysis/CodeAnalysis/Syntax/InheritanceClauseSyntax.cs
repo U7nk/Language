@@ -1,15 +1,15 @@
+using System.Collections.Generic;
+
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class InheritanceClauseSyntax : SyntaxNode
 {
-    public SyntaxToken ColonToken { get; }
-    public SyntaxToken BaseTypeIdentifier { get; }
+    public SeparatedSyntaxList<SyntaxToken> BaseTypes { get; }
 
-    public InheritanceClauseSyntax(SyntaxTree syntaxTree, SyntaxToken colonToken, SyntaxToken baseTypeIdentifier) 
+    public InheritanceClauseSyntax(SyntaxTree syntaxTree, SeparatedSyntaxList<SyntaxToken> baseTypes) 
         : base(syntaxTree)
     {
-        ColonToken = colonToken;
-        BaseTypeIdentifier = baseTypeIdentifier;
+        BaseTypes = baseTypes;
     }
 
     public override SyntaxKind Kind => SyntaxKind.InheritanceClause;

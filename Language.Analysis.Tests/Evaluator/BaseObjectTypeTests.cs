@@ -32,11 +32,16 @@ public class BaseObjectTypeTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard();
-        result.Type.Name.Should().Be("MyClass");
-        result.Type.BaseType.NullGuard().Name.Should().Be("object");
+        var result = TestTools.Evaluate(code);
+        result.IsOk.Should().BeTrue();
+        result.Ok.NullGuard();
+        
+        (result.Ok is 
+        {
+            Type.Name: "MyClass",
+            Type.BaseTypes.Count: 1,
+        }).Should().BeTrue();
+        result.Ok.Type.BaseTypes.Single().Name.Should().Be("object");
     }
     
     [Fact]
@@ -58,11 +63,13 @@ public class BaseObjectTypeTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard();
-        result.Type.Name.Should().Be("MyClass");
-        result.Type.BaseType.NullGuard().Name.Should().Be("object");
+        var result = TestTools.Evaluate(code);
+        (result.Ok is 
+        {
+            Type.Name: "MyClass",
+            Type.BaseTypes.Count: 1
+        }).Should().BeTrue();
+        result.Ok.NullGuard().Type.BaseTypes.Single().Name.Should().Be("object");
     }
     
     [Fact]
@@ -85,11 +92,10 @@ public class BaseObjectTypeTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard();
-        result.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
-        result.LiteralValue.Should().Be(true);
+        var result = TestTools.Evaluate(code);
+        result.Ok.NullGuard();
+        result.Ok.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
+        result.Ok.LiteralValue.Should().Be(true);
     }
     
     [Fact]
@@ -111,10 +117,11 @@ public class BaseObjectTypeTests
             }
             """;
         
-        var (result, diagnostics) = TestTools.Evaluate(code);
-        diagnostics.Should().BeEmpty();
-        result.NullGuard();
-        result.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
-        result.LiteralValue.Should().Be(false);
+        var result = TestTools.Evaluate(code);
+        
+        result.Ok.NullGuard();
+        result.Ok.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
+        result.Ok.LiteralValue.Should().Be(false);
     }
+    
 }

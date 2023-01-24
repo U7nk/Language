@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundConditionalGotoStatement : BoundStatement
 {
-    public BoundConditionalGotoStatement(SyntaxNode? syntax, LabelSymbol label, BoundExpression condition, bool jumpIfTrue) : base(syntax)
+    public BoundConditionalGotoStatement(Option<SyntaxNode> syntax, LabelSymbol label, BoundExpression condition, bool jumpIfTrue) : base(syntax)
     {
         Label = label;
         Condition = condition;

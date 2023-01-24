@@ -96,8 +96,8 @@ public sealed class Compilation
 
     public void EmitTree(IndentedTextWriter writer)
     {
-        if (GlobalScope.MainMethod is not null)
-            EmitTree(GlobalScope.MainMethod, writer);
+        if (GlobalScope.MainMethod.IsSome)
+            EmitTree(GlobalScope.MainMethod.Unwrap(), writer);
         else if (GlobalScope.ScriptMainMethod is not null)
             EmitTree(GlobalScope.ScriptMainMethod, writer);
 

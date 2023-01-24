@@ -405,11 +405,11 @@ public class DiagnosticBag : List<Diagnostic>
         Report(new TextLocation(sourceText, new TextSpan(0, 0)), message, MAIN_METHOD_SHOULD_BE_DECLARED_CODE);
     }
 
-    public const string CANNOT_ACCESS_STATIC_ON_NON_STATIC = "[0047:Error]";
+    public const string CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE = "[0047:Error]";
     public void ReportCannotAccessStaticFieldOnNonStaticMember(SyntaxToken identifierToken)
     {
         var message = $"Cannot access static field '{identifierToken.Text}' on non-static member.";
-        Report(identifierToken.Location, message, CANNOT_ACCESS_STATIC_ON_NON_STATIC);
+        Report(identifierToken.Location, message, CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE);
     }
     
     public const string CLASS_CANNOT_INHERIT_FROM_SELF_CODE = "[0048:Error]";
@@ -417,5 +417,45 @@ public class DiagnosticBag : List<Diagnostic>
     {
         var message = "Class cannot inherit from itself.";
         Report(classIdentifier.Location, message, CLASS_CANNOT_INHERIT_FROM_SELF_CODE);
+    }
+
+    public const string METHOD_CANNOT_USE_VIRTUAL_WITH_OVERRIDE_CODE = "[0049:Error]";
+    public void ReportCannotUseVirtualWithOverride(SyntaxToken virtualKeyword, SyntaxToken overrideKeyword)
+    {
+        var message = "Method cannot use virtual with override";
+        var firstLocation = virtualKeyword.Location.Span.Start < overrideKeyword.Location.Span.Start
+            ? virtualKeyword.Location
+            : overrideKeyword.Location;
+        Report(firstLocation, message, METHOD_CANNOT_USE_VIRTUAL_WITH_OVERRIDE_CODE);
+    }
+
+    public const string UNEXPECTED_EXPRESSION_INSIDE_CAST_EXPRESSION_CODE = "[0049:Error]";
+    public void ReportUnexpectedExpressionToCast(ExpressionSyntax toCastExpression)
+    {
+        var message = "Unexpected expression inside cast expression";
+        Report(toCastExpression.Location, message, UNEXPECTED_EXPRESSION_INSIDE_CAST_EXPRESSION_CODE);
+    }
+    
+    public const string INHERITANCE_DIAMOND_PROBLEM_CODE = "[0050:Error]";
+    public void ReportInheritanceDiamondProblem(SyntaxToken classIdentifier, List<TypeSymbol> baseTypes, Symbol symbol)
+    {
+        (classIdentifier.Kind is SyntaxKind.IdentifierToken).EnsureTrue();
+        var baseTypeNamesString = string.Join(", ", baseTypes.Select(x => x.Name));
+        var symbolString = symbol.Kind switch
+        {
+            SymbolKind.Method => $"method '{symbol.Name}'",
+            SymbolKind.Field => $"field '{symbol.Name}'",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        var message = $"Inheritance diamond problem. Problem with {symbolString}. Classes involved {baseTypeNamesString}.";
+        Report(classIdentifier.Location, message, INHERITANCE_DIAMOND_PROBLEM_CODE);
+    }
+    
+    public const string METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE = "[0051:Error]";
+    public void ReportMethodAlreadyDeclaredInBaseClass(MethodSymbol methodSymbol, TypeSymbol baseType)
+    {
+        var identifier = methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier;
+        var message = $"Method '{identifier.Text}' is already declared in base class '{baseType}'.";
+        Report(identifier.Location, message, METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE);
     }
 }

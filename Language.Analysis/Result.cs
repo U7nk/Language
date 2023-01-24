@@ -3,52 +3,53 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Language.Analysis;
 
-public class Result<TSuccess, TFail> 
+public class Result<TOk, TFail> 
 {
-    readonly TSuccess? _success;
+    readonly TOk? _success;
     readonly TFail? _fail;
 
-    public TSuccess? Success
+    public TOk Ok
     {
         get
         {
-            if (IsSuccess)
-            {
-                return _success;
-            }
+            if (IsOk)
+                return _success!;
 
             throw new InvalidOperationException("Cannot get success value from failed result");
         }
     }
 
-    public TFail? Fail
+    public TFail Error
     {
         get
         {
-            if (IsFail)
-            {
-                return _fail;
-            }
-            
+            if (IsError)
+                return _fail!;
+
             throw new InvalidOperationException("Cannot get fail value from successful result");
         }
     }
 
-    [MemberNotNullWhen(true, nameof(Success))]
-    public bool IsSuccess => _success is not null;
-    [MemberNotNullWhen(true, nameof(Fail))]
-    public bool IsFail => _fail is not null;
+    [MemberNotNullWhen(true, nameof(Ok))]
+    public bool IsOk { get; private init; }
+
+    [MemberNotNullWhen(true, nameof(Error))]
+    public bool IsError { get; private init; }
 
     public Result(TFail fail)
     {
+        IsOk = false;
+        IsError = true;
         _fail = fail;
     }
 
-    public Result(TSuccess success)
+    public Result(TOk success)
     {
+        IsOk = true;
+        IsError = false;
         _success = success;
     }
     
-    public static implicit operator Result<TSuccess, TFail>(TSuccess success) => new(success);
-    public static implicit operator Result<TSuccess, TFail>(TFail fail) => new(fail);
+    public static implicit operator Result<TOk, TFail>(TOk success) => new(success);
+    public static implicit operator Result<TOk, TFail>(TFail fail) => new(fail);
 }

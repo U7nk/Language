@@ -138,7 +138,7 @@ class ControlFlowGraph
                 foreach (var block in blocks.Where(x => x.Incoming.Empty()))
                 {
                     RemoveBlock(blocks, block);
-                    goto RESCAN; //-V3020
+                    goto RESCAN;
                 }
 
                 blocks.Insert(0, _start);
@@ -326,7 +326,7 @@ class ControlFlowGraph
                     variableUseExpression);
                 if (!isInitialized)
                 {
-                    var syntax = (NameExpressionSyntax)variableUseExpression.Syntax.NullGuard();
+                    var syntax = variableUseExpression.Syntax.UnwrapAs<NameExpressionSyntax>();
                     diagnostics.ReportCannotUseUninitializedVariable(syntax.Identifier);
                 }
             }

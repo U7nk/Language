@@ -8,7 +8,7 @@ class BoundMemberAccessExpression : BoundExpression
     public BoundExpression Left { get; }
     public BoundExpression Member { get; }
 
-    public BoundMemberAccessExpression(SyntaxNode? syntax, BoundExpression left, BoundExpression member) : base(syntax)
+    public BoundMemberAccessExpression(Option<SyntaxNode> syntax, BoundExpression left, BoundExpression member) : base(syntax)
     {
         Left = left;
         Member = member;

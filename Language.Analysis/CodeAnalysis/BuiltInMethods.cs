@@ -13,17 +13,21 @@ internal static class BuiltInMethods
         Print = new(
             Option.None,
             isStatic: true,
+            isVirtual: false,
+            isOverriding: false,
             name: "print",
             parameters: ImmutableArray.Create(new ParameterSymbol(Option.None, "text", 
                                                                   containingType: null,
                                                                   BuiltInTypeSymbols.String)),
-            returnType: BuiltInTypeSymbols.Void, 
+            returnType: BuiltInTypeSymbols.Void,
             containingType: null);
 
     public static readonly MethodSymbol
         Input = new(
             Option.None,
             isStatic: true,
+            isVirtual: false,
+            isOverriding: false,
             name: "input",
             parameters: ImmutableArray<ParameterSymbol>.Empty,
             returnType: BuiltInTypeSymbols.String, 

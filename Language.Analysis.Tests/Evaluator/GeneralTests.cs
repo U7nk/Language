@@ -560,7 +560,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { (result is { LiteralValue: 10 }).ThrowIfFalse("\n" + result); },
+            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n" + result); },
             isScript: false);
     }
 
@@ -701,7 +701,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             source,
-            result => { (result is { LiteralValue: 10 }).ThrowIfFalse("\n"+result); },
+            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n"+result); },
             isScript: false);
     }
 
