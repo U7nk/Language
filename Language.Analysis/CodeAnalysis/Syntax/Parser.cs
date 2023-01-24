@@ -57,7 +57,7 @@ public class Parser
         return current;
     }
 
-    SyntaxToken? TryMatch(SyntaxKind kind)
+    SyntaxToken? OptionalMatch(SyntaxKind kind)
     {
         if (Current.Kind == kind)
         {
@@ -170,14 +170,14 @@ public class Parser
 
     InheritanceClauseSyntax? ParseOptionalInheritanceClause()
     {
-        var colonToken = TryMatch(SyntaxKind.ColonToken);
+        var colonToken = OptionalMatch(SyntaxKind.ColonToken);
         if (colonToken is null)
             return null;
         
         var baseTypes = ImmutableArray.CreateBuilder<SyntaxToken>();
         var currentToken = Match(SyntaxKind.IdentifierToken);
         baseTypes.Add(currentToken);
-        currentToken = TryMatch(SyntaxKind.CommaToken);
+        currentToken = OptionalMatch(SyntaxKind.CommaToken);
         if (currentToken is { })
         {
             baseTypes.Add(currentToken);
@@ -187,7 +187,7 @@ public class Parser
         {
             var baseTypeIdentifier = Match(SyntaxKind.IdentifierToken);
             baseTypes.Add(baseTypeIdentifier);
-            currentToken = TryMatch(SyntaxKind.ColonToken);
+            currentToken = OptionalMatch(SyntaxKind.CommaToken);
             if (currentToken is { }) 
                 baseTypes.Add(currentToken);
         }
@@ -231,7 +231,7 @@ public class Parser
 
     FieldDeclarationSyntax ParseFieldDeclaration()
     {
-        var staticKeyword = TryMatch(SyntaxKind.StaticKeyword);
+        var staticKeyword = OptionalMatch(SyntaxKind.StaticKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
         var typeClause = ParseTypeClause();
         var semicolonToken = Match(SyntaxKind.SemicolonToken);
@@ -239,10 +239,10 @@ public class Parser
     }
     MethodDeclarationSyntax ParseMethodDeclaration()
     {
-        var staticKeyword = TryMatch(SyntaxKind.StaticKeyword);
+        var staticKeyword = OptionalMatch(SyntaxKind.StaticKeyword);
         var functionKeyword = Match(SyntaxKind.FunctionKeyword);
-        var virtualKeyword = TryMatch(SyntaxKind.VirtualKeyword);
-        var overrideKeyword = TryMatch(SyntaxKind.OverrideKeyword);
+        var virtualKeyword = OptionalMatch(SyntaxKind.VirtualKeyword);
+        var overrideKeyword = OptionalMatch(SyntaxKind.OverrideKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
         var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
         var parameters = ParseParameterList();

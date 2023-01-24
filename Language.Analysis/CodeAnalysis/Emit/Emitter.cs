@@ -540,9 +540,8 @@ class Emitter
         string outputPath)
     {
         _program = program;
-        var mainFunction = _program.MainMethod ?? _program.ScriptMainMethod;
-        Debug.Assert(mainFunction != null, nameof(mainFunction) + " != null");
-        
+        var mainFunction = _program.MainMethod.SomeOr(() => _program.ScriptMainMethod.Unwrap());
+
         _methodOffsets.Add(mainFunction, 0);
         _methodParameters.Add(mainFunction, 0);
 

@@ -27,9 +27,6 @@ sealed class TypeBinder
     public void BindClassBody()
     {
         var typeScope = new BoundScope(_scope);
-        
-        var baseTypes = BindInheritanceClause(_lookup.CurrentType.InheritanceClauseSyntax);
-        AddBaseTypesToCurrentType(baseTypes);
 
         foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
         {
@@ -55,79 +52,5 @@ sealed class TypeBinder
 
             _lookup.CurrentType.MethodTable.SetMethodBody(methodSymbol, loweredBody);
         }
-    }
-
-    public void AddBaseTypesToCurrentType(ImmutableArray<TypeSymbol> baseTypes)
-    {
-        foreach (var baseType in baseTypes)
-        {
-            CheckTypeDontInheritFromItself(_lookup.CurrentType, baseType);
-            _lookup.CurrentType.BaseTypes.Add(baseType);
-        }
-    }
-    
-    /// <summary>
-    /// Checks if type inherits from itself. <br/>
-    /// If so, adds diagnostic to <see cref="_diagnostics"/>.
-    /// Diagnostic is added to every <see cref="InheritanceClauseSyntax"/> location.
-    /// </summary>
-    /// <param name="currentType">Type that is being checked for inheritance from itself.</param>
-    /// <param name="baseTypeToInheritFrom">Base type that will be added to <see cref="TypeSymbol.BaseTypes"/> list of <paramref name="currentType"/></param>
-    void CheckTypeDontInheritFromItself(TypeSymbol currentType, TypeSymbol? baseTypeToInheritFrom)
-    {
-        if (baseTypeToInheritFrom is null)
-            return;
-
-        var typesToCheck = new List<TypeSymbol>(currentType.BaseTypes) { currentType };
-
-        foreach (var checkedType in typesToCheck)
-        {
-            if (checkedType == baseTypeToInheritFrom)
-            {
-                var existingDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(currentType);
-                foreach (var declarationSyntax in existingDeclarationSyntax)
-                {
-                    _diagnostics.ReportClassCannotInheritFromSelf(declarationSyntax.Identifier);
-                }
-                return;
-            }
-        }
-
-        foreach (var baseType in currentType.BaseTypes)
-        {
-            CheckTypeDontInheritFromItself(baseType, baseTypeToInheritFrom);
-        }
-    }
-
-    /// <summary>
-    /// <b>NOTE:</b> All types is implicitly inherited from <see cref="BuiltInTypeSymbols.Object"/> type. <br/>
-    /// So every return array will contain at least one element - <see cref="BuiltInTypeSymbols.Object"/> type.
-    /// </summary>
-    /// <param name="syntax">Inheritance clause syntax.</param>
-    /// <returns></returns>
-    ImmutableArray<TypeSymbol> BindInheritanceClause(InheritanceClauseSyntax? syntax)
-    {
-        var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        builder.Add(BuiltInTypeSymbols.Object);
-        
-        if (syntax is not null)
-        {
-            foreach (var baseTypeIdentifier in syntax.BaseTypes)
-            {
-                var baseTypeName = baseTypeIdentifier.Text;
-                if (!_scope.TryLookupType(baseTypeName, out var baseTypeSymbol))
-                {
-                    _diagnostics.ReportUndefinedType(baseTypeIdentifier.Location, baseTypeName);
-                    continue;
-                }
-
-                if (baseTypeSymbol == BuiltInTypeSymbols.Object)
-                    continue;
-                
-                builder.Add(baseTypeSymbol);
-            }
-        }
-        
-        return builder.ToImmutable();
     }
 }

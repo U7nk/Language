@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -31,8 +33,11 @@ sealed class TypeMembersSignaturesBinder
             {
                 var method = (MethodDeclarationSyntax) member;
                 var methodSignatureBinder = new MethodSignatureBinder(
-                    new MethodSignatureBinderLookup(_lookup.AvailableTypes, currentType, isTopMethod: false, _lookup.Declarations),
-                    typeScope);
+                    new MethodSignatureBinderLookup(_lookup.AvailableTypes,
+                                                    currentType,
+                                                    isTopMethod: false,
+                                                    _lookup.Declarations),
+                    typeScope); 
                 methodSignatureBinder.BindMethodSignature(method)
                     .AddRangeTo(diagnostics);
             }
@@ -52,5 +57,56 @@ sealed class TypeMembersSignaturesBinder
         }
 
         return diagnostics.ToImmutableArray();
+    }
+
+    public void DiagnoseDiamondProblem(TypeSymbol type, DiagnosticBag diagnostics)
+    {
+        var flattenBaseTypes = FlattenBaseTypes(type);
+        var alreadyCheckedTypes = new List<TypeSymbol>();
+        foreach (var firstBaseType in flattenBaseTypes)
+        {
+            if (alreadyCheckedTypes.Contains(firstBaseType))
+                continue;
+            
+            var otherBaseTypes = flattenBaseTypes.Where(x => x != firstBaseType).ToList();
+            var symbols = firstBaseType.MethodTable.Symbols.Cast<Symbol>().Concat(firstBaseType.FieldTable.Symbols)
+                .ToList();
+            
+            foreach (var symbol in symbols) 
+            {
+                var problemBaseTypes = otherBaseTypes
+                    .Where(x => x.MethodTable.Symbols.Any(s => s.Name == symbol.Name) || x.FieldTable.Symbols.Any(s => s.Name == symbol.Name))
+                    .AddRangeTo(alreadyCheckedTypes)
+                    .ToList();
+                if (problemBaseTypes.Count == 0)
+                    continue;
+                
+                firstBaseType.AddTo(problemBaseTypes);
+                diagnostics.ReportInheritanceDiamondProblem(type.DeclarationSyntax.Unwrap().Identifier, problemBaseTypes, symbol);
+            }   
+            
+        }
+    }
+
+    List<TypeSymbol> FlattenBaseTypes(TypeSymbol typeSymbol, Option<List<TypeSymbol>> checkedTypes = default)
+    {
+        if (checkedTypes.IsNone)
+            checkedTypes = new List<TypeSymbol>();
+        
+        if (checkedTypes.Unwrap().Contains(typeSymbol))
+            return new List<TypeSymbol>();
+        
+        checkedTypes.Unwrap().Add(typeSymbol);
+
+
+        var result = new List<TypeSymbol>();
+        var baseTypesExcludeTypeSymbol = typeSymbol.BaseTypes.Where(x => x != typeSymbol);
+        foreach (var baseType in baseTypesExcludeTypeSymbol)
+        {
+            result.Add(baseType);
+            result.AddRange(FlattenBaseTypes(baseType, checkedTypes));
+        }
+
+        return result.Distinct().ToList();
     }
 }

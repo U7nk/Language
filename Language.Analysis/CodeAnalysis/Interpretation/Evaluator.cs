@@ -24,10 +24,7 @@ class Evaluator
 
     public ObjectInstance? Evaluate()
     {
-        var function = _program.MainMethod ?? _program.ScriptMainMethod;
-
-        if (function is null)
-            return null;
+        var function = _program.MainMethod.SomeOr(() => _program.ScriptMainMethod.Unwrap());
 
         if (!function.IsStatic)
             throw new Exception("Main method must be static.");
@@ -191,7 +188,7 @@ class Evaluator
         RuntimeObject instance;
         if (node.FieldSymbol.IsStatic)
         {
-            instance = GetTypeStaticInstance(node.FieldSymbol.ContainingType.NullGuard());
+            instance = GetTypeStaticInstance(node.FieldSymbol.ContainingType.Unwrap());
         }
         else
         {
@@ -211,7 +208,7 @@ class Evaluator
             RuntimeObject instance;
             if (fieldExpression.FieldSymbol.IsStatic)
             {
-                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.ContainingType.NullGuard());
+                instance = GetTypeStaticInstance(fieldExpression.FieldSymbol.ContainingType.Unwrap());
             }
             else
             {
@@ -263,7 +260,7 @@ class Evaluator
         }
         else
         {
-            var type = methodCallExpression.MethodSymbol.ContainingType.NullGuard();
+            var type = methodCallExpression.MethodSymbol.ContainingType.Unwrap();
             typeInstance = GetTypeStaticInstance(type);
         }
 
@@ -291,7 +288,8 @@ class Evaluator
         }
         else
         {
-            methodBody = methodCallExpression.MethodSymbol.ContainingType.LookupMethodBody(methodCallExpression.MethodSymbol);
+            methodBody = methodCallExpression.MethodSymbol.ContainingType.Unwrap()
+                .LookupMethodBody(methodCallExpression.MethodSymbol);
             result = EvaluateStatement(methodBody);
         }
 

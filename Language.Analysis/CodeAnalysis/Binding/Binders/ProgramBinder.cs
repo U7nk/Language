@@ -56,15 +56,29 @@ sealed class ProgramBinder
             var typeSignatureBindDiagnostics = typeSignatureBinder.BindClassDeclaration(classDeclaration); 
             _diagnostics.MergeWith(typeSignatureBindDiagnostics);
         }
+        var typesToBind = _scope.GetDeclaredTypes().Except(BuiltInTypeSymbols.All).ToImmutableArray();
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeSignatureBinder.BindInheritanceClause(typeSymbol, _diagnostics);
+        }
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeSignatureBinder.DiagnoseTypeDontInheritFromItself(typeSymbol, _diagnostics);
+        }
 
         var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
             new BinderLookup(_scope.GetDeclaredTypes(), _lookup.Declarations),
             _scope,
             IsScript);
-        foreach (var typeSymbol in _scope.GetDeclaredTypes().Except(BuiltInTypeSymbols.All))
+        foreach (var typeSymbol in typesToBind)
         {
             var membersSignaturesBindDiagnostics = typeMembersSignaturesBinder.BindMembersSignatures(typeSymbol);
             _diagnostics.MergeWith(membersSignaturesBindDiagnostics);
+        }
+
+        foreach (var typeSymbol in typesToBind)
+        {
+            typeMembersSignaturesBinder.DiagnoseDiamondProblem(typeSymbol, _diagnostics);
         }
 
         DiagnoseGlobalStatementsUsage();

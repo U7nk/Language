@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
+using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Common;
 
@@ -84,28 +85,87 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public MethodTable MethodTable { get; }
     public FieldTable FieldTable { get; }
-
     public SingleOccurenceList<TypeSymbol> BaseTypes { get; }
-
-    public InheritanceClauseSyntax? InheritanceClauseSyntax { get; }
+    public new Option<ClassDeclarationSyntax> DeclarationSyntax => base.DeclarationSyntax.IsSome 
+        ? base.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>() 
+        : Option.None;
+    public Option<InheritanceClauseSyntax> InheritanceClauseSyntax { get; }
     TypeSymbol ITypedSymbol.Type => this;
 
     public override SymbolKind Kind => SymbolKind.Type;
 
-    public bool TryDeclareMethod(MethodSymbol method)
+    public bool TryDeclareMethod(
+        MethodSymbol method,
+        DiagnosticBag diagnostics, 
+        MethodSignatureBinderLookup lookup)
     {
+        var canBeDeclared = true;
         if (Name == method.Name)
-            return false;
+        {
+            canBeDeclared = false;
+            diagnostics.ReportClassMemberCannotHaveNameOfClass(
+                method.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier);
+        }
 
         var declaredField = LookupField(method.Name);
         if (declaredField is { })
-            return false;
-        
+        {
+            canBeDeclared = false;
+            var sameNameFields = FieldTable.Symbols
+                .Where(f => f.Name == method.Name)
+                .ToList();
+
+            diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(
+                method.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier);
+            foreach (var sameNameField in sameNameFields)
+            {
+                var fieldDeclarations = lookup.LookupDeclarations<FieldDeclarationSyntax>(sameNameField)
+                    .Add(sameNameField.DeclarationSyntax.UnwrapAs<FieldDeclarationSyntax>());
+                foreach (var fieldDeclaration in fieldDeclarations)
+                    diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
+            }
+        }
+
         var declared = LookupMethod(method.Name);
         if (declared.Count > 0)
-            return false;
-        
-        MethodTable.Add(method, null);
+        {
+            var methodsFromBaseTypes = declared
+                .Where(m => m.ContainingType.IsSome && m.ContainingType.Unwrap() != this)
+                .ToList();
+            
+            // TODO: create warning for overloading, if method is not override
+            // but declared in base class methods with same name is virtual warn about overload possibility
+            if ((declared.All(x => x.IsVirtual) && method.IsOverriding) is false)
+            {
+                canBeDeclared = false;
+                foreach (var methodFromBase in methodsFromBaseTypes)
+                {
+                    diagnostics.ReportMethodAlreadyDeclaredInBaseClass(method, methodFromBase.ContainingType.Unwrap());
+                }
+
+                var alreadyReportedMethodDeclarations = methodsFromBaseTypes
+                    .Select(x => x.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>());
+                var existingMethodDeclarations = lookup.LookupDeclarations<MethodDeclarationSyntax>(method)
+                    .Except(alreadyReportedMethodDeclarations)
+                    .ToList();
+
+                // if there is more than one declaration left after reporting the base class methods redeclaration,
+                // then there is a redeclaration in the current class
+                if (existingMethodDeclarations.Count > 1)
+                {
+                    foreach (var existingMethodDeclaration in existingMethodDeclarations)
+                    {
+                        diagnostics.ReportMethodAlreadyDeclared(existingMethodDeclaration.Identifier);
+                    }
+                }
+            }
+        }
+
+        if (canBeDeclared)
+        {
+            MethodTable.Add(method, null);
+        }
+
         return true;
     }
 
@@ -133,13 +193,23 @@ public class TypeSymbol : Symbol, ITypedSymbol
         
         return baseMethod;
     }
-    public List<MethodSymbol> LookupMethod(string name)
+    public List<MethodSymbol> LookupMethod(string name) 
+        => LookupMethodInternal(name, new List<TypeSymbol>());
+
+    List<MethodSymbol> LookupMethodInternal(string name, List<TypeSymbol> typesChecked)
     {
+        if (typesChecked.Contains(this))
+            return new List<MethodSymbol>();
+        typesChecked.Add(this);
+        
         var result = new List<MethodSymbol>();
         var methods = MethodTable.Symbols.Where(x => x.Name == name).ToList();
         result.AddRange(methods);
 
-        var baseTypesMethods = BaseTypes.Select(x => x.LookupMethod(name)).SelectMany(x => x).ToList();
+        var baseTypesMethods = BaseTypes.Select(x => x.LookupMethodInternal(name, typesChecked))
+            .SelectMany(x => x)
+            .ToList();
+        
         if (baseTypesMethods.Any())
             result.AddRange(baseTypesMethods);
 
@@ -163,9 +233,17 @@ public class TypeSymbol : Symbol, ITypedSymbol
         return true;
     }
 
-    public FieldSymbol? LookupField(string fieldName)
+    public FieldSymbol? LookupField(string fieldName) 
+        => LookupFieldInternal(fieldName, new List<TypeSymbol>());
+
+    FieldSymbol? LookupFieldInternal(string fieldName, List<TypeSymbol> typesChecked)
     {
-        var baseTypeField = BaseTypes.Select(x => x.LookupField(fieldName))
+        if (typesChecked.Contains(this))
+            return null;
+        typesChecked.Add(this);
+        
+        var baseTypeField = BaseTypes
+            .Select(x => x.LookupFieldInternal(fieldName, typesChecked))
             .Exclude(x => x is null)
             .SingleOrDefault();
         
@@ -173,11 +251,9 @@ public class TypeSymbol : Symbol, ITypedSymbol
             return baseTypeField;
         
         var field = FieldTable.Symbols.FirstOrDefault(x => x.Name == fieldName);
-        if (field is not null)
-            return field;
-
-        return null;
+        return field;
     }
+    
 
     public bool IsSubClassOf(TypeSymbol other)
     {

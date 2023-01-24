@@ -151,9 +151,73 @@ public class InheritanceTests
         
         TestTools.AssertDiagnostics(code, false, diagnostics, Output);
     }
+    [Fact]
+    public void ClassCannotInheritFromSelfThroughBaseClass()
+    {
+        var code = @"
+            class [Inheritor] : Base 
+            {
+                function Method() : int
+                {
+                    return 1;
+                }
+            }
+            class [Base] : Inheritor
+            {
+                function BlabLa() { this.Method(); }
+            }
+
+            class Program
+            {
+                static function main()
+                {
+                }
+            }";
+        var diagnostics = new[]
+        {
+            DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
+            DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
+        };
+        
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+    }
+    [Fact]
+    public void ClassCannotInheritFromSelfThroughMultipleBaseClass()
+    {
+        var code = @"
+            class [Inheritor] : Base 
+            {
+                function Method() : int
+                {
+                    return 1;
+                }
+            }
+            class [SecondInheritor] : Inheritor 
+            {
+            }
+            class [Base] : SecondInheritor
+            {
+                function BlabLa() { this.Method(); }
+            }
+
+            class Program
+            {
+                static function main()
+                {
+                }
+            }";
+        var diagnostics = new[]
+        {
+            DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
+            DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
+            DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
+        };
+        
+        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+    }
     
     [Fact]
-    public void ClassDiamondProblemWithMethodsReportsAmbiguity()
+    public void ClassDiamondProblemWithMethodsReported()
     {
         var code = $$""""
                     class BaseOne
@@ -170,7 +234,7 @@ public class InheritanceTests
                             return "Base2";
                         }
                     }
-                    class Inheritor : [BaseOne], [BaseTwo]
+                    class [Inheritor] : BaseOne, BaseTwo
                     {
                     }
                     class Program
@@ -183,10 +247,10 @@ public class InheritanceTests
         TestTools.AssertDiagnostics(code, false, new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
-            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
         }, Output);
+        var output = TestTools.Evaluate(code);
     }
-    
+
     [Fact]
     public void ClassDiamondProblemWithMethodAndFieldReportsAmbiguity()
     {
@@ -202,7 +266,7 @@ public class InheritanceTests
                     {
                         MethodOne : string;
                     }
-                    class Inheritor : [BaseOne], [BaseTwo]
+                    class [Inheritor] : BaseOne, BaseTwo
                     {
                     }
                     class Program
@@ -212,13 +276,13 @@ public class InheritanceTests
                         }
                     }
                     """";
+        
         TestTools.AssertDiagnostics(code, false, new []
         {
-            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
         }, Output);
     }
-    
+
     [Fact]
     public void ClassDiamondProblemWithFieldsReportsAmbiguity()
     {
@@ -231,7 +295,7 @@ public class InheritanceTests
                     {
                         FieldOne : string;
                     }
-                    class Inheritor : [BaseOne], [BaseTwo]
+                    class [Inheritor] : BaseOne, BaseTwo
                     {
                     }
                     class Program
@@ -244,8 +308,69 @@ public class InheritanceTests
         TestTools.AssertDiagnostics(code, false, new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
-            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
         }, Output);
     }
-
+    
+    [Fact]
+    public void ClassDiamondProblemWithFieldsReportsAmbiguityEvenThroughOneInheritanceLevel()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        FieldOne : string;
+                    }
+                    class BaseTwo : BaseOne
+                    {
+                    }
+                    class BaseThree
+                    {
+                        FieldOne : string;
+                    }
+                    class [Inheritor] : BaseTwo, BaseThree
+                    {
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                        }
+                    }
+                    """";
+        TestTools.AssertDiagnostics(code, false, new []
+        {
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
+        }, Output);
+    }
+    [Fact]
+    public void ClassDiamondProblemWithFieldsReportsAmbiguityEvenThroughTwoInheritanceLevel()
+    {
+        var code = $$""""
+                    class BaseOne
+                    {
+                        FieldOne : string;
+                    }
+                    class BaseTwo : BaseOne
+                    {
+                    }
+                    class BaseThree : BaseTwo { }
+                    class BaseFour 
+                    {
+                        FieldOne : string;
+                    }
+                    class BaseFive : BaseFour { }
+                    class [Inheritor] : BaseFive, BaseThree
+                    {
+                    }
+                    class Program
+                    {
+                        static function main()
+                        {
+                        }
+                    }
+                    """";
+        TestTools.AssertDiagnostics(code, false, new []
+        {
+            DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
+        }, Output);
+    }
 }

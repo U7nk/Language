@@ -10,7 +10,6 @@ interface ITypedSymbol
 }
 public abstract class Symbol
 {
-    
     private protected Symbol(Option<SyntaxNode> declarationSyntax, string name, TypeSymbol? containingType)
     {
         DeclarationSyntax = declarationSyntax;
@@ -19,7 +18,7 @@ public abstract class Symbol
     }
 
     public Option<SyntaxNode> DeclarationSyntax { get; private set; }
-    public TypeSymbol? ContainingType { get; private set; }
+    public Option<TypeSymbol> ContainingType { get; private set; }
     public string Name { get; }
     public abstract SymbolKind Kind { get; }
     public override string ToString() => Name;

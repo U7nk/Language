@@ -272,7 +272,7 @@ public class InheritanceTests
                     }
                     """";
         
-        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
         result.Ok.NullGuard();
         result.Ok.LiteralValue.Should().Be(true);
     }
@@ -316,7 +316,7 @@ public class InheritanceTests
                     }
                     """";
         
-        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
 
         result.IsOk.Should().BeTrue();
         result.Ok.NullGuard();
@@ -370,7 +370,7 @@ public class InheritanceTests
                     }
                     """";
         
-        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
 
         result.IsOk.Should().BeTrue();
         result.Ok.NullGuard();
@@ -418,7 +418,7 @@ public class InheritanceTests
                     }
                     """";
         
-        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
 
         result.IsOk.Should().BeTrue();
         result.Ok.NullGuard();
@@ -475,7 +475,7 @@ public class InheritanceTests
                     }
                     """";
         
-        var result = TestTools.Evaluate(code).IfErrorOutputDiagnosticsAndThrow(_output);
+        var result = TestTools.Evaluate(code).AssertNoDiagnostics(_output);
 
         result.IsOk.Should().BeTrue();
         result.Ok.NullGuard();

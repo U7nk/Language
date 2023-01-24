@@ -437,4 +437,25 @@ public class DiagnosticBag : List<Diagnostic>
     }
     
     public const string INHERITANCE_DIAMOND_PROBLEM_CODE = "[0050:Error]";
+    public void ReportInheritanceDiamondProblem(SyntaxToken classIdentifier, List<TypeSymbol> baseTypes, Symbol symbol)
+    {
+        (classIdentifier.Kind is SyntaxKind.IdentifierToken).EnsureTrue();
+        var baseTypeNamesString = string.Join(", ", baseTypes.Select(x => x.Name));
+        var symbolString = symbol.Kind switch
+        {
+            SymbolKind.Method => $"method '{symbol.Name}'",
+            SymbolKind.Field => $"field '{symbol.Name}'",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        var message = $"Inheritance diamond problem. Problem with {symbolString}. Classes involved {baseTypeNamesString}.";
+        Report(classIdentifier.Location, message, INHERITANCE_DIAMOND_PROBLEM_CODE);
+    }
+    
+    public const string METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE = "[0051:Error]";
+    public void ReportMethodAlreadyDeclaredInBaseClass(MethodSymbol methodSymbol, TypeSymbol baseType)
+    {
+        var identifier = methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier;
+        var message = $"Method '{identifier.Text}' is already declared in base class '{baseType}'.";
+        Report(identifier.Location, message, METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE);
+    }
 }

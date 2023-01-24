@@ -41,7 +41,7 @@ public class MethodSymbol : MemberSymbol
         if (Name != other.Name)
             return false;
 
-        if (ContainingType != other.ContainingType)
+        if (!ContainingType.Equals(other.ContainingType))
             return false;
 
         return true;
