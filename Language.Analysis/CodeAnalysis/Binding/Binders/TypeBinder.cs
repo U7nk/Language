@@ -28,7 +28,7 @@ sealed class TypeBinder
     {
         var typeScope = new BoundScope(_scope);
 
-        foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Symbols)
+        foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Select(x => x.MethodSymbol))
         {
             var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
                                                     _lookup.Declarations, 

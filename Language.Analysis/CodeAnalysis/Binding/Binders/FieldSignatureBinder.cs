@@ -3,6 +3,7 @@ using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -23,8 +24,8 @@ public sealed class FieldSignatureBinder
     {
         var diagnostics = new DiagnosticBag();
         _lookup.NullGuard();
-        var fieldType = _lookup.LookupType(fieldDeclaration.TypeClause.Identifier.Text);
-        if (fieldType == null)
+        
+        if (!_scope.TryLookupType(fieldDeclaration.TypeClause.Identifier.Text, out var fieldType))
         {
             diagnostics.ReportUndefinedType(
                 fieldDeclaration.TypeClause.Location,
@@ -34,7 +35,7 @@ public sealed class FieldSignatureBinder
         // if diagnostics are reported field should not be used later in binding
         // so we just let type to be null and try to gain more diagnostics
         var fieldSymbol = new FieldSymbol(fieldDeclaration,
-                                    fieldDeclaration.StaticKeyword is { },
+                                    fieldDeclaration.StaticKeyword.IsSome,
                                     fieldDeclaration.Identifier.Text,
                                     _lookup.ContainingType, 
                                     fieldType!);
@@ -54,13 +55,13 @@ public sealed class FieldSignatureBinder
             }
 
             
-            var sameNameMethods = _lookup.ContainingType.MethodTable.Symbols.Where(x => x.Name == fieldSymbol.Name).ToList();
+            var sameNameMethods = _lookup.ContainingType.MethodTable.Where(x => x.MethodSymbol.Name == fieldSymbol.Name).ToList();
             if (sameNameMethods.Any())
             {
                 diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
-                foreach (var sameNameMethod in sameNameMethods)
+                foreach (var declaration in sameNameMethods)
                 {
-                    var sameNameMethodDeclarations = _lookup.LookupDeclarations<MethodDeclarationSyntax>(sameNameMethod);
+                    var sameNameMethodDeclarations = _lookup.LookupDeclarations<MethodDeclarationSyntax>(declaration.MethodSymbol);
                     foreach (var sameNameMethodDeclaration in sameNameMethodDeclarations)
                     {
                         diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(sameNameMethodDeclaration.Identifier);    

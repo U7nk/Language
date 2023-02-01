@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
@@ -38,11 +39,7 @@ public class BinderLookup
     }
     
     public ImmutableArray<TypeSymbol> AvailableTypes { get; }
-    protected internal DeclarationsBag Declarations { get; } 
-    public TypeSymbol? LookupType(string name)
-    {
-        return AvailableTypes.SingleOrDefault(t => t.Name == name);
-    }
+    protected internal DeclarationsBag Declarations { get; }
 
     /// <summary>
     /// Retrieves all declarations(including redeclaration) for the given bound node. <br/>

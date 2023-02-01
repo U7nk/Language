@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.Tests;
 

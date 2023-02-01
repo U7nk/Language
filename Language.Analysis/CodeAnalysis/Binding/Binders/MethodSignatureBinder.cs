@@ -4,10 +4,11 @@ using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Common;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
- class MethodSignatureBinder
+class MethodSignatureBinder
 {
     readonly MethodSignatureBinderLookup _lookup;
     readonly BoundScope _scope;
@@ -22,12 +23,36 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
     {
         var diagnostics = new DiagnosticBag();
 
+        if (method.GenericParametersSyntax.IsSome)
+        {
+            var genericArgumentsSyntax = method.GenericParametersSyntax.Unwrap();
+            foreach (var genericArgument in genericArgumentsSyntax.Arguments)
+            {
+                var genericArgumentName = genericArgument.Text;
+                var genericType = TypeSymbol.New(genericArgumentName, 
+                                                 Option.None,
+                                                 null,
+                                                 new MethodTable(),
+                                                 new FieldTable(),
+                                                 new SingleOccurenceList<TypeSymbol> { 
+                                                     BuiltInTypeSymbols.Object 
+                                                 }, isGenericMethodParameter: true);
+
+                if (!_scope.TryDeclareType(genericType))
+                {
+                    diagnostics.ReportAmbiguousType(genericArgument.Location,
+                                                    genericArgumentName,
+                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName).ToList());
+                }
+            }
+        }
+        
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
         foreach (var parameter in method.Parameters)
         {
             var parameterName = parameter.Identifier.Text;
 
-            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _lookup);
+            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _scope);
             if (parameterType is null)
             {
                 diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
@@ -54,9 +79,9 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
             }
         }
 
-        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _lookup) ?? BuiltInTypeSymbols.Void;
+        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _scope) ?? BuiltInTypeSymbols.Void;
 
-        var isStatic = method.StaticKeyword is { } || _lookup.IsTopMethod;
+        var isStatic = method.StaticKeyword.IsSome || _lookup.IsTopMethod;
 
         var isVirtual = method.VirtualKeyword.IsSome;
         var isOverriding = method.OverrideKeyword.IsSome;

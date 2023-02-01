@@ -21,7 +21,7 @@ public class MethodSymbol : MemberSymbol
         IsOverriding = isOverriding;
         IsStatic = isStatic;
     }
-
+    
     public bool IsGeneratedFromGlobalStatements => DeclarationSyntax.IsSome &&
                                                    DeclarationSyntax.Unwrap() is
                                                        CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax;

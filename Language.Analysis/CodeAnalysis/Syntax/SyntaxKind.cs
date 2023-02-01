@@ -24,10 +24,10 @@ public enum SyntaxKind
     OpenBraceToken,
     CloseBraceToken,
     SemicolonToken,
-    LessOrEqualsToken,
-    LessToken,
-    GreaterOrEqualsToken,
-    GreaterToken,
+    LessThanOrEqualsToken,
+    LessThanToken,
+    GreaterThanOrEqualsToken,
+    GreaterThanToken,
     PipeToken,
     AmpersandToken,
     HatToken,
@@ -66,6 +66,7 @@ public enum SyntaxKind
     FieldDeclaration,
     GlobalStatement,
     Parameter,
+    GenericArgumentsList,
     
     // expressions
     LiteralExpression,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Text;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
@@ -57,7 +58,7 @@ public class Parser
         return current;
     }
 
-    SyntaxToken? OptionalMatch(SyntaxKind kind)
+    Option<SyntaxToken> OptionalMatch(SyntaxKind kind)
     {
         if (Current.Kind == kind)
         {
@@ -171,25 +172,25 @@ public class Parser
     InheritanceClauseSyntax? ParseOptionalInheritanceClause()
     {
         var colonToken = OptionalMatch(SyntaxKind.ColonToken);
-        if (colonToken is null)
+        if (colonToken.IsNone)
             return null;
         
         var baseTypes = ImmutableArray.CreateBuilder<SyntaxToken>();
-        var currentToken = Match(SyntaxKind.IdentifierToken);
-        baseTypes.Add(currentToken);
+        Option<SyntaxToken> currentToken = Match(SyntaxKind.IdentifierToken);
+        baseTypes.Add(currentToken.Unwrap());
         currentToken = OptionalMatch(SyntaxKind.CommaToken);
-        if (currentToken is { })
+        if (currentToken.IsSome)
         {
-            baseTypes.Add(currentToken);
+            baseTypes.Add(currentToken.Unwrap());
         }
         
-        while (currentToken is { Kind: SyntaxKind.CommaToken })
+        while (currentToken.IsSome && currentToken.Unwrap() is { Kind: SyntaxKind.CommaToken })
         {
             var baseTypeIdentifier = Match(SyntaxKind.IdentifierToken);
             baseTypes.Add(baseTypeIdentifier);
             currentToken = OptionalMatch(SyntaxKind.CommaToken);
-            if (currentToken is { }) 
-                baseTypes.Add(currentToken);
+            if (currentToken.IsSome) 
+                baseTypes.Add(currentToken.Unwrap());
         }
         
         
@@ -244,6 +245,7 @@ public class Parser
         var virtualKeyword = OptionalMatch(SyntaxKind.VirtualKeyword);
         var overrideKeyword = OptionalMatch(SyntaxKind.OverrideKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
+        var genericArgumentsSyntax = ParseOptionalGenericClause();
         var openParenthesisToken = Match(SyntaxKind.OpenParenthesisToken);
         var parameters = ParseParameterList();
         var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
@@ -251,11 +253,34 @@ public class Parser
         var body = ParseBlockStatement();
         return _syntaxTree.NewMethodDeclaration(staticKeyword, functionKeyword,
                                                 virtualKeyword, overrideKeyword,
-                                                identifier, openParenthesisToken,
+                                                identifier, genericArgumentsSyntax,
+                                                openParenthesisToken,
                                                 parameters, closeParenthesisToken,
                                                 type, body);
     }
-    
+
+    Option<GenericClauseSyntax> ParseOptionalGenericClause()
+    {
+        var lessThanToken = OptionalMatch(SyntaxKind.LessThanToken);
+        if (lessThanToken.IsNone)
+            return Option.None;
+
+        var arguments = ImmutableArray.CreateBuilder<SyntaxToken>();
+        var currentToken = Match(SyntaxKind.IdentifierToken);
+        arguments.Add(currentToken);
+        
+        while (Current is { Kind: SyntaxKind.CommaToken })
+        {
+            Match(SyntaxKind.CommaToken).AddTo(arguments);
+            Match(SyntaxKind.IdentifierToken).AddTo(arguments);
+        }
+        
+        var greaterThanToken = Match(SyntaxKind.GreaterThanToken);
+        return _syntaxTree.NewGenericClause(lessThanToken.Unwrap(),
+                                                   new SeparatedSyntaxList<SyntaxToken>(arguments.ToImmutable()),
+                                                   greaterThanToken);
+    }
+
     GlobalStatementDeclarationSyntax ParseGlobalStatement()
     {
         var statement = ParseStatement();
@@ -501,10 +526,11 @@ public class Parser
     MethodCallExpressionSyntax ParseMethodCallExpressionSyntax()
     {
         var identifier = Match(SyntaxKind.IdentifierToken);
+        var optionalGenericArguments = ParseOptionalGenericClause();
         var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
         var arguments = ParseArguments();
         var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
-        return _syntaxTree.NewMethodCallExpression(identifier, openParenthesis, arguments, closeParenthesis);
+        return _syntaxTree.NewMethodCallExpression(identifier, optionalGenericArguments, openParenthesis, arguments, closeParenthesis);
     }
     
     ExpressionSyntax ParseMemberAccessExpression()
@@ -512,6 +538,7 @@ public class Parser
         var left = Peek(1).Kind switch
         {
             SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
+            SyntaxKind.LessThanToken when Peek(1).Kind is SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
 
             _ => Current.Kind is SyntaxKind.ThisKeyword 
                 ? ParseThisExpression() 
@@ -526,6 +553,8 @@ public class Parser
             ExpressionSyntax right = Peek(1).Kind switch
             {
                 SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
+                SyntaxKind.LessThanToken => ParseMethodCallExpressionSyntax(),
+                
                 _ => ParseNameExpression()
             };
             left = _syntaxTree.NewMemberAccessExpression(left, dot, right);

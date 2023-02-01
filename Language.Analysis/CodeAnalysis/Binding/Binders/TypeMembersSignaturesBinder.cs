@@ -5,6 +5,7 @@ using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -68,14 +69,15 @@ sealed class TypeMembersSignaturesBinder
             if (alreadyCheckedTypes.Contains(firstBaseType))
                 continue;
             
-            var otherBaseTypes = flattenBaseTypes.Where(x => x != firstBaseType).ToList();
-            var symbols = firstBaseType.MethodTable.Symbols.Cast<Symbol>().Concat(firstBaseType.FieldTable.Symbols)
+            var otherBaseTypes = flattenBaseTypes.Where(x => !x.Equals(firstBaseType)).ToList();
+            var symbols = firstBaseType.MethodTable.Select(x => x.MethodSymbol).Cast<Symbol>().Concat(firstBaseType.FieldTable.Symbols)
                 .ToList();
             
             foreach (var symbol in symbols) 
             {
                 var problemBaseTypes = otherBaseTypes
-                    .Where(x => x.MethodTable.Symbols.Any(s => s.Name == symbol.Name) || x.FieldTable.Symbols.Any(s => s.Name == symbol.Name))
+                    .Where(x => x.MethodTable.Select(declaration => declaration.MethodSymbol).Any(s => s.Name == symbol.Name) 
+                                || x.FieldTable.Symbols.Any(s => s.Name == symbol.Name))
                     .AddRangeTo(alreadyCheckedTypes)
                     .ToList();
                 if (problemBaseTypes.Count == 0)

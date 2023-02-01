@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using Language.Analysis.CodeAnalysis.Text;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.Tests;
 

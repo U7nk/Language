@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Interpretation;
 
@@ -29,12 +30,12 @@ class Evaluator
         if (!function.IsStatic)
             throw new Exception("Main method must be static.");
 
-        var programType = _program.Types.Single(x => x.MethodTable.ContainsKey(function));
+        var programType = _program.Types.Single(x => x.MethodTable.SingleOrNone(x => x.MethodSymbol.Equals(function)).IsSome);
         var programTypeStatic = new TypeStaticInstance(CreateFieldsFromTable(programType.FieldTable),
                                                        programType);
         _types.Add(programType, programTypeStatic);
         
-        var body = programType.MethodTable[function].NullGuard();
+        var body = programType.MethodTable.Single(x=> x.MethodSymbol.Equals(function)).Body.Unwrap();
         return EvaluateStatement(body);
     }
 
@@ -264,14 +265,15 @@ class Evaluator
             typeInstance = GetTypeStaticInstance(type);
         }
 
+        
         var parameters = methodCallExpression.MethodSymbol.Parameters;
-        var locals = _stacks.Peek();
+        var newLocals = new Dictionary<VariableSymbol, ObjectInstance?>();
         foreach (var i in 0..methodCallExpression.Arguments.Length)
         {
-            locals.Add(parameters[i], EvaluateExpression(methodCallExpression.Arguments[i]).As<ObjectInstance>());
+            newLocals.Add(parameters[i], EvaluateExpression(methodCallExpression.Arguments[i]).As<ObjectInstance>());
         }
         
-        _stacks.Push(new Dictionary<VariableSymbol, ObjectInstance?>());
+        _stacks.Push(newLocals);
         BoundBlockStatement methodBody;
         ObjectInstance? result;
         if (typeInstance is ObjectInstance objectInstance)

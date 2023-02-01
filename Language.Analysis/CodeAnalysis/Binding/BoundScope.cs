@@ -111,8 +111,18 @@ public class BoundScope
         
         return false;
     }
-    public ImmutableArray<TypeSymbol> GetDeclaredTypes() 
-        => _symbols.Values.SelectMany(x=> x)
+    public ImmutableArray<TypeSymbol> GetDeclaredTypes()
+    {
+        if (Parent is { })
+        {
+            var symbols = Parent.GetDeclaredTypes();
+            return symbols.AddRange(_symbols.Values.SelectMany(x => x)
+                .OfType<TypeSymbol>()
+                .ToImmutableArray());
+        }
+        
+        return _symbols.Values.SelectMany(x => x)
             .OfType<TypeSymbol>()
             .ToImmutableArray();
+    }
 }

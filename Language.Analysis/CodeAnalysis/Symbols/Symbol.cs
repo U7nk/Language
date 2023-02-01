@@ -47,10 +47,4 @@ public abstract class Symbol
 
     public override int GetHashCode() 
         => HashCode.Combine(Name, (int)Kind);
-
-    public static bool operator==(Symbol? left, Symbol? right) 
-        => Equals(left, right);
-
-    public static bool operator !=(Symbol? left, Symbol? right) 
-        => !(left == right);
 }

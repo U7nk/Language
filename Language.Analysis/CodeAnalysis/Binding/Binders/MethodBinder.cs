@@ -8,6 +8,7 @@ using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -34,7 +35,7 @@ sealed class MethodBinder
         _scope = new(_scope);
         BoundBlockStatement result;
         if (methodSymbol.Name is SyntaxFacts.MAIN_METHOD_NAME or SyntaxFacts.SCRIPT_MAIN_METHOD_NAME
-            && _lookup.CurrentType.Name is SyntaxFacts.START_TYPE_NAME)
+            && _lookup.CurrentType.Name == SyntaxFacts.START_TYPE_NAME)
         {
             // method may be generated from global statements
             // so it needs special handling
@@ -440,7 +441,11 @@ sealed class MethodBinder
 
     BoundExpression BindCastExpression(CastExpressionSyntax castExpressionSyntax)
     {
-        var castType = _lookup.LookupType(castExpressionSyntax.NameExpression.Identifier.Text).NullGuard();
+        if (!_scope.TryLookupType(castExpressionSyntax.NameExpression.Identifier.Text, out var castType))
+        {
+            _diagnostics.ReportUndefinedType(castExpressionSyntax.NameExpression.Identifier.Location, castExpressionSyntax.NameExpression.Identifier.Text);
+            return new BoundErrorExpression(castExpressionSyntax);
+        }
         var expression = BindExpression(castExpressionSyntax.CastedExpression, castType, true);
         
         return expression;
@@ -732,13 +737,13 @@ sealed class MethodBinder
             // types is checked differently, because if accessing member on typeSymbol,
             // then the right side should be a static.
             var matchingTypes = symbolList.OfType<TypeSymbol>()
-                .Where(x => x.MethodTable.Symbols
-                           .Any(method => method.IsStatic && method.Name == methodCall.Identifier.Text));
+                .Where(x => x.MethodTable
+                           .Any(method => method.MethodSymbol.IsStatic && method.MethodSymbol.Name == methodCall.Identifier.Text));
             
             var matchingOther = symbolList
                 .OfType<ITypedSymbol>()
-                .Where(x => x.Type.MethodTable.Symbols
-                           .Any(method => !method.IsStatic && method.Name == methodCall.Identifier.Text));
+                .Where(x => x.Type.MethodTable
+                           .Any(method => !method.MethodSymbol.IsStatic && method.MethodSymbol.Name == methodCall.Identifier.Text));
             
             var matchingSymbols = matchingTypes.Concat(matchingOther).Cast<Symbol>().ToList();
             if (matchingSymbols.Count is 1)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
@@ -45,11 +46,11 @@ internal class BoundBinaryOperator
         new(BoundBinaryOperatorKind.LogicalAnd, SyntaxKind.AmpersandAmpersandToken, BuiltInTypeSymbols.Bool),
         new(BoundBinaryOperatorKind.LogicalOr, SyntaxKind.PipePipeToken, BuiltInTypeSymbols.Bool),
         
-        new(BoundBinaryOperatorKind.LessThan, SyntaxKind.LessToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
-        new(BoundBinaryOperatorKind.LessThanOrEquals, SyntaxKind.LessOrEqualsToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
+        new(BoundBinaryOperatorKind.LessThan, SyntaxKind.LessThanToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
+        new(BoundBinaryOperatorKind.LessThanOrEquals, SyntaxKind.LessThanOrEqualsToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
         
-        new(BoundBinaryOperatorKind.GreaterThan, SyntaxKind.GreaterToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
-        new(BoundBinaryOperatorKind.GreaterThanOrEquals, SyntaxKind.GreaterOrEqualsToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
+        new(BoundBinaryOperatorKind.GreaterThan, SyntaxKind.GreaterThanToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
+        new(BoundBinaryOperatorKind.GreaterThanOrEquals, SyntaxKind.GreaterThanOrEqualsToken, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Int, BuiltInTypeSymbols.Bool),
         
         new(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, BuiltInTypeSymbols.Bool),
         new(BoundBinaryOperatorKind.Equality, SyntaxKind.EqualsEqualsToken, BuiltInTypeSymbols.String, BuiltInTypeSymbols.String, BuiltInTypeSymbols.Bool),

@@ -7,12 +7,12 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 static class BinderHelp
 {
-    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BinderLookup typesLookup)
+    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BoundScope scope)
     {
         if (syntax is null)
             return null;
         
-        var type = typesLookup.AvailableTypes.SingleOrDefault(x=> x.Name == syntax.Identifier.Text);
+        var type = scope.GetDeclaredTypes().SingleOrDefault(x=> x.Name == syntax.Identifier.Text);
         if (type != null)
             return type;
 

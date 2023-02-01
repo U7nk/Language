@@ -93,4 +93,11 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     {
         return HashCode.Combine(HasValue, Value);
     }
+
+    public void OnSome(Action<T> action)
+    {
+        if (HasValue)
+            action(Value!);
+        
+    }
 }

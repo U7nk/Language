@@ -6,6 +6,7 @@ using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Common;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
@@ -13,39 +14,50 @@ static class BuiltInTypeSymbols
 {
     public static readonly TypeSymbol Error = TypeSymbol.New("error", Option.None,
                                                              inheritanceClauseSyntax: null,
-                                                             new MethodTable(),
-                                                             new FieldTable());
+                                                             methodTable: new MethodTable(),
+                                                             fieldTable: new FieldTable(),
+                                                             baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                                                             isGenericMethodParameter: false);
 
     public static readonly TypeSymbol Void = TypeSymbol.New("void", Option.None,
                                                             inheritanceClauseSyntax: null,
-                                                            new MethodTable(),
-                                                            new FieldTable());
+                                                            methodTable: new MethodTable(),
+                                                            fieldTable: new FieldTable(), 
+                                                            baseTypes: new SingleOccurenceList<TypeSymbol>(),
+                                                            isGenericMethodParameter: false);
 
     public static readonly TypeSymbol Bool = TypeSymbol.New("bool", Option.None,
                                                             inheritanceClauseSyntax: null,
-                                                            new MethodTable(),
-                                                            new FieldTable());
+                                                            methodTable: new MethodTable(),
+                                                            fieldTable: new FieldTable(),
+                                                            baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                                                            isGenericMethodParameter: false);
 
     public static readonly TypeSymbol Int = TypeSymbol.New("int", Option.None,
                                                            inheritanceClauseSyntax: null,
-                                                           new MethodTable(),
-                                                           new FieldTable());
+                                                           methodTable: new MethodTable(),
+                                                           fieldTable: new FieldTable(), 
+                                                           baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                                                           isGenericMethodParameter: false);
 
     public static readonly TypeSymbol String = TypeSymbol.New("string", Option.None,
                                                               inheritanceClauseSyntax: null,
-                                                              new MethodTable(),
-                                                              new FieldTable());
+                                                              methodTable: new MethodTable(),
+                                                              fieldTable: new FieldTable(),
+                                                              baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                                                              isGenericMethodParameter: false);
 
     public static readonly TypeSymbol Object = InitializeObject();
     public static readonly IEnumerable<TypeSymbol> All = new[] { Error, Void, Bool, Int, String, Object };
     
 
-    private static TypeSymbol InitializeObject()
+    static TypeSymbol InitializeObject()
     {
         var symbol = TypeSymbol.New("object", Option.None,
                        inheritanceClauseSyntax: null,
-                       new MethodTable(),
-                       new FieldTable());
+                       methodTable: new MethodTable(),
+                       fieldTable: new FieldTable(), baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                       isGenericMethodParameter: false);
 
         return symbol;
     }
@@ -68,21 +80,24 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public static TypeSymbol New(string name, Option<SyntaxNode> declaration,
                                  InheritanceClauseSyntax? inheritanceClauseSyntax,
-                                 MethodTable methodTable, FieldTable fieldTable)
-        => new(name, declaration, inheritanceClauseSyntax, containingType: null, methodTable, fieldTable);
+                                 MethodTable methodTable, FieldTable fieldTable,
+                                 SingleOccurenceList<TypeSymbol> baseTypes, bool isGenericMethodParameter)
+        => new(name, declaration, inheritanceClauseSyntax, containingType: null, methodTable, fieldTable, baseTypes, isGenericMethodParameter);
 
     TypeSymbol(string name, Option<SyntaxNode> declaration,
                InheritanceClauseSyntax? inheritanceClauseSyntax,
                TypeSymbol? containingType, MethodTable methodTable,
-               FieldTable fieldTable)
+               FieldTable fieldTable, SingleOccurenceList<TypeSymbol> baseTypes, bool isGenericMethodParameter)
         : base(declaration, name, containingType)
     {
         MethodTable = methodTable;
         FieldTable = fieldTable;
         InheritanceClauseSyntax = inheritanceClauseSyntax;
-        BaseTypes = new SingleOccurenceList<TypeSymbol>();
+        BaseTypes = baseTypes;
+        IsGenericMethodParameter = isGenericMethodParameter;
     }
 
+    public bool IsGenericMethodParameter { get; }
     public MethodTable MethodTable { get; }
     public FieldTable FieldTable { get; }
     public SingleOccurenceList<TypeSymbol> BaseTypes { get; }
@@ -163,7 +178,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
         if (canBeDeclared)
         {
-            MethodTable.Add(method, null);
+            MethodTable.AddMethodDeclaration(method, new List<TypeSymbol>());
         }
 
         return true;
@@ -180,11 +195,14 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     BoundBlockStatement? LookupMethodBodyNullIfNotFound(MethodSymbol methodSymbol)
     {
-        var sameName = MethodTable.Where(x => x.Key.Name == methodSymbol.Name).ToList();
-        foreach (var (method, body) in sameName)
+        var sameName = MethodTable.Where(x => x.MethodSymbol.Name == methodSymbol.Name).ToList();
+        foreach (var declaration in sameName)
         {
-            if (method.ReturnType == methodSymbol.ReturnType && method.Parameters.SequenceEqual(methodSymbol.Parameters))
-                return body.NullGuard();
+            if (declaration.MethodSymbol.ReturnType.Equals(methodSymbol.ReturnType)
+                && declaration.MethodSymbol.Parameters.SequenceEqual(methodSymbol.Parameters))
+            {
+                return declaration.Body.Unwrap();
+            }
         }
         
         var baseMethod = BaseTypes.Select(x => x.LookupMethodBodyNullIfNotFound(methodSymbol))
@@ -203,8 +221,8 @@ public class TypeSymbol : Symbol, ITypedSymbol
         typesChecked.Add(this);
         
         var result = new List<MethodSymbol>();
-        var methods = MethodTable.Symbols.Where(x => x.Name == name).ToList();
-        result.AddRange(methods);
+        var methods = MethodTable.Where(x => x.MethodSymbol.Name == name).ToList();
+        result.AddRange(methods.Select(x => x.MethodSymbol));
 
         var baseTypesMethods = BaseTypes.Select(x => x.LookupMethodInternal(name, typesChecked))
             .SelectMany(x => x)
