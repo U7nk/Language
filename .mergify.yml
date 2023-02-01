@@ -1,0 +1,17 @@
+pull_request_rules:
+  - name: Automatic merge on approval
+    conditions:
+      - "#approved-reviews-by>=1"
+    actions:
+      merge:
+        method: merge
+  
+  - name: automatic merge for Dependabot pull requests
+    conditions:
+      - author=dependabot[bot]
+      # Replace with the name of your CI(s)
+      - check-success=continuous-integration/jenkins/branch
+      - check-success=continuous-integration/jenkins/pr-merge
+    actions:
+      merge:
+        method: merge
