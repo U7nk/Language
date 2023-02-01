@@ -11,6 +11,7 @@ using Language.Analysis.CodeAnalysis.Emit;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis;
 
@@ -112,12 +113,12 @@ public sealed class Compilation
         type.WriteTo(writer);
         writer.WriteLine();
         writer.Write("{");
-        foreach (var methodEntry in type.MethodTable)
+        foreach (var declaration in type.MethodTable)
         {
             writer.WriteLine();
             writer.Indent++;
-            methodEntry.Key.WriteTo(writer);
-            methodEntry.Value?.WriteTo(writer);
+            declaration.MethodSymbol.WriteTo(writer);
+            declaration.Body.OnSome(b => b.WriteTo(writer));
             writer.Indent--;
         }
         writer.Write("}");
@@ -128,11 +129,13 @@ public sealed class Compilation
         var program = GetProgram();
         method.WriteTo(writer);
         writer.WriteLine();
-        var type = program.Types.SingleOrDefault(x => x.MethodTable.ContainsKey(method));
-        if (type is null)
+        var type = program.Types.SingleOrNone(x => x.MethodTable.FirstOrNone(x => x.MethodSymbol.Equals(method)).IsSome);
+        if (type.IsNone)
             return;
 
-        type.MethodTable[method].NullGuard().WriteTo(writer);
+        type.Unwrap().MethodTable
+            .SingleOrNone(x => x.MethodSymbol.Equals(method))
+            .Unwrap().MethodSymbol.WriteTo(writer);
     }
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, string[] refernces, string outputPaths)

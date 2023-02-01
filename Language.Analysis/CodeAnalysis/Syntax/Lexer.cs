@@ -134,20 +134,20 @@ public class Lexer
                 break;
             case '<':
                 if (Lookahead is '=')
-                    _kind = Next(SyntaxKind.LessOrEqualsToken, 2);
+                    _kind = Next(SyntaxKind.LessThanOrEqualsToken, 2);
                 else
-                    _kind = Next(SyntaxKind.LessToken);
+                    _kind = Next(SyntaxKind.LessThanToken);
                 break;
             case '>':
                 Next();
                 if (Current is '=')
                 {
                     Next();
-                    _kind = SyntaxKind.GreaterOrEqualsToken;
+                    _kind = SyntaxKind.GreaterThanOrEqualsToken;
                 }
                 else
                 {
-                    _kind = SyntaxKind.GreaterToken;
+                    _kind = SyntaxKind.GreaterThanToken;
                 }
                 break;
             case '=':

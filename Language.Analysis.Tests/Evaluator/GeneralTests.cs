@@ -1,8 +1,10 @@
+using System.Collections.Immutable;
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.Evaluator;
@@ -770,20 +772,74 @@ public class EvaluatorTests
                 result.Type.Should().Be(BuiltInTypeSymbols.Int);
                 result.LiteralValue.Should().Be(10);
             },
-            isScript: false);
+            isScript: false,
+            Option.Some(_testOutputHelper));
+    }
+    
+    [Fact]
+    public void EvaluatorEvaluatesMethodWithGenericParameterCall()
+    {
+        var source = """
+            class MyClass
+            {
+                
+                function TestMethod<T>(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass();
+                    myClass.TestMethod<int>(10);
+                    myClass.TestMethod<string>("foo");
+                }
+            }
+            """;
+        AssertValue(
+            source,
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(BuiltInTypeSymbols.String);
+                result.LiteralValue.Should().Be("foo");
+            },
+            isScript: false,
+            Option.Some(_testOutputHelper));
     }
 
 
-    static ObjectInstance? EvaluateValue(string expression, bool isScript)
+    static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
-        syntaxTree.Diagnostics.Should().BeEmpty();
+        if (output.IsSome)
+        {
+            if (syntaxTree.Diagnostics is { Length: >0 } diagnostics)
+            {
+                new Result<ObjectInstance?, ImmutableArray<Diagnostic>>(diagnostics)
+                    .AssertNoDiagnostics(output.Unwrap());
+            }
+        }
+        else
+        {
+            syntaxTree.Diagnostics.Should().BeEmpty();
+        }
 
         var compilation = isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
         var variables = new Dictionary<VariableSymbol, ObjectInstance?>();
         var evaluation = compilation.Evaluate(variables);
 
-        evaluation.Diagnostics.ToList().Should().BeEmpty();
+        if (output.IsSome)
+        {
+            Result<ObjectInstance?, ImmutableArray<Diagnostic>> evaluationCastedToResult = evaluation;
+            evaluationCastedToResult.AssertNoDiagnostics(output.Unwrap());
+        }
+        else
+        {
+            evaluation.Diagnostics.AsEnumerable().Should().BeEmpty();   
+        }
         return evaluation.Result;
     }
 
@@ -792,8 +848,8 @@ public class EvaluatorTests
         EvaluateValue(expression, isScript).NullGuard().LiteralValue.Should().Be(expectedValue);
     }
 
-    static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript)
+    static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript, Option<ITestOutputHelper> output = default)
     {
-        resultAssertion(EvaluateValue(expression, isScript));
+        resultAssertion(EvaluateValue(expression, isScript, output));
     }
 }

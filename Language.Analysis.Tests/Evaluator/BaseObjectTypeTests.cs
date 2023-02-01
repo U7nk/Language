@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.Extensions;
 using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.Evaluator;

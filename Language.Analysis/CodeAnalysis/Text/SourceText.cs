@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Text;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Text;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Syntax;
 

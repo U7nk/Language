@@ -184,10 +184,10 @@ public sealed class LexerTests
 
         switch (t1Kind, t2Kind)
         {
-            case (SyntaxKind.GreaterToken, 
+            case (SyntaxKind.GreaterThanToken, 
                 SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
                 
-            case (SyntaxKind.LessToken,
+            case (SyntaxKind.LessThanToken,
                 SyntaxKind.EqualsToken or SyntaxKind.EqualsEqualsToken):
             
             case (SyntaxKind.NumberToken, SyntaxKind.NumberToken):

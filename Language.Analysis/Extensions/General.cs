@@ -8,9 +8,9 @@ using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.Analysis;
+namespace Language.Analysis.Extensions;
 
-internal static class Extensions
+internal static class General
 {
     public class Condition<T>
     { 
@@ -85,7 +85,7 @@ internal static class Extensions
         
         public int Current => _current;
     }
-    
+
     /// <summary>
     /// Null guard
     /// </summary>

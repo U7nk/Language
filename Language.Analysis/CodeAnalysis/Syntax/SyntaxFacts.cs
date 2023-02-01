@@ -39,10 +39,10 @@ internal static class SyntaxFacts
 
             case SyntaxKind.EqualsEqualsToken:
             case SyntaxKind.BangEqualsToken:
-            case SyntaxKind.LessToken:
-            case SyntaxKind.LessOrEqualsToken:
-            case SyntaxKind.GreaterToken:
-            case SyntaxKind.GreaterOrEqualsToken:
+            case SyntaxKind.LessThanToken:
+            case SyntaxKind.LessThanOrEqualsToken:
+            case SyntaxKind.GreaterThanToken:
+            case SyntaxKind.GreaterThanOrEqualsToken:
                 return 3;
 
             case SyntaxKind.AmpersandToken:
@@ -105,6 +105,8 @@ internal static class SyntaxFacts
             "static" => SyntaxKind.StaticKeyword,
             "virtual" => SyntaxKind.VirtualKeyword,
             "override" => SyntaxKind.OverrideKeyword,
+            "<" => SyntaxKind.LessThanToken,
+            ">" => SyntaxKind.GreaterThanToken,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -130,16 +132,16 @@ internal static class SyntaxFacts
             SyntaxKind.EqualsEqualsToken => "==",
             SyntaxKind.BangEqualsToken => "!=",
             SyntaxKind.EqualsToken => "=",
-            SyntaxKind.LessToken => "<",
-            SyntaxKind.LessOrEqualsToken => "<=",
-            SyntaxKind.GreaterToken => ">",
-            SyntaxKind.GreaterOrEqualsToken => ">=",
+            SyntaxKind.LessThanToken => "<",
+            SyntaxKind.LessThanOrEqualsToken => "<=",
+            SyntaxKind.GreaterThanToken => ">",
+            SyntaxKind.GreaterThanOrEqualsToken => ">=",
             SyntaxKind.PipeToken => "|",
             SyntaxKind.AmpersandToken => "&",
             SyntaxKind.HatToken => "^",
             SyntaxKind.TildeToken => "~",
             SyntaxKind.DotToken => ".",
-            
+
             SyntaxKind.TrueKeyword => "true",
             SyntaxKind.FalseKeyword => "false",
             SyntaxKind.LetKeyword => "let",

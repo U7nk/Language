@@ -6,6 +6,8 @@ using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Common;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -183,7 +185,9 @@ sealed class ProgramBinder
     {
         var programType = TypeSymbol.New(SyntaxFacts.START_TYPE_NAME, Option.None,
                                          inheritanceClauseSyntax: null , 
-                                         new MethodTable(), new FieldTable());
+                                         methodTable: new MethodTable(), fieldTable: new FieldTable(),
+                                         baseTypes: new SingleOccurenceList<TypeSymbol>(), 
+                                         isGenericMethodParameter: false);
 
 
         var mainMethodDeclarationSyntax = globalStatements.IsSome
@@ -213,6 +217,7 @@ sealed class ProgramBinder
                 containingType: programType);
         }
 
+        programType.MethodTable.AddMethodDeclaration(main, new List<TypeSymbol>());
         programType.MethodTable.SetMethodBody(main, null);
         
         if (!scope.TryDeclareType(programType))
@@ -238,7 +243,7 @@ sealed class ProgramBinder
 
     MethodSymbol? TryFindMainMethod()
     {
-        foreach (var function in _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Symbols))
+        foreach (var function in _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Select(declaration=>declaration.MethodSymbol)))
         {
             if (function.Name == SyntaxFacts.MAIN_METHOD_NAME)
                 return function;
@@ -250,7 +255,7 @@ sealed class ProgramBinder
     void DiagnoseMainMethodAndGlobalStatementsUsage(
         IEnumerable<GlobalStatementDeclarationSyntax> statements)
     {
-        var methods = _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Symbols).ToList();
+        var methods = _scope.GetDeclaredTypes().SelectMany(x => x.MethodTable.Select(declaration=> declaration.MethodSymbol)).ToList();
         if (methods.Any(x => x.Name == "main") && statements.Any())
         {
             foreach (var method in methods.Where(x => x.Name == "main"))

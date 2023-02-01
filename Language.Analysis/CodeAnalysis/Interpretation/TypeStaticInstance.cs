@@ -14,8 +14,8 @@ public class TypeStaticInstance : RuntimeObject
         Type = type;
     }
     
-    public ImmutableDictionary<MethodSymbol, BoundBlockStatement?> Methods => Type.MethodTable
-        .Where(x=> x.Key.IsStatic)
-        .ToImmutableDictionary();
+    public ImmutableArray<MethodDeclaration> Methods => Type.MethodTable
+        .Where(x=> x.MethodSymbol.IsStatic)
+        .ToImmutableArray();
     public TypeSymbol Type { get; }
 }

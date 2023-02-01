@@ -4,6 +4,7 @@ using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Common;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -25,7 +26,9 @@ sealed class TypeSignatureBinder
                                         classDeclaration, 
                                         classDeclaration.InheritanceClause,
                                         new MethodTable(),
-                                        new FieldTable());
+                                        new FieldTable(),
+                                        new SingleOccurenceList<TypeSymbol>(), 
+                                        isGenericMethodParameter: false);
         _lookup.AddDeclaration(typeSymbol, classDeclaration);
         
         var diagnostics = new DiagnosticBag();

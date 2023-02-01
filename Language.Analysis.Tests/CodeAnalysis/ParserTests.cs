@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.Tests.CodeAnalysis;
 

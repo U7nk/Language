@@ -5,6 +5,7 @@ using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis;
 

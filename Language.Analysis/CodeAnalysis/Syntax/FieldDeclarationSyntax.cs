@@ -4,7 +4,7 @@ public class FieldDeclarationSyntax : SyntaxNode, IClassMemberDeclarationSyntax
 {
     public FieldDeclarationSyntax(
         SyntaxTree syntaxTree,
-        SyntaxToken? staticKeyword, SyntaxToken identifier, 
+        Option<SyntaxToken> staticKeyword, SyntaxToken identifier, 
         TypeClauseSyntax typeClause, SyntaxToken semicolonToken) : base(syntaxTree)
     {
         StaticKeyword = staticKeyword;
@@ -13,7 +13,7 @@ public class FieldDeclarationSyntax : SyntaxNode, IClassMemberDeclarationSyntax
         TypeClause = typeClause;
     }
     
-    public SyntaxToken? StaticKeyword { get; }
+    public Option<SyntaxToken> StaticKeyword { get; }
     public SyntaxToken Identifier { get; }
     public TypeClauseSyntax TypeClause { get; }
     public SyntaxToken SemicolonToken { get; }

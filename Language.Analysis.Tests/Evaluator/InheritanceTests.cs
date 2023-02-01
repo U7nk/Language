@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Language.Analysis.Extensions;
 using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.Evaluator;

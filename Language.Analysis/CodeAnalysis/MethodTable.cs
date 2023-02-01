@@ -1,34 +1,66 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis;
+
+public class MethodDeclaration
+{
+    public MethodDeclaration(MethodSymbol methodSymbol, List<TypeSymbol> genericArgumentsTypeSymbols, Option<BoundBlockStatement> body)
+    {
+        MethodSymbol = methodSymbol;
+        GenericArgumentsTypeSymbols = genericArgumentsTypeSymbols;
+        Body = body;
+    }
+
+    public MethodSymbol MethodSymbol { get; init; }
+    public List<TypeSymbol> GenericArgumentsTypeSymbols { get; init; }
+    public Option<BoundBlockStatement> Body { get; set; }
+    
+    
+}
 
 /// <summary>
 /// Function symbol -> Lowered function body
 /// </summary>
-public class MethodTable : Dictionary<MethodSymbol, BoundBlockStatement?>
+public class MethodTable : IEnumerable<MethodDeclaration>
 {
-    public IEnumerable<MethodSymbol> Symbols => Keys;
-    public IEnumerable<BoundBlockStatement?> Bodies => Values;
-
-    public MethodTable(Dictionary<MethodSymbol, BoundBlockStatement?> methods) : base(methods)
-    {
-        
-    }
-    public MethodTable()
-    { }
+    readonly List<MethodDeclaration> _methodDeclarations = new();
     public void SetMethodBody(MethodSymbol symbol, BoundBlockStatement? body)
     {
-        if (ContainsKey(symbol))
+        var declaration = _methodDeclarations.FirstOrNone(x => x.MethodSymbol.Equals(symbol));
+        if (declaration.IsSome)
         {
-            this[symbol] = body;
+            declaration.Unwrap().Body = body;
         }
         else
         {
-            Add(symbol, body);
+            throw new Exception($"Method {symbol.Name} is not declared");
         }
+    }
+    
+    public void AddMethodDeclaration(MethodSymbol symbol, List<TypeSymbol> genericArgumentsTypeSymbols)
+    {
+        if (_methodDeclarations.Any(x => x.MethodSymbol.Equals(symbol)))
+        {
+            throw new Exception($"Method {symbol.Name} is already declared");
+        }
+        
+        _methodDeclarations.Add(new MethodDeclaration(symbol, genericArgumentsTypeSymbols, body: Option.None));
+    }
+
+    public IEnumerator<MethodDeclaration> GetEnumerator()
+    {
+        return _methodDeclarations.GetEnumerator(); 
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }
 

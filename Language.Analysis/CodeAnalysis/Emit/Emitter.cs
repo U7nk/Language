@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Emit;
 

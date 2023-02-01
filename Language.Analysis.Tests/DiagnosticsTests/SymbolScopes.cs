@@ -4,6 +4,7 @@ using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 using Xunit.Abstractions;
 
 namespace Language.Analysis.Tests.DiagnosticsTests;
