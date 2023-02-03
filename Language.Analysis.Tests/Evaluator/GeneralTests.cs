@@ -809,6 +809,36 @@ public class EvaluatorTests
             isScript: false,
             Option.Some(_testOutputHelper));
     }
+    
+    [Fact]
+    public void MethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
+    {
+        var source = """
+            class MyClass
+            {
+                function TestMethod<T>(parameter : T) : int
+                    where T : MyClass
+                {
+                    return parameter.TestMethodTwo();
+                }
+
+                function TestMethodTwo() : int
+                {
+                    return 10;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var result = new MyClass().TestMethod<MyClass>(new MyClass());
+                }
+            }
+            """;
+        
+        (TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper).Ok is { LiteralValue: 10, Type.Name: "int" })
+            .Should().BeTrue();
+    }
 
     static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
     {
