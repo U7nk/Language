@@ -28,7 +28,7 @@ sealed class TypeSignatureBinder
                                         new MethodTable(),
                                         new FieldTable(),
                                         new SingleOccurenceList<TypeSymbol>(), 
-                                        isGenericMethodParameter: false);
+                                        isGenericMethodParameter: false, genericParameterTypeConstraints: Option.None);
         _lookup.AddDeclaration(typeSymbol, classDeclaration);
         
         var diagnostics = new DiagnosticBag();

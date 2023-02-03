@@ -363,13 +363,11 @@ public class General
             """
             class Program{
                 static StaticField : int;
-                InstanceField : int;
-                
                 static function main(){
                     
                 }
                 
-                function StaticMethod(){
+                static function StaticMethod(){
                     [StaticField;]
                     [Program.StaticField;]
                 }
@@ -379,6 +377,32 @@ public class General
         var diagnostics = new[]
         {
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+            DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
+        };
+
+        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void StaticFieldCannotBeCalledOnInstanceMethod()
+    {
+        var text =
+            """
+            class Program{
+                static StaticField : int;
+                
+                static function main(){    
+                }
+                
+                function StaticMethod(){
+                    [[StaticField];]
+                }
+            } 
+            """ ;
+            
+        var diagnostics = new[]
+        {
+            DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
@@ -576,4 +600,120 @@ public class General
         };
         TestTools.AssertDiagnostics(text, isScript: true, diagnostics, Output);
     }
+    
+    [Fact]
+    public void MethodWithGenericTypeParametersCallReportsWhenNoGenericTypeArguments()
+    {
+        var source = """
+            class MyClass
+            {
+                
+                function TestMethod<T>(parameter : T) : T
+                    where T : MyClass
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass();
+                    myClass.[TestMethod](10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void MethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
+    {
+        var source = """
+            class MyClass
+            {
+                function TestMethod<T>(parameter : T) : T
+                    where T : MyClass
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass();
+                    myClass.TestMethod<[int]>(10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+
+    [Fact]
+    public void MethodWithGenericTypeConstraintsCallReportsWhenTooMuchTypeArguments()
+    {
+        var source = """
+            class MyClass
+            {
+                function TestMethod<T>(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass();
+                    myClass.TestMethod[<int, string>](10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void MethodWithGenericTypeConstraintsCallReportsWhenNotEnoughTypeArguments()
+    {
+        var source = """
+            class MyClass
+            {
+                function TestMethod<T, TY, TX>(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass();
+                    myClass.TestMethod[<int, string>](10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+
 }

@@ -8,9 +8,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax(this,members,endOfFileToken);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> virtualKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> overrideKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericParametersSyntax,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
+    public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> virtualKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> overrideKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericParametersSyntax,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.Option<System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.GenericConstraintsClauseSyntax>> genericConstraintsClauseSyntax,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,virtualKeyword,overrideKeyword,identifier,genericParametersSyntax,openParenthesisToken,parameters,closeParenthesisToken,returnType,body);
+       return new Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax(this,staticKeyword,functionKeyword,virtualKeyword,overrideKeyword,identifier,genericParametersSyntax,openParenthesisToken,parameters,closeParenthesisToken,returnType,genericConstraintsClauseSyntax,body);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.VariableDeclarationSyntax NewVariableDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken keywordToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? typeClause)
@@ -101,6 +101,11 @@ public partial class SyntaxTree {
     public Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax NewInheritanceClause(Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> baseTypes)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax(this,baseTypes);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.GenericConstraintsClauseSyntax NewGenericConstraintsClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken whereKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken colonToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> typeConstraints)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.GenericConstraintsClauseSyntax(this,whereKeyword,identifier,colonToken,typeConstraints);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.FieldDeclarationSyntax NewFieldDeclaration(Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax typeClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken semicolonToken)

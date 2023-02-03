@@ -810,7 +810,6 @@ public class EvaluatorTests
             Option.Some(_testOutputHelper));
     }
 
-
     static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
     {
         var syntaxTree = SyntaxTree.Parse(expression);

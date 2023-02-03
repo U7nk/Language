@@ -187,7 +187,7 @@ sealed class ProgramBinder
                                          inheritanceClauseSyntax: null , 
                                          methodTable: new MethodTable(), fieldTable: new FieldTable(),
                                          baseTypes: new SingleOccurenceList<TypeSymbol>(), 
-                                         isGenericMethodParameter: false);
+                                         isGenericMethodParameter: false, genericParameterTypeConstraints: Option.None);
 
 
         var mainMethodDeclarationSyntax = globalStatements.IsSome
