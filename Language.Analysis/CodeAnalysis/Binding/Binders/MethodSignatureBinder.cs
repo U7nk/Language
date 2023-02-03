@@ -5,6 +5,7 @@ using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Common;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -56,15 +57,18 @@ class MethodSignatureBinder
                 var typeConstraints = typeConstraintsByGenericName.TryGetValue(genericArgumentName, out var value) 
                     ? Option.Some(value.ToImmutableArray()) 
                     : Option.None;
+
+                var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
+                if (typeConstraints.IsSome) 
+                    typeConstraints.Unwrap().AddRangeTo(baseTypes);
                 
                 var genericType = TypeSymbol.New(genericArgumentName, 
                                                  Option.None,
                                                  null,
                                                  new MethodTable(),
                                                  new FieldTable(),
-                                                 new SingleOccurenceList<TypeSymbol> { 
-                                                     BuiltInTypeSymbols.Object 
-                                                 }, isGenericMethodParameter: true, 
+                                                 baseTypes,
+                                                 isGenericMethodParameter: true, 
                                                  typeConstraints);
 
                 if (!_scope.TryDeclareType(genericType))

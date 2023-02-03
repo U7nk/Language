@@ -543,11 +543,6 @@ public class Parser
 
     ExpressionSyntax ParseExpression()
     {
-        if (Current.Kind is SyntaxKind.NewKeyword)
-        {
-            return ParseObjectCreationExpression();
-        }
-        
         var binary =  ParseBinaryExpression();
 
         return binary;
@@ -565,16 +560,19 @@ public class Parser
     
     ExpressionSyntax ParseMemberAccessExpression()
     {
-        var left = Peek(1).Kind switch
+        var left = Current.Kind switch
         {
-            SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
-            SyntaxKind.LessThanToken when Peek(1).Kind is SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
+            SyntaxKind.NewKeyword => ParseObjectCreationExpression(),
+            
+            _ => Peek(1).Kind switch
+            {
+                SyntaxKind.OpenParenthesisToken => ParseMethodCallExpressionSyntax(),
 
-            _ => Current.Kind is SyntaxKind.ThisKeyword 
-                ? ParseThisExpression() 
-                : ParseNameExpression()
+                _ => Current.Kind is SyntaxKind.ThisKeyword
+                    ? ParseThisExpression()
+                    : ParseNameExpression()
+            }
         };
-
 
         while (Current.Kind is SyntaxKind.DotToken)
         {
