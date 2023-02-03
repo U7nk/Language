@@ -289,10 +289,10 @@ public class DiagnosticBag : List<Diagnostic>
     public const string AMBIGUOUS_TYPE_CODE = "[0033:Error]";
 
     public void ReportAmbiguousType(TextLocation typeIdentifierLocation, string typeIdentifier,
-        List<TypeSymbol> matchingTypes)
+        IEnumerable<TypeSymbol> matchingTypes)
     {
-        var message =
-            $"Type '{typeIdentifier}' is ambiguous. Found {matchingTypes.Count} matching types: {string.Join(", ", matchingTypes.Select(t => t.Name))}.";
+        var typeSymbols = matchingTypes.ToList();
+        var message = $"Type '{typeIdentifier}' is ambiguous. Found {typeSymbols.Count} matching types: {string.Join(", ", typeSymbols.Select(t => t.Name))}.";
         Report(typeIdentifierLocation, message, AMBIGUOUS_TYPE_CODE);
     }
 
@@ -458,5 +458,29 @@ public class DiagnosticBag : List<Diagnostic>
         var identifier = methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier;
         var message = $"Method '{identifier.Text}' is already declared in base class '{baseType}'.";
         Report(identifier.Location, message, METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE);
+    }
+    
+    public const string GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE = "[0052:Error]";
+    public void ReportGenericMethodCallWithWrongTypeArgument(SyntaxToken genericArgument, TypeSymbol genericArgumentType, TypeSymbol constraintType)
+    {
+        var message = $"Generic method call with wrong type argument. Type '{genericArgumentType}' does not satisfy type constraint '{constraintType}'.";
+        Report(genericArgument.Location, message, GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE);
+    }
+    
+    public const string GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE = "[0053:Error]";
+    public void ReportGenericMethodCallWithWrongTypeArgumentsCount(GenericClauseSyntax genericClauseSyntax, 
+                                                                  SyntaxToken identifier, 
+                                                                  IEnumerable<SyntaxToken> typeArguments,
+                                                                  IEnumerable<TypeSymbol> expectedTypeArguments)
+    {
+        var message = $"Generic method call with wrong type arguments count. Method '{identifier.Text}' expects {expectedTypeArguments.Count()} type arguments, but {typeArguments.Count()} were provided.";
+        Report(genericClauseSyntax.Location, message, GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE);
+    }
+
+    public const string GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE = "[0054:Error]";
+    public void ReportGenericMethodParametersNotSpecified(SyntaxToken methodIdentifier)
+    {
+        var message = $"Generic method parameters not specified.";
+        Report(methodIdentifier.Location, message, GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE);
     }
 }

@@ -54,6 +54,7 @@ public enum SyntaxKind
     StaticKeyword,
     VirtualKeyword,
     OverrideKeyword,
+    WhereKeyword,
     
     // nodes
     CompilationUnit,
@@ -67,6 +68,7 @@ public enum SyntaxKind
     GlobalStatement,
     Parameter,
     GenericArgumentsList,
+    GenericConstraintsClause,
     
     // expressions
     LiteralExpression,

@@ -23,8 +23,7 @@ public class MethodSymbol : MemberSymbol
     }
     
     public bool IsGeneratedFromGlobalStatements => DeclarationSyntax.IsSome &&
-                                                   DeclarationSyntax.Unwrap() is
-                                                       CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax;
+                                                   DeclarationSyntax.Unwrap() is CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax;
 
     public bool IsStatic { get; }
     public bool IsVirtual { get; }

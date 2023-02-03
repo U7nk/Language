@@ -420,7 +420,7 @@ sealed class MethodBinder
                 return BindNameExpression((NameExpressionSyntax)syntax,
                                           type: _lookup.CurrentType,
                                           // if method is static, it can be only static member access
-                                          _lookup.CurrentMethod.IsStatic ? true : null);
+                                          _lookup.CurrentMethod.IsStatic);
             case SyntaxKind.ThisExpression:
                 return BindThisExpression((ThisExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
@@ -433,7 +433,7 @@ sealed class MethodBinder
                 return BindMethodCallExpression((MethodCallExpressionSyntax)syntax, 
                                                 _lookup.CurrentType,
                                                 // if method is static, it can be only static member access
-                                                isStatic: _lookup.CurrentMethod.IsStatic ? true : null);
+                                                isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
@@ -469,8 +469,7 @@ sealed class MethodBinder
             var nameExpression = (NameExpressionSyntax)syntax.MemberAccess;
             member = BindNameExpression(nameExpression,
                                         _lookup.CurrentType,
-                                        // if method is static, it can be only static member access
-                                        _lookup.CurrentMethod.IsStatic ? true : null);
+                                        isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
             if (member.Kind is BoundNodeKind.VariableExpression)
             {
                 var variableExpression = (BoundVariableExpression)member;
@@ -497,31 +496,79 @@ sealed class MethodBinder
     /// </summary>
     /// <param name="syntax"></param>
     /// <param name="type"></param>
-    /// <param name="isStatic">if null, dont perform static check.</param>
+    /// <param name="isCalledOnStatic"></param>
     /// <returns></returns>
-    BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type, bool? isStatic)
+    BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type, bool isCalledOnStatic)
     {
         var methods = type.LookupMethod(syntax.Identifier.Text);
-        var method = methods.FirstOrDefault();
-        if (method is null)
+        var methodSymbol = methods.FirstOrDefault();
+        if (methodSymbol is null)
         {
             _diagnostics.ReportUndefinedMethod(syntax.Identifier, type);
             return new BoundErrorExpression(null);
         }
+        var arguments = syntax.Arguments.Select(x => BindExpression(x)).ToImmutableArray();
+        var boundMethodCall = new BoundMethodCallExpression(syntax, methodSymbol, arguments);
         
-        if (isStatic.HasValue)
+        
+        if (isCalledOnStatic is false && methodSymbol.IsStatic)
         {
-            if (method.IsStatic && isStatic.Value is false)
+            _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(syntax.Identifier);
+        }
+        
+        var genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter).ToList();
+        if (genericParameters.Any())
+        {
+            if (syntax.GenericArgumentsSyntax.IsNone)
             {
-                _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(syntax.Identifier);
+                _diagnostics.ReportGenericMethodParametersNotSpecified(syntax.Identifier);
+            }
+            else
+            {
+                if (genericParameters.Count != syntax.GenericArgumentsSyntax.Unwrap().Arguments.Count)
+                {
+                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(syntax.GenericArgumentsSyntax.Unwrap(),
+                        syntax.Identifier,
+                        syntax.GenericArgumentsSyntax.Unwrap().Arguments,
+                        genericParameters.Select(x=> x.Type));
+                }
+                
+                foreach (var genericArg in syntax.GenericArgumentsSyntax.Unwrap().Arguments)
+                {
+                    if (!_scope.TryLookupType(genericArg.Text, out _))
+                    {
+                        _diagnostics.ReportUndefinedType(genericArg.Location, genericArg.Text);
+                    }
+                }
+                
+                foreach (var i in 0..genericParameters.Count)
+                {
+                    var genericParameter = genericParameters[i];
+                    var genericArgumentSyntax = syntax.GenericArgumentsSyntax.Unwrap().Arguments[i];
+                    if (!_scope.TryLookupType(genericArgumentSyntax.Text, out var genericArgumentType))
+                        continue;
+
+                    var constraintTypesOption = genericParameter.Type.GenericParameterTypeConstraints;
+                    if (constraintTypesOption.IsNone)
+                        continue;
+                    
+                    var constraintTypes = constraintTypesOption.Unwrap();
+                    foreach (var constraintType in constraintTypes)
+                    {
+                        if (genericArgumentType.CanBeCastedTo(constraintType) is false)
+                        {
+                            _diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
+                                genericArgumentSyntax,
+                                genericArgumentType,
+                                constraintType);
+                        }
+                    }
+                }
             }
         }
-
-        var arguments = syntax.Arguments.Select(x => BindExpression(x))
-            .ToImmutableArray();
-
-        var boundMethodCall = new BoundMethodCallExpression(syntax, method, arguments);
-
+        
+        
+        
         return boundMethodCall;
     }
 
@@ -530,14 +577,12 @@ sealed class MethodBinder
         if (syntax.Kind is SyntaxKind.NameExpression)
             return BindNameExpression((NameExpressionSyntax)syntax, 
                                       _lookup.CurrentType,
-                                      // if method is static, it can be only static member access
-                                      isStatic: _lookup.CurrentMethod.IsStatic ? true : null);
+                                      isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
 
         if (syntax.Kind is SyntaxKind.MethodCallExpression)
             return BindMethodCallExpression((MethodCallExpressionSyntax)syntax,
-                                            _lookup.CurrentType, 
-                                            // if it is a static method, then it can be only a static member access
-                                            isStatic: _lookup.CurrentMethod.IsStatic ? true : null);
+                                            _lookup.CurrentType,
+                                            isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
 
         Debug.Assert(
             syntax.Kind is SyntaxKind.MemberAccessExpression,
@@ -614,8 +659,7 @@ sealed class MethodBinder
         
         if (memberAccess.Right.Kind is SyntaxKind.MethodCallExpression)
         {
-            var methodCall = BindMethodCallExpression((MethodCallExpressionSyntax)memberAccess.Right, left.Type, 
-                                                      isStatic);
+            var methodCall = BindMethodCallExpression((MethodCallExpressionSyntax)memberAccess.Right, left.Type, isStatic);
             
             return new BoundMemberAccessExpression(syntax, left, methodCall);
         }
@@ -624,8 +668,7 @@ sealed class MethodBinder
         {
             
             var nameExpression = (NameExpressionSyntax)memberAccess.Right;
-            var fieldAccess = BindNameExpression(nameExpression, left.Type,
-                               isStatic);
+            var fieldAccess = BindNameExpression(nameExpression, left.Type, isStatic);
             
             return new BoundMemberAccessExpression(memberAccess, left, fieldAccess);
         }
@@ -833,7 +876,7 @@ sealed class MethodBinder
             _ => throw new Exception($"Unexpected symbol {symbol.Kind}")
         };
 
-    BoundExpression BindNameExpression(NameExpressionSyntax syntax, TypeSymbol type, bool? isStatic)
+    BoundExpression BindNameExpression(NameExpressionSyntax syntax, TypeSymbol type, bool isCalledOnStatic)
     {
         var name = syntax.Identifier.Text;
 
@@ -854,7 +897,7 @@ sealed class MethodBinder
             return new BoundVariableExpression(syntax, variable);
         }
 
-        if (field is null && type != _lookup.CurrentType)
+        if (field is null && !type.Equals(_lookup.CurrentType))
         {
             _diagnostics.ReportUndefinedFieldAccess(syntax.Identifier, type);
             return new BoundErrorExpression(null);
@@ -865,12 +908,9 @@ sealed class MethodBinder
             return new BoundErrorExpression(null);
         }
 
-        if (isStatic.HasValue)
+        if (isCalledOnStatic is false && field.IsStatic)
         {
-            if (field.IsStatic && isStatic.Value is false)
-            {
-                _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(syntax.Identifier);
-            }
+            _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(syntax.Identifier);
         }
 
         return new BoundFieldExpression(syntax, field);

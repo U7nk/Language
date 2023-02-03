@@ -22,13 +22,41 @@ class MethodSignatureBinder
     public ImmutableArray<Diagnostic> BindMethodSignature(MethodDeclarationSyntax method)
     {
         var diagnostics = new DiagnosticBag();
-
+        
+        var typeConstraintsByGenericName = new Dictionary<string, IEnumerable<TypeSymbol>>();
         if (method.GenericParametersSyntax.IsSome)
         {
-            var genericArgumentsSyntax = method.GenericParametersSyntax.Unwrap();
-            foreach (var genericArgument in genericArgumentsSyntax.Arguments)
+            foreach (var x in method.GenericConstraintsClauseSyntax.SomeOr(ImmutableArray<GenericConstraintsClauseSyntax>.Empty))
             {
-                var genericArgumentName = genericArgument.Text;
+                if (method.GenericConstraintsClauseSyntax.IsSome)
+                {
+                    var typeConstraintsSyntax = x.TypeConstraints;
+                    var typeConstraints = new List<TypeSymbol>();
+                    foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
+                    {
+                        var genericTypeConstraintName = genericTypeConstraintIdentifier.Text;
+                        if (!_scope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
+                        {
+                            diagnostics.ReportUndefinedType(genericTypeConstraintIdentifier.Location,
+                                                            genericTypeConstraintName);
+                            continue;
+                        }
+
+                        typeConstraints.Add(genericTypeConstraintType);
+                    }
+
+                    typeConstraintsByGenericName.Add(x.Identifier.Text, typeConstraints);
+                }
+            }
+
+            var genericArgumentsSyntax = method.GenericParametersSyntax.Unwrap();
+            foreach (var genericArgumentSyntax in genericArgumentsSyntax.Arguments)
+            {
+                var genericArgumentName = genericArgumentSyntax.Text;
+                var typeConstraints = typeConstraintsByGenericName.TryGetValue(genericArgumentName, out var value) 
+                    ? Option.Some(value.ToImmutableArray()) 
+                    : Option.None;
+                
                 var genericType = TypeSymbol.New(genericArgumentName, 
                                                  Option.None,
                                                  null,
@@ -36,16 +64,18 @@ class MethodSignatureBinder
                                                  new FieldTable(),
                                                  new SingleOccurenceList<TypeSymbol> { 
                                                      BuiltInTypeSymbols.Object 
-                                                 }, isGenericMethodParameter: true);
+                                                 }, isGenericMethodParameter: true, 
+                                                 typeConstraints);
 
                 if (!_scope.TryDeclareType(genericType))
                 {
-                    diagnostics.ReportAmbiguousType(genericArgument.Location,
+                    diagnostics.ReportAmbiguousType(genericArgumentSyntax.Location,
                                                     genericArgumentName,
-                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName).ToList());
+                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName));
                 }
             }
         }
+        
         
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
         foreach (var parameter in method.Parameters)

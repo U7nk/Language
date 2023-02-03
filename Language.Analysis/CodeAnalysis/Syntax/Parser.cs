@@ -250,13 +250,43 @@ public class Parser
         var parameters = ParseParameterList();
         var closeParenthesisToken = Match(SyntaxKind.CloseParenthesisToken);
         var type = ParseOptionalTypeClause();
+        var optionalGenericConstraintClause = ParseOptionalGenericConstraintsClause();
         var body = ParseBlockStatement();
         return _syntaxTree.NewMethodDeclaration(staticKeyword, functionKeyword,
                                                 virtualKeyword, overrideKeyword,
                                                 identifier, genericArgumentsSyntax,
-                                                openParenthesisToken,
-                                                parameters, closeParenthesisToken,
-                                                type, body);
+                                                openParenthesisToken, parameters,
+                                                closeParenthesisToken, type,
+                                                optionalGenericConstraintClause, body);
+    }
+
+    Option<ImmutableArray<GenericConstraintsClauseSyntax>> ParseOptionalGenericConstraintsClause()
+    {
+        var constraints = ImmutableArray.CreateBuilder<GenericConstraintsClauseSyntax>();
+        while (Current.Kind == SyntaxKind.WhereKeyword)
+        {
+            var whereKeyword = OptionalMatch(SyntaxKind.WhereKeyword);
+            if (whereKeyword.IsNone)
+                return Option.None;
+
+            var identifier = Match(SyntaxKind.IdentifierToken);
+            var colonToken = Match(SyntaxKind.ColonToken);
+            var typeConstraints = ImmutableArray.CreateBuilder<SyntaxToken>();
+            Match(SyntaxKind.IdentifierToken).AddTo(typeConstraints);
+            while (Current is { Kind: SyntaxKind.CommaToken })
+            {
+                Match(SyntaxKind.CommaToken);
+                Match(SyntaxKind.IdentifierToken).AddTo(typeConstraints);
+            }
+
+            var typeConstraintSyntax = _syntaxTree.NewGenericConstraintsClause(whereKeyword.Unwrap(),
+                                                                               identifier,
+                                                                               colonToken,
+                                                                               new SeparatedSyntaxList<SyntaxToken>(typeConstraints.ToImmutable()));
+            constraints.Add(typeConstraintSyntax);
+        }
+
+        return constraints.ToImmutableArray();
     }
 
     Option<GenericClauseSyntax> ParseOptionalGenericClause()

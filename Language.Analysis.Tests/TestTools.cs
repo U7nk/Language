@@ -142,25 +142,26 @@ public static class TestTools
     public static void AssertDiagnostics(string text, bool isScript, string[] diagnosticsCodes, ITestOutputHelper output)
     {
         var annotatedText = AnnotatedText.Parse(text);
+        diagnosticsCodes.Length.Should().Be(annotatedText.Spans.Length, "Must mark as many spans as there expected diagnostics");
+        
         var syntaxTree = SyntaxTree.Parse(annotatedText.RawText);
         var compilation = isScript 
             ? Compilation.CreateScript(null, syntaxTree)
             : Compilation.Create(syntaxTree);
         
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
-        var diagnostics = result.Diagnostics.ToImmutableArray();
+        var diagnostics = result.Diagnostics;
 
         var actualDiagnosticsTexts = diagnostics
             .Select(d => AnnotatedTextFromDiagnostic(d) + "\n" + d.Code + d.Message)
             .ToArray();
 
-        var expectedDiagnosticsTexts = new List<string>();
+        var expectedDiagnostics = new List<Diagnostic>();
         foreach (var i in 0..diagnosticsCodes.Length)
         {
             var code = diagnosticsCodes[i];
             var span = annotatedText.Spans[i];
-            var t = AnnotatedText.Annotate(annotatedText.RawText, new []{ span });
-            expectedDiagnosticsTexts.Add(t + "\n" + code);
+            new Diagnostic(new TextLocation(syntaxTree.SourceText, span), code, code).AddTo(expectedDiagnostics);
         }
         
         if (diagnostics.Length != diagnosticsCodes.Length)
@@ -169,13 +170,17 @@ public static class TestTools
             {
                 var actualText = GetEnumeratedTextWithDiagnostics(diagnostics);
                 Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
-                            $"Expected: \n{string.Join(",\n", expectedDiagnosticsTexts)}\n\n" +
+                            $"Expected: \n{GetEnumeratedTextWithDiagnostics(expectedDiagnostics.ToImmutableArray())}\n\n" +
                             $"{new string('=', 69)}" + $"{Environment.NewLine}{Environment.NewLine}" +
                             $"Actual: {Environment.NewLine}" +
                             $"{actualText}");
             }
-
-            diagnostics.Length.Should().Be(diagnosticsCodes.Length);
+            else
+            {
+                Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
+                            $"Expected: \n{GetEnumeratedTextWithDiagnostics(expectedDiagnostics.ToImmutableArray())}\n\n" +
+                            $"{new string('=', 69)}" + $"{Environment.NewLine}{Environment.NewLine}");
+            }
         }
         
         diagnostics.Length.Should().Be(
