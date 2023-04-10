@@ -626,7 +626,7 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE,
+            DiagnosticBag.GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }
@@ -683,7 +683,7 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }
@@ -711,7 +711,147 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeParametersCallReportsWhenNoGenericTypeArguments()
+    {
+        var source = """
+            class MyClass<T>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new [MyClass]();
+                    myClass.[TestMethod](10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE,
+            DiagnosticBag.GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassDeclarationShouldBeValid()
+    {
+        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
+        // TODO: MyClass is undefined on generic constraints binding, because we bind class at the same time as its generic constraints
+        var source = """            
+            class MyClass<T> where T : MyClass<[string]>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass<[int]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+
+    [Fact]
+    public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenTooMuchTypeArguments()
+    {
+        var source = """
+            class MyClass<T>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass[<int, string>]();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenNotEnoughTypeArguments()
+    {
+        var source = """
+            class MyClass<T, TY, TX>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass[<int, string>]();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }

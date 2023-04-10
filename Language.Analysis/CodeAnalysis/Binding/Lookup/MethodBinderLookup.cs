@@ -9,9 +9,7 @@ public class MethodBinderLookup : BinderLookup
     public MethodSymbol CurrentMethod { get; }
 
     public MethodBinderLookup(DeclarationsBag declarationsBag,
-        TypeSymbol currentType,
-        ImmutableArray<TypeSymbol> availableTypes,
-        MethodSymbol currentMethod) : base(availableTypes, declarationsBag)
+        TypeSymbol currentType, MethodSymbol currentMethod) : base(declarationsBag)
     {
         CurrentType = currentType;
         CurrentMethod = currentMethod;

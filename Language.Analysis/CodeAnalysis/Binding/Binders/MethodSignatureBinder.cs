@@ -35,7 +35,7 @@ class MethodSignatureBinder
                     var typeConstraints = new List<TypeSymbol>();
                     foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
                     {
-                        var genericTypeConstraintName = genericTypeConstraintIdentifier.Text;
+                        var genericTypeConstraintName = genericTypeConstraintIdentifier.Identifier.Text;
                         if (!_scope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
                         {
                             diagnostics.ReportUndefinedType(genericTypeConstraintIdentifier.Location,
@@ -50,33 +50,36 @@ class MethodSignatureBinder
                 }
             }
 
-            var genericArgumentsSyntax = method.GenericParametersSyntax.Unwrap();
-            foreach (var genericArgumentSyntax in genericArgumentsSyntax.Arguments)
+            var genericParameters = ImmutableArray.CreateBuilder<TypeSymbol>();
+            var genericParametersSyntax = method.GenericParametersSyntax.Unwrap();
+            foreach (var genericParameterSyntax in genericParametersSyntax.Arguments)
             {
-                var genericArgumentName = genericArgumentSyntax.Text;
-                var typeConstraints = typeConstraintsByGenericName.TryGetValue(genericArgumentName, out var value) 
+                var genericParameterName = genericParameterSyntax.Identifier.Text;
+                var genericParameterTypeConstraints = typeConstraintsByGenericName.TryGetValue(genericParameterName, out var value) 
                     ? Option.Some(value.ToImmutableArray()) 
                     : Option.None;
 
                 var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
-                if (typeConstraints.IsSome) 
-                    typeConstraints.Unwrap().AddRangeTo(baseTypes);
+                if (genericParameterTypeConstraints.IsSome) 
+                    genericParameterTypeConstraints.Unwrap().AddRangeTo(baseTypes);
                 
-                var genericType = TypeSymbol.New(genericArgumentName, 
+                var genericParameter = TypeSymbol.New(genericParameterName, 
                                                  Option.None,
                                                  null,
                                                  new MethodTable(),
                                                  new FieldTable(),
                                                  baseTypes,
-                                                 isGenericMethodParameter: true, 
-                                                 typeConstraints);
+                                                 isGenericMethodParameter: true,
+                                                 isGenericClassParameter: false, 
+                                                 genericParameters: Option.None, genericParameterTypeConstraints);
 
-                if (!_scope.TryDeclareType(genericType))
+                if (!_scope.TryDeclareType(genericParameter))
                 {
-                    diagnostics.ReportAmbiguousType(genericArgumentSyntax.Location,
-                                                    genericArgumentName,
-                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName));
+                    diagnostics.ReportAmbiguousType(genericParameterSyntax.Location,
+                                                    genericParameterName,
+                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericParameterName));
                 }
+                genericParameters.Add(genericParameter);
             }
         }
         
@@ -128,7 +131,8 @@ class MethodSignatureBinder
             isOverriding,
             method.Identifier.Text,
             parameters.ToImmutable(),
-            returnType);
+            returnType,
+            );
 
         _lookup.AddDeclaration(currentMethodSymbol, method);
         _lookup.ContainingType.TryDeclareMethod(currentMethodSymbol, diagnostics, _lookup);

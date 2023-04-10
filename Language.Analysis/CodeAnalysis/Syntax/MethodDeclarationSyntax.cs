@@ -6,7 +6,7 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 
 public class GenericClauseSyntax : SyntaxNode
 {
-    public GenericClauseSyntax(SyntaxTree syntaxTree, SyntaxToken lessThanToken, SeparatedSyntaxList<SyntaxToken> arguments, SyntaxToken greaterThanToken) 
+    public GenericClauseSyntax(SyntaxTree syntaxTree, SyntaxToken lessThanToken, SeparatedSyntaxList<NamedTypeExpressionSyntax> arguments, SyntaxToken greaterThanToken) 
         : base(syntaxTree)
     {
         LessThanToken = lessThanToken;
@@ -15,7 +15,7 @@ public class GenericClauseSyntax : SyntaxNode
     }
 
     public SyntaxToken LessThanToken { get; }
-    public SeparatedSyntaxList<SyntaxToken> Arguments { get; }
+    public SeparatedSyntaxList<NamedTypeExpressionSyntax> Arguments { get; }
     public SyntaxToken GreaterThanToken { get; } 
     public override SyntaxKind Kind => SyntaxKind.GenericArgumentsList;
 }

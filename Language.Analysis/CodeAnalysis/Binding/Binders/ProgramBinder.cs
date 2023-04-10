@@ -11,7 +11,19 @@ using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-sealed class ProgramBinder
+public class TypeBindingUnit
+{
+    public TypeBindingUnit(TypeSymbol type, BoundScope scope)
+    {
+        Type = type;
+        Scope = scope;
+    }
+
+    public TypeSymbol Type { get; }
+    public BoundScope Scope { get; }
+}
+
+internal sealed class ProgramBinder
 {
     readonly BoundGlobalScope? _previous;
     readonly BoundScope _scope;
@@ -53,34 +65,43 @@ sealed class ProgramBinder
             .ToImmutableArray();
 
         var typeSignatureBinder = new TypeSignatureBinder(_scope, _lookup);
+        var typeBindingUnits = new List<TypeBindingUnit>();
+        
         foreach (var classDeclaration in classDeclarations)
         {
-            var typeSignatureBindDiagnostics = typeSignatureBinder.BindClassDeclaration(classDeclaration); 
-            _diagnostics.MergeWith(typeSignatureBindDiagnostics);
+            if (typeSignatureBinder.BindClassDeclaration(classDeclaration, _diagnostics) is { IsOk: true, Ok: var typeBindingUnit })
+            {
+                typeBindingUnits.Add(typeBindingUnit);
+            }
         }
-        var typesToBind = _scope.GetDeclaredTypes().Except(BuiltInTypeSymbols.All).ToImmutableArray();
-        foreach (var typeSymbol in typesToBind)
+        
+        
+        foreach (var typeSymbol in typeBindingUnits)
         {
             typeSignatureBinder.BindInheritanceClause(typeSymbol, _diagnostics);
         }
-        foreach (var typeSymbol in typesToBind)
+        foreach (var typeSymbol in typeBindingUnits)
         {
-            typeSignatureBinder.DiagnoseTypeDontInheritFromItself(typeSymbol, _diagnostics);
+            typeSignatureBinder.DiagnoseTypeDontInheritFromItself(typeSymbol.Type, _diagnostics);
         }
 
-        var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
-            new BinderLookup(_scope.GetDeclaredTypes(), _lookup.Declarations),
-            _scope,
-            IsScript);
-        foreach (var typeSymbol in typesToBind)
+        
+        foreach (var typeBindingUnit in typeBindingUnits)
         {
-            var membersSignaturesBindDiagnostics = typeMembersSignaturesBinder.BindMembersSignatures(typeSymbol);
-            _diagnostics.MergeWith(membersSignaturesBindDiagnostics);
+            var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
+                new BinderLookup(_lookup.Declarations),
+                typeBindingUnit.Scope,
+                IsScript);
+            typeMembersSignaturesBinder.BindMembersSignatures(typeBindingUnit.Type, _diagnostics);
         }
 
-        foreach (var typeSymbol in typesToBind)
+        foreach (var typeBindingUnit in typeBindingUnits)
         {
-            typeMembersSignaturesBinder.DiagnoseDiamondProblem(typeSymbol, _diagnostics);
+            var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
+                new BinderLookup(_lookup.Declarations),
+                typeBindingUnit.Scope,
+                IsScript);
+            typeMembersSignaturesBinder.DiagnoseDiamondProblem(typeBindingUnit.Type, _diagnostics);
         }
 
         DiagnoseGlobalStatementsUsage();
@@ -155,7 +176,7 @@ sealed class ProgramBinder
             .Only<MethodDeclarationSyntax>()
             .ToImmutableArray();
         var methodSignatureBinder = new MethodSignatureBinder(
-            new MethodSignatureBinderLookup(_scope.GetDeclaredTypes(), mainFunctionType, isTopMethod: true, _lookup.Declarations), 
+            new MethodSignatureBinderLookup(mainFunctionType, isTopMethod: true, _lookup.Declarations), 
             _scope);
         foreach (var topMethodDeclaration in topMethodDeclarations)
         {
@@ -187,7 +208,9 @@ sealed class ProgramBinder
                                          inheritanceClauseSyntax: null , 
                                          methodTable: new MethodTable(), fieldTable: new FieldTable(),
                                          baseTypes: new SingleOccurenceList<TypeSymbol>(), 
-                                         isGenericMethodParameter: false, genericParameterTypeConstraints: Option.None);
+                                         isGenericMethodParameter: false, 
+                                         isGenericClassParameter: false,
+                                         genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
 
 
         var mainMethodDeclarationSyntax = globalStatements.IsSome
@@ -337,7 +360,7 @@ sealed class ProgramBinder
 
         foreach (var type in typesToBind)
         {
-            var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, availableTypes, _lookup.Declarations));
+            var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, _lookup.Declarations));
             binder.BindClassBody();
             diagnostics.AddRange(binder.Diagnostics);
         }

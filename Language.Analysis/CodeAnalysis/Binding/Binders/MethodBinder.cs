@@ -9,6 +9,7 @@ using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
+using OneOf;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
@@ -288,7 +289,8 @@ sealed class MethodBinder
             return null;
 
         _lookup.NullGuard();
-        var type = _lookup.AvailableTypes.SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
+        
+        var type = _scope.GetDeclaredTypes().SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
 
@@ -424,7 +426,7 @@ sealed class MethodBinder
             case SyntaxKind.ThisExpression:
                 return BindThisExpression((ThisExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
-                return BindObjectCreationExpression((ObjectCreationExpressionSyntax)syntax);
+                return BindNewExpression((NewExpressionSyntax)syntax);
             case SyntaxKind.MemberAccessExpression:
                 return BindMemberAccessExpression((MemberAccessExpressionSyntax)syntax);
             case SyntaxKind.MemberAssignmentExpression:
@@ -444,7 +446,7 @@ sealed class MethodBinder
         if (!_scope.TryLookupType(castExpressionSyntax.NameExpression.Identifier.Text, out var castType))
         {
             _diagnostics.ReportUndefinedType(castExpressionSyntax.NameExpression.Identifier.Location, castExpressionSyntax.NameExpression.Identifier.Text);
-            return new BoundErrorExpression(castExpressionSyntax);
+            return new BoundErrorExpression(null);
         }
         var expression = BindExpression(castExpressionSyntax.CastedExpression, castType, true);
         
@@ -494,82 +496,120 @@ sealed class MethodBinder
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="syntax"></param>
+    /// <param name="methodCallExpressionSyntax"></param>
     /// <param name="type"></param>
     /// <param name="isCalledOnStatic"></param>
     /// <returns></returns>
-    BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax syntax, TypeSymbol type, bool isCalledOnStatic)
+    BoundExpression BindMethodCallExpression(MethodCallExpressionSyntax methodCallExpressionSyntax, TypeSymbol type, bool isCalledOnStatic)
     {
-        var methods = type.LookupMethod(syntax.Identifier.Text);
+        var methods = type.LookupMethod(methodCallExpressionSyntax.Identifier.Text);
         var methodSymbol = methods.FirstOrDefault();
         if (methodSymbol is null)
         {
-            _diagnostics.ReportUndefinedMethod(syntax.Identifier, type);
+            _diagnostics.ReportUndefinedMethod(methodCallExpressionSyntax.Identifier, type);
             return new BoundErrorExpression(null);
         }
-        var arguments = syntax.Arguments.Select(x => BindExpression(x)).ToImmutableArray();
-        var boundMethodCall = new BoundMethodCallExpression(syntax, methodSymbol, arguments);
+        var arguments = methodCallExpressionSyntax.Arguments.Select(x => BindExpression(x)).ToImmutableArray();
+        var boundMethodCall = new BoundMethodCallExpression(methodCallExpressionSyntax, methodSymbol, arguments);
         
         
         if (isCalledOnStatic is false && methodSymbol.IsStatic)
         {
-            _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(syntax.Identifier);
+            _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(methodCallExpressionSyntax.Identifier);
         }
         
-        var genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter).ToList();
-        if (genericParameters.Any())
+        List<ParameterSymbol> genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter || x.Type.IsGenericClassParameter).ToList();
+        
+        
+        if (methodSymbol.IsGeneric)
         {
-            if (syntax.GenericArgumentsSyntax.IsNone)
+            if (methodCallExpressionSyntax.GenericClause.IsNone)
             {
-                _diagnostics.ReportGenericMethodParametersNotSpecified(syntax.Identifier);
+                _diagnostics.ReportGenericMethodGenericArgumentsNotSpecified(methodCallExpressionSyntax.Identifier);
             }
             else
             {
-                if (genericParameters.Count != syntax.GenericArgumentsSyntax.Unwrap().Arguments.Count)
+                if (genericParameters.Count != methodCallExpressionSyntax.GenericClause.Unwrap().Arguments.Count)
                 {
-                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(syntax.GenericArgumentsSyntax.Unwrap(),
-                        syntax.Identifier,
-                        syntax.GenericArgumentsSyntax.Unwrap().Arguments,
-                        genericParameters.Select(x=> x.Type));
+                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(methodCallExpressionSyntax, genericParameters.Select(x=> x.Type));
                 }
-                
-                foreach (var genericArg in syntax.GenericArgumentsSyntax.Unwrap().Arguments)
-                {
-                    if (!_scope.TryLookupType(genericArg.Text, out _))
-                    {
-                        _diagnostics.ReportUndefinedType(genericArg.Location, genericArg.Text);
-                    }
-                }
-                
-                foreach (var i in 0..genericParameters.Count)
-                {
-                    var genericParameter = genericParameters[i];
-                    var genericArgumentSyntax = syntax.GenericArgumentsSyntax.Unwrap().Arguments[i];
-                    if (!_scope.TryLookupType(genericArgumentSyntax.Text, out var genericArgumentType))
-                        continue;
 
-                    var constraintTypesOption = genericParameter.Type.GenericParameterTypeConstraints;
-                    if (constraintTypesOption.IsNone)
-                        continue;
+                var genericParametersTypes = genericParameters.Select(x => x.Type).ToList();
+                CheckGenericTypeConstraintsForGenericClassMemberInvocation(genericParametersTypes, methodCallExpressionSyntax);
+            }
+        }
+
+
+
+        return boundMethodCall;
+    }
+
+    /// <summary>
+    /// Count of generic arguments expected to match count of generic parameters.
+    /// </summary>
+    /// <param name="genericParametersOfClass"></param>
+    /// <param name="invocationSyntax"></param>
+    /// <exception cref="Exception">Will be thrown when count of generic parameters doesn't match count of generic arguments.</exception>
+    void CheckGenericTypeConstraintsForGenericClassMemberInvocation(List<TypeSymbol> genericParametersOfClass, OneOf<MethodCallExpressionSyntax, NewExpressionSyntax> invocationSyntax)
+    {
+        var optionalGenericArguments = invocationSyntax.Match<Option<SeparatedSyntaxList<NamedTypeExpressionSyntax>>>(
+            methodCallExpressionSyntax =>
+            {
+                var genericArguments = methodCallExpressionSyntax.GenericClause.Unwrap().Arguments;
+                if (genericArguments.Count != genericParametersOfClass.Count)
+                {
+                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(methodCallExpressionSyntax, genericParametersOfClass);
+                    return Option.None;
+                }
+                return genericArguments;
+            }, 
+            newExpressionSyntax => 
+            {
+                var genericArguments = newExpressionSyntax.GenericClause.Unwrap().Arguments;
+                if (genericArguments.Count != genericParametersOfClass.Count)
+                {
+                    _diagnostics.NewExpressionGenericArgumentsWrongCount(newExpressionSyntax, genericParametersOfClass);
+                    return Option.None;
+                }
+                return genericArguments;
+            });
+
+        if (optionalGenericArguments.IsNone)
+            return;
+        var genericArguments = optionalGenericArguments.Unwrap();
+
+
+        foreach (var genericArg in genericArguments)
+        {
+            if (!_scope.TryLookupType(genericArg.Identifier.Text, out _))
+            {
+                _diagnostics.ReportUndefinedType(genericArg.Location, genericArg.Identifier.Text);
+            }
+        }
+                
+        foreach (var i in 0..genericParametersOfClass.Count)
+        {
+            var genericParameter = genericParametersOfClass[i];
+            var genericArgumentSyntax = genericArguments[i];
+            if (!_scope.TryLookupType(genericArgumentSyntax.Identifier.Text, out var genericArgumentType))
+                continue;
+
+            var constraintTypesOption = genericParameter.GenericParameterTypeConstraints;
+            if (constraintTypesOption.IsNone)
+                continue;
                     
-                    var constraintTypes = constraintTypesOption.Unwrap();
-                    foreach (var constraintType in constraintTypes)
-                    {
-                        if (genericArgumentType.CanBeCastedTo(constraintType) is false)
-                        {
-                            _diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
-                                genericArgumentSyntax,
-                                genericArgumentType,
-                                constraintType);
-                        }
-                    }
+            var constraintTypes = constraintTypesOption.Unwrap();
+            foreach (var constraintType in constraintTypes)
+            {
+                if (genericArgumentType.CanBeCastedTo(constraintType) is false)
+                {
+                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
+                        genericArgumentSyntax,
+                        genericArgumentType,
+                        constraintType);
                 }
             }
         }
-        
-        
-        
-        return boundMethodCall;
     }
 
     BoundExpression BindMemberAccessExpression(ExpressionSyntax syntax)
@@ -809,14 +849,13 @@ sealed class MethodBinder
     }
 
 
-    BoundExpression BindObjectCreationExpression(ObjectCreationExpressionSyntax syntax)
+    BoundExpression BindNewExpression(NewExpressionSyntax syntax)
     {
-        _lookup.NullGuard();
-
         var typeName = syntax.TypeIdentifier.Text;
-        var matchingTypes = _lookup.AvailableTypes
+        var matchingTypes = _scope.GetDeclaredTypes()
             .Where(t => t.Name == typeName)
             .ToList();
+
         if (matchingTypes.Count > 1)
         {
             _diagnostics.ReportAmbiguousType(syntax.TypeIdentifier.Location, typeName, matchingTypes);
@@ -829,7 +868,36 @@ sealed class MethodBinder
             return new BoundErrorExpression(null);
         }
 
+        var type = matchingTypes.Single();
+        if (type.IsGenericType)
+        {
+            CheckIsNewExpressionMatchTypeGenericConstraints(syntax, type);
+        }
+
         return new BoundObjectCreationExpression(syntax, matchingTypes.Single());
+    }
+
+    /// <summary>
+    /// Checks that new expression syntax for generic class matches generic constraints for that class. <br/>
+    /// If some constraints not satisfied, reports to <see cref="_diagnostics"/>.
+    /// </summary>
+    /// <param name="syntax">new expression syntax for generic class.</param>
+    /// <param name="type">generic class that being created.</param>
+    /// <returns>False when constraints not met, True when all constraints are met.</returns>
+    void CheckIsNewExpressionMatchTypeGenericConstraints(NewExpressionSyntax syntax, TypeSymbol type)
+    {
+        type.IsGenericType.EnsureTrue();
+
+        var syntaxGenericArgumentsCount = syntax.GenericClause.IsSome
+            ? syntax.GenericClause.Unwrap().Arguments.Count 
+            : 0;
+        
+        if (syntaxGenericArgumentsCount is 0)
+            _diagnostics.NewExpressionGenericArgumentsNotSpecified(syntax.TypeIdentifier, type);
+
+        if (syntax.GenericClause.IsSome)
+            CheckGenericTypeConstraintsForGenericClassMemberInvocation(type.GenericParameters.Unwrap().ToList(),
+                                                                       syntax);
     }
 
     BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicitConversion = false)

@@ -38,21 +38,19 @@ public sealed class Compilation
     public bool IsScript { get; }
     public Compilation? Previous { get; }
 
+    
     BoundGlobalScope? _globalScope;
-    internal BoundGlobalScope GlobalScope
+    internal BoundGlobalScope GetGlobalScope()
     {
-        get
-        {
             if (_globalScope is not null)
                 return _globalScope;
 
-            var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, new DeclarationsBag());
+            var lookup = new BinderLookup(new DeclarationsBag());
             var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
             var boundGlobalScope = programBinder.BindGlobalScope();
             Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
 
             return _globalScope;
-        }
     }
     
     BoundProgram? _boundProgram;
@@ -64,11 +62,21 @@ public sealed class Compilation
             return _boundProgram;
         
         
-        var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, GlobalScope.DeclarationsBag);
+        var lookup = new BinderLookup(GetGlobalScope().DeclarationsBag);
         var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
-        var program = programBinder.BindProgram(IsScript, previous, GlobalScope);
+        var program = programBinder.BindProgram(IsScript, previous, GetGlobalScope());
         Interlocked.CompareExchange(ref _boundProgram, program, null);
         return _boundProgram;
+    }
+
+    FullBoundProgram _fullBoundProgram;
+    FullBoundProgram GetFullBoundProgram()
+    {
+        var previous = Previous?.GetProgram();
+        if (_fullBoundProgram is not null)
+            return _fullBoundProgram;
+
+        return _fullBoundProgram;
     }
 
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, ObjectInstance?> variables)
@@ -76,7 +84,7 @@ public sealed class Compilation
         var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
         var program = GetProgram();
         var diagnostics = parseDiagnostics
-            .Concat(GlobalScope.Diagnostics)
+            .Concat(GetGlobalScope().Diagnostics)
             .Concat(program.Diagnostics)
             .ToImmutableArray();
         
@@ -97,12 +105,12 @@ public sealed class Compilation
 
     public void EmitTree(IndentedTextWriter writer)
     {
-        if (GlobalScope.MainMethod.IsSome)
-            EmitTree(GlobalScope.MainMethod.Unwrap(), writer);
-        else if (GlobalScope.ScriptMainMethod is not null)
-            EmitTree(GlobalScope.ScriptMainMethod, writer);
+        if (GetGlobalScope().MainMethod.IsSome)
+            EmitTree(GetGlobalScope().MainMethod.Unwrap(), writer);
+        else if (GetGlobalScope().ScriptMainMethod is not null)
+            EmitTree(GetGlobalScope().ScriptMainMethod, writer);
 
-        foreach (var type in GlobalScope.Types)
+        foreach (var type in GetGlobalScope().Types)
         {
             EmitTree(type, writer);
         }
@@ -143,4 +151,17 @@ public sealed class Compilation
         var program = GetProgram();
         return new Emitter().Emit(program, moduleName, refernces, outputPaths);
     }
+}
+
+internal class FullBoundProgram
+{
+    public FullBoundProgram(BoundGlobalScope globalScope, BoundProgram program)
+    {
+        this.Program = program;
+        this.GlobalScope = globalScope;
+    }
+
+    public BoundGlobalScope GlobalScope { get; }
+    public BoundProgram Program { get; }
+    
 }

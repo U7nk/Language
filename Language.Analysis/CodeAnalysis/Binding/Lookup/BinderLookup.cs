@@ -32,13 +32,12 @@ public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
 
 public class BinderLookup
 {
-    public BinderLookup(ImmutableArray<TypeSymbol> availableTypes, DeclarationsBag declarationsBag)
+    public BinderLookup(DeclarationsBag declarationsBag)
     {
-        AvailableTypes = availableTypes;
+    
         Declarations = declarationsBag;
     }
     
-    public ImmutableArray<TypeSymbol> AvailableTypes { get; }
     protected internal DeclarationsBag Declarations { get; }
 
     /// <summary>

@@ -5,7 +5,10 @@ using System.Diagnostics;
 
 namespace Language.Analysis;
 
-public struct Unit { }
+public struct Unit
+{
+    public static readonly Unit Default = default;
+}
 public static class Option
 {
     public static Option<T> Some<T>(T value) => new(value, hasValue: true);

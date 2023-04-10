@@ -22,25 +22,23 @@ sealed class TypeMembersSignaturesBinder
         _isScript = isScript;
     }
 
-    public ImmutableArray<Diagnostic> BindMembersSignatures(TypeSymbol currentType)
+    public void BindMembersSignatures(TypeSymbol currentType, DiagnosticBag diagnostics)
     {
-        _lookup.NullGuard();
         var classDeclaration = currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
-        var diagnostics  = new DiagnosticBag();
         var typeScope = new BoundScope(_scope);
         foreach (var member in classDeclaration.Members)
         {
             if (member.Kind is SyntaxKind.MethodDeclaration)
             {
+                var methodScope = new BoundScope(typeScope);
+                
                 var method = (MethodDeclarationSyntax) member;
                 var methodSignatureBinder = new MethodSignatureBinder(
-                    new MethodSignatureBinderLookup(_lookup.AvailableTypes,
-                                                    currentType,
+                    new MethodSignatureBinderLookup(currentType,
                                                     isTopMethod: false,
                                                     _lookup.Declarations),
-                    typeScope); 
-                methodSignatureBinder.BindMethodSignature(method)
-                    .AddRangeTo(diagnostics);
+                    methodScope); 
+                methodSignatureBinder.BindMethodSignature(method).AddRangeTo(diagnostics);
             }
             else if (member.Kind is SyntaxKind.FieldDeclaration)
             {
@@ -48,16 +46,14 @@ sealed class TypeMembersSignaturesBinder
                 var fieldBinder = new FieldSignatureBinder(
                     typeScope, 
                     _isScript,
-                    new FieldBinderLookup(_lookup.AvailableTypes, currentType, _lookup.Declarations));
-                fieldBinder.BindDeclaration(field).AddRangeTo(diagnostics);
+                    new FieldBinderLookup(currentType, _lookup.Declarations));
+                fieldBinder.BindDeclaration(field, diagnostics);
             }
             else
             {
                 throw new Exception($"Unexpected member kind {member.Kind}");
             }
         }
-
-        return diagnostics.ToImmutableArray();
     }
 
     public void DiagnoseDiamondProblem(TypeSymbol type, DiagnosticBag diagnostics)

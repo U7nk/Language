@@ -20,11 +20,8 @@ public sealed class FieldSignatureBinder
         _lookup = lookup;
     }
 
-    public ImmutableArray<Diagnostic> BindDeclaration(FieldDeclarationSyntax fieldDeclaration)
+    public void BindDeclaration(FieldDeclarationSyntax fieldDeclaration, DiagnosticBag diagnostics)
     {
-        var diagnostics = new DiagnosticBag();
-        _lookup.NullGuard();
-        
         if (!_scope.TryLookupType(fieldDeclaration.TypeClause.Identifier.Text, out var fieldType))
         {
             diagnostics.ReportUndefinedType(
@@ -69,7 +66,5 @@ public sealed class FieldSignatureBinder
                 }
             }
         }
-
-        return diagnostics.ToImmutableArray();
     }
 }

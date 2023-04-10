@@ -5,8 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
 
 public class TypeBinderLookup : BinderLookup
 {
-    public TypeBinderLookup(TypeSymbol currentType, ImmutableArray<TypeSymbol> availableTypes,
-                            DeclarationsBag declarationsBag) : base(availableTypes, declarationsBag)
+    public TypeBinderLookup(TypeSymbol currentType, DeclarationsBag declarationsBag) : base(declarationsBag)
     {
         CurrentType = currentType;
     }

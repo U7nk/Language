@@ -33,7 +33,6 @@ sealed class TypeBinder
             var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
                                                     _lookup.Declarations, 
                                                     _lookup.CurrentType,
-                                                    _lookup.AvailableTypes,
                                                     methodSymbol));
             
             var body = methodBinder.BindMethodBody(methodSymbol);

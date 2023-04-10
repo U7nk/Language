@@ -1,10 +1,11 @@
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
-public class ObjectCreationExpressionSyntax : ExpressionSyntax
+public class NewExpressionSyntax : ExpressionSyntax
 {
-    public ObjectCreationExpressionSyntax(SyntaxTree syntaxTree,
+    public NewExpressionSyntax(SyntaxTree syntaxTree,
         SyntaxToken newKeyword, 
-        SyntaxToken typeIdentifier, 
+        SyntaxToken typeIdentifier,
+        Option<GenericClauseSyntax> genericClause,
         SyntaxToken openParenthesis,
         SyntaxToken closeParenthesis) : base(syntaxTree)
     {
@@ -12,10 +13,12 @@ public class ObjectCreationExpressionSyntax : ExpressionSyntax
         TypeIdentifier = typeIdentifier;
         OpenParenthesis = openParenthesis;
         CloseParenthesis = closeParenthesis;
+        GenericClause = genericClause;
     }
 
     public SyntaxToken NewKeyword { get; }
     public SyntaxToken TypeIdentifier { get; }
+    public Option<GenericClauseSyntax> GenericClause { get; }
     public SyntaxToken OpenParenthesis { get; }
     public SyntaxToken CloseParenthesis { get; }
 
