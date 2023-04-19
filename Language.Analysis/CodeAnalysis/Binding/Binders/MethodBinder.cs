@@ -518,8 +518,7 @@ sealed class MethodBinder
             _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(methodCallExpressionSyntax.Identifier);
         }
         
-        List<ParameterSymbol> genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter || x.Type.IsGenericClassParameter).ToList();
-        
+        List<ParameterSymbol> genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter).ToList();
         
         if (methodSymbol.IsGeneric)
         {

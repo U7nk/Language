@@ -734,7 +734,7 @@ public class General
                 static function main()
                 {
                     var myClass = new [MyClass]();
-                    myClass.[TestMethod](10);
+                    myClass.TestMethod(10);
                 }
             }
             """;
@@ -742,7 +742,6 @@ public class General
         var diagnostics = new[]
         {
             DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE,
-            DiagnosticBag.GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }

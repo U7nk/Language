@@ -33,7 +33,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         Value = value;
         HasValue = hasValue;
     }
-
+    
     bool HasValue { get; }
 
     public T SomeOr(T defaultValue)
@@ -49,7 +49,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     [StackTraceHidden]
     public T Unwrap()
     {
-        if (Value is null)
+        if (HasValue is false || Value is null)
             throw new InvalidOperationException("Option is empty");
         
         return Value;

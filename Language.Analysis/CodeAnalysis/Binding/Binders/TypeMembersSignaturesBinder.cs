@@ -9,44 +9,46 @@ using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
+
 sealed class TypeMembersSignaturesBinder
 {
-    readonly BinderLookup _lookup;
+    readonly TypeSymbol _currentType;
     readonly BoundScope _scope;
     readonly bool _isScript;
 
-    public TypeMembersSignaturesBinder(BinderLookup lookup, BoundScope scope, bool isScript)
+    readonly List<FullMethodBinder> _methodBinders = new();
+    readonly List<FullFieldBinder> _fieldBinders = new();
+    readonly DeclarationsBag _allDeclarations;
+
+    public TypeMembersSignaturesBinder(TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope scope, bool isScript)
     {
-        _lookup = lookup;
+        _currentType = currentType;
+        _allDeclarations = allDeclarations;
         _scope = scope;
         _isScript = isScript;
     }
 
-    public void BindMembersSignatures(TypeSymbol currentType, DiagnosticBag diagnostics)
+    public (List<FullMethodBinder>, List<FullFieldBinder>) BindMembersSignatures(DiagnosticBag diagnostics)
     {
-        var classDeclaration = currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
+        var classDeclaration = _currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
         var typeScope = new BoundScope(_scope);
         foreach (var member in classDeclaration.Members)
         {
             if (member.Kind is SyntaxKind.MethodDeclaration)
             {
                 var methodScope = new BoundScope(typeScope);
+                var methodBinder = new FullMethodBinder(methodScope, _currentType, _allDeclarations, _isScript, isTopMethod: false);
+                _methodBinders.Add(methodBinder);
                 
-                var method = (MethodDeclarationSyntax) member;
-                var methodSignatureBinder = new MethodSignatureBinder(
-                    new MethodSignatureBinderLookup(currentType,
-                                                    isTopMethod: false,
-                                                    _lookup.Declarations),
-                    methodScope); 
-                methodSignatureBinder.BindMethodSignature(method).AddRangeTo(diagnostics);
+                var methodDeclarationSyntax = (MethodDeclarationSyntax) member;
+                methodBinder.BindMethodDeclaration(methodDeclarationSyntax, diagnostics);
             }
             else if (member.Kind is SyntaxKind.FieldDeclaration)
             {
                 var field = (FieldDeclarationSyntax)member;
-                var fieldBinder = new FieldSignatureBinder(
-                    typeScope, 
-                    _isScript,
-                    new FieldBinderLookup(currentType, _lookup.Declarations));
+                var fieldBinder = new FullFieldBinder(typeScope, _isScript, _currentType, _allDeclarations);
+                _fieldBinders.Add(fieldBinder);
+                
                 fieldBinder.BindDeclaration(field, diagnostics);
             }
             else
@@ -54,11 +56,13 @@ sealed class TypeMembersSignaturesBinder
                 throw new Exception($"Unexpected member kind {member.Kind}");
             }
         }
+
+        return (_methodBinders, _fieldBinders);
     }
 
-    public void DiagnoseDiamondProblem(TypeSymbol type, DiagnosticBag diagnostics)
+    public void DiagnoseDiamondProblem( DiagnosticBag diagnostics)
     {
-        var flattenBaseTypes = FlattenBaseTypes(type);
+        var flattenBaseTypes = FlattenBaseTypes(_currentType);
         var alreadyCheckedTypes = new List<TypeSymbol>();
         foreach (var firstBaseType in flattenBaseTypes)
         {
@@ -80,7 +84,7 @@ sealed class TypeMembersSignaturesBinder
                     continue;
                 
                 firstBaseType.AddTo(problemBaseTypes);
-                diagnostics.ReportInheritanceDiamondProblem(type.DeclarationSyntax.Unwrap().Identifier, problemBaseTypes, symbol);
+                diagnostics.ReportInheritanceDiamondProblem(_currentType.DeclarationSyntax.Unwrap().Identifier, problemBaseTypes, symbol);
             }   
             
         }

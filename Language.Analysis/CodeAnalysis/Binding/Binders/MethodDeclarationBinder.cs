@@ -9,21 +9,27 @@ using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
-class MethodSignatureBinder
+class MethodDeclarationBinder
 {
-    readonly MethodSignatureBinderLookup _lookup;
-    readonly BoundScope _scope;
+    readonly TypeSymbol _containingType;
+    readonly BoundScope _methodScope;
+    readonly bool _isTopMethod;
+    readonly DeclarationsBag _allDeclarations;
 
-    public MethodSignatureBinder(MethodSignatureBinderLookup lookup, BoundScope scope)
+    public MethodDeclarationBinder(BoundScope methodScope, TypeSymbol containingType, bool isTopMethod, DeclarationsBag allDeclarations)
     {
-        _lookup = lookup;
-        _scope = scope;
+        _methodScope = methodScope;
+        _isTopMethod = isTopMethod;
+        _allDeclarations = allDeclarations;
+        _containingType = containingType;
+    }
+    public MethodDeclarationBinder(BoundScope methodScope, bool successfullyDeclaredInType, bool isTopMethod,TypeSymbol containingType, DeclarationsBag allDeclarations) : this(methodScope, containingType, isTopMethod, allDeclarations)
+    {
+        SuccessfullyDeclaredInType = successfullyDeclaredInType;
     }
 
-    public ImmutableArray<Diagnostic> BindMethodSignature(MethodDeclarationSyntax method)
+    public MethodSymbol BindMethodDeclaration(MethodDeclarationSyntax method, DiagnosticBag diagnostics)
     {
-        var diagnostics = new DiagnosticBag();
-        
         var typeConstraintsByGenericName = new Dictionary<string, IEnumerable<TypeSymbol>>();
         if (method.GenericParametersSyntax.IsSome)
         {
@@ -36,7 +42,7 @@ class MethodSignatureBinder
                     foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
                     {
                         var genericTypeConstraintName = genericTypeConstraintIdentifier.Identifier.Text;
-                        if (!_scope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
+                        if (!_methodScope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
                         {
                             diagnostics.ReportUndefinedType(genericTypeConstraintIdentifier.Location,
                                                             genericTypeConstraintName);
@@ -50,7 +56,7 @@ class MethodSignatureBinder
                 }
             }
 
-            var genericParameters = ImmutableArray.CreateBuilder<TypeSymbol>();
+            
             var genericParametersSyntax = method.GenericParametersSyntax.Unwrap();
             foreach (var genericParameterSyntax in genericParametersSyntax.Arguments)
             {
@@ -73,13 +79,12 @@ class MethodSignatureBinder
                                                  isGenericClassParameter: false, 
                                                  genericParameters: Option.None, genericParameterTypeConstraints);
 
-                if (!_scope.TryDeclareType(genericParameter))
+                if (!_methodScope.TryDeclareType(genericParameter))
                 {
                     diagnostics.ReportAmbiguousType(genericParameterSyntax.Location,
                                                     genericParameterName,
-                                                    _scope.GetDeclaredTypes().Where(x => x.Name == genericParameterName));
+                                                    _methodScope.GetDeclaredTypes().Where(x => x.Name == genericParameterName));
                 }
-                genericParameters.Add(genericParameter);
             }
         }
         
@@ -89,7 +94,7 @@ class MethodSignatureBinder
         {
             var parameterName = parameter.Identifier.Text;
 
-            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _scope);
+            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _methodScope);
             if (parameterType is null)
             {
                 diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
@@ -116,31 +121,36 @@ class MethodSignatureBinder
             }
         }
 
-        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _scope) ?? BuiltInTypeSymbols.Void;
+        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _methodScope) ?? BuiltInTypeSymbols.Void;
 
-        var isStatic = method.StaticKeyword.IsSome || _lookup.IsTopMethod;
+        var isStatic = method.StaticKeyword.IsSome || _isTopMethod;
 
         var isVirtual = method.VirtualKeyword.IsSome;
         var isOverriding = method.OverrideKeyword.IsSome;
         
+        var genericParameters = _methodScope.GetDeclaredTypesCurrentScope().Where(x => x.IsGenericMethodParameter).ToList();
+        var isGeneric = genericParameters.Any(); 
         var currentMethodSymbol = new MethodSymbol(
             method,
-            _lookup.ContainingType,
+            _containingType,
             isStatic,
             isVirtual,
             isOverriding,
             method.Identifier.Text,
             parameters.ToImmutable(),
-            returnType,
-            );
+            returnType, 
+            isGeneric,
+            isGeneric ? genericParameters.ToImmutableArray() : Option.None);
 
-        _lookup.AddDeclaration(currentMethodSymbol, method);
-        _lookup.ContainingType.TryDeclareMethod(currentMethodSymbol, diagnostics, _lookup);
+        _allDeclarations.AddDeclaration(currentMethodSymbol, method);
+        SuccessfullyDeclaredInType = _containingType.TryDeclareMethod(currentMethodSymbol, diagnostics, _allDeclarations);
 
         ReportModifiersMisuseIfAny(currentMethodSymbol, diagnostics);
 
-        return diagnostics.ToImmutableArray();
+        return currentMethodSymbol;
     }
+
+    public Option<bool> SuccessfullyDeclaredInType { get; private set; }
 
     void ReportModifiersMisuseIfAny(MethodSymbol methodSymbol, DiagnosticBag diagnosticBag)
     {

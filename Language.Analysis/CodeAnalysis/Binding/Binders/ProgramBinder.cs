@@ -28,22 +28,22 @@ internal sealed class ProgramBinder
     readonly BoundGlobalScope? _previous;
     readonly BoundScope _scope;
     readonly ImmutableArray<SyntaxTree> _syntaxTrees;
+    readonly DeclarationsBag _allDeclarations;
     readonly DiagnosticBag _diagnostics = new();
-    readonly BinderLookup _lookup;
 
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
     public bool IsScript { get; }
 
     internal ProgramBinder(bool isScript,
         BoundGlobalScope? previous,
-        ImmutableArray<SyntaxTree> syntaxTrees, BinderLookup lookup)
+        ImmutableArray<SyntaxTree> syntaxTrees, DeclarationsBag allDeclarations)
     {
         _previous = previous;
         if (_previous is not null)
             _diagnostics.InsertRange(0, _previous.Diagnostics);
         _scope = CreateParentScope(_previous);
         _syntaxTrees = syntaxTrees;
-        _lookup = lookup;
+        _allDeclarations = allDeclarations;
         IsScript = isScript;
     }
 
@@ -56,6 +56,7 @@ internal sealed class ProgramBinder
         _scope.TryDeclareType(BuiltInTypeSymbols.Void);
     }
 
+    List<FullTypeBinder> _typeBinders = new();
     public BoundGlobalScope BindGlobalScope()
     {
         DeclareBuiltInTypes();
@@ -63,45 +64,34 @@ internal sealed class ProgramBinder
         var classDeclarations = _syntaxTrees
             .Only<ClassDeclarationSyntax>()
             .ToImmutableArray();
-
-        var typeSignatureBinder = new TypeSignatureBinder(_scope, _lookup);
-        var typeBindingUnits = new List<TypeBindingUnit>();
+        
         
         foreach (var classDeclaration in classDeclarations)
         {
-            if (typeSignatureBinder.BindClassDeclaration(classDeclaration, _diagnostics) is { IsOk: true, Ok: var typeBindingUnit })
+            var typeBinder = new FullTypeBinder(_scope, _allDeclarations, IsScript);
+            var typeSignatureBindResult = typeBinder.BindClassDeclaration(classDeclaration, _diagnostics);
+            if (typeSignatureBindResult.IsOk)
             {
-                typeBindingUnits.Add(typeBindingUnit);
+                _typeBinders.Add(typeBinder);   
             }
         }
         
         
-        foreach (var typeSymbol in typeBindingUnits)
+        foreach (var typeBinder in _typeBinders)
         {
-            typeSignatureBinder.BindInheritanceClause(typeSymbol, _diagnostics);
+            typeBinder.BindInheritanceClause(_diagnostics);
         }
-        foreach (var typeSymbol in typeBindingUnits)
+        foreach (var typeBinder in _typeBinders)
         {
-            typeSignatureBinder.DiagnoseTypeDontInheritFromItself(typeSymbol.Type, _diagnostics);
+            typeBinder.DiagnoseTypeDontInheritFromItself(_diagnostics);
         }
-
-        
-        foreach (var typeBindingUnit in typeBindingUnits)
+        foreach (var typeBinder in _typeBinders)
         {
-            var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
-                new BinderLookup(_lookup.Declarations),
-                typeBindingUnit.Scope,
-                IsScript);
-            typeMembersSignaturesBinder.BindMembersSignatures(typeBindingUnit.Type, _diagnostics);
+            typeBinder.BindMembersSignatures(_diagnostics);
         }
-
-        foreach (var typeBindingUnit in typeBindingUnits)
+        foreach (var typeBinder in _typeBinders)
         {
-            var typeMembersSignaturesBinder = new TypeMembersSignaturesBinder(
-                new BinderLookup(_lookup.Declarations),
-                typeBindingUnit.Scope,
-                IsScript);
-            typeMembersSignaturesBinder.DiagnoseDiamondProblem(typeBindingUnit.Type, _diagnostics);
+            typeBinder.DiagnoseDiamondProblem(_diagnostics);
         }
 
         DiagnoseGlobalStatementsUsage();
@@ -113,23 +103,15 @@ internal sealed class ProgramBinder
         
         MethodSymbol? mainMethod = null;
         MethodSymbol? scriptMainMethod = null;
-        if (IsScript)
+        
+        
+        if (globalStatements.Any())
         {
-            if (globalStatements.Any())
-            {
-                var mainMethodGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainMethodGeneration.IsError)
-                {
-                    _diagnostics.MergeWith(mainMethodGeneration.Error);
-                }
-                else
-                {
-                    scriptMainMethod = mainMethodGeneration.Ok.Function;
-                    var mainFunctionType = mainMethodGeneration.Ok.Type;
-                    BindTopMethodsSignatures(mainFunctionType);
-                }
-            }
-            else
+            BindGlobalStatements(globalStatements, ref scriptMainMethod, ref mainMethod);
+        }
+        else
+        {
+            if (IsScript)
             {
                 scriptMainMethod = TryFindMainMethod();
                 if (scriptMainMethod is { })
@@ -138,26 +120,10 @@ internal sealed class ProgramBinder
                         scriptMainMethod.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier.Location);
                 }
             }
-        }
-        else
-        {
+
             mainMethod = TryFindMainMethod();
-            if (mainMethod is null && globalStatements.Any())
-            {
-                var mainFunctionGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
-                if (mainFunctionGeneration.IsError)
-                {
-                    _diagnostics.AddRange(mainFunctionGeneration.Error);
-                }
-                else
-                {
-                    mainMethod = mainFunctionGeneration.Ok.Function;
-                    var mainFunctionType = mainFunctionGeneration.Ok.Type;
-                    BindTopMethodsSignatures(mainFunctionType);
-                }
-            }
         }
-        
+
         if (mainMethod is null && scriptMainMethod is null)
         {
             _diagnostics.ReportMainMethodShouldBeDeclared(_syntaxTrees.First().SourceText);
@@ -167,21 +133,52 @@ internal sealed class ProgramBinder
             _previous, _diagnostics.ToImmutableArray(),
             mainMethod, scriptMainMethod,
             _scope.GetDeclaredTypes(), _scope.GetDeclaredVariables(),
-            _lookup.Declarations);
+            _allDeclarations,
+            _typeBinders.ToImmutableArray());
     }
 
-    void BindTopMethodsSignatures(TypeSymbol mainFunctionType)
+    void BindGlobalStatements(ImmutableArray<GlobalStatementDeclarationSyntax> globalStatements, ref MethodSymbol? scriptMainMethod, ref MethodSymbol? mainMethod)
+    {
+        Result<(MethodSymbol Function, TypeSymbol Type), DiagnosticBag> mainMethodGeneration;
+        if (IsScript)
+        {
+            mainMethodGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
+            if (mainMethodGeneration.IsError)
+            {
+                _diagnostics.MergeWith(mainMethodGeneration.Error);
+            }
+            
+            scriptMainMethod = mainMethodGeneration.Ok.Function;
+        }
+        else
+        {
+            mainMethodGeneration = GenerateMainMethod(_scope, IsScript, globalStatements);
+            if (mainMethodGeneration.IsError)
+            {
+                _diagnostics.AddRange(mainMethodGeneration.Error);
+            }
+            mainMethod = mainMethodGeneration.Ok.Function;
+        }
+        
+        Option<TypeSymbol> programType = mainMethodGeneration.Ok.Type;
+        BindTopMethodsDeclarations(programType.Unwrap());
+        
+        var programTypeBinder = new FullTypeBinder(_scope, _allDeclarations, IsScript, programType.Unwrap(), isTopMethod: true);
+        _typeBinders.Add(programTypeBinder);
+    }
+
+    void BindTopMethodsDeclarations(TypeSymbol mainFunctionType)
     {
         var topMethodDeclarations = _syntaxTrees
             .Only<MethodDeclarationSyntax>()
             .ToImmutableArray();
-        var methodSignatureBinder = new MethodSignatureBinder(
-            new MethodSignatureBinderLookup(mainFunctionType, isTopMethod: true, _lookup.Declarations), 
-            _scope);
+        var methodSignatureBinder = new MethodDeclarationBinder(_scope, mainFunctionType, isTopMethod:true, _allDeclarations);
+        
+        TypeSymbol typeSymbol = _scope.GetDeclaredTypes().Single(x=> x.Name == SyntaxFacts.START_TYPE_NAME);
         foreach (var topMethodDeclaration in topMethodDeclarations)
         {
-            methodSignatureBinder.BindMethodSignature(topMethodDeclaration)
-                .AddRangeTo(_diagnostics);   
+            var methodSymbol = methodSignatureBinder.BindMethodDeclaration(topMethodDeclaration, _diagnostics);
+            typeSymbol.TryDeclareMethod(methodSymbol, _diagnostics, _allDeclarations);
         }
     }
 
@@ -225,7 +222,9 @@ internal sealed class ProgramBinder
             name: SyntaxFacts.MAIN_METHOD_NAME,
             parameters: ImmutableArray<ParameterSymbol>.Empty,
             returnType: BuiltInTypeSymbols.Void, 
-            containingType: programType);
+            containingType: programType,
+            isGeneric: false, 
+            genericParameters: Option.None);
         
         if (isScript)
         {
@@ -237,7 +236,9 @@ internal sealed class ProgramBinder
                 name: SyntaxFacts.SCRIPT_MAIN_METHOD_NAME,
                 parameters: ImmutableArray<ParameterSymbol>.Empty,
                 returnType: BuiltInTypeSymbols.Object,
-                containingType: programType);
+                containingType: programType, 
+                isGeneric: false, 
+                genericParameters: Option.None);
         }
 
         programType.MethodTable.AddMethodDeclaration(main, new List<TypeSymbol>());
@@ -249,7 +250,7 @@ internal sealed class ProgramBinder
             var alreadyDeclaredSymbol = scope.GetDeclaredTypes()
                 .Single(x => x.Name == SyntaxFacts.START_TYPE_NAME);
             
-            var existingDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(alreadyDeclaredSymbol);
+            var existingDeclarationSyntax = _allDeclarations.LookupDeclarations<ClassDeclarationSyntax>(alreadyDeclaredSymbol);
             
             foreach (var syntax in existingDeclarationSyntax)
             {
@@ -260,6 +261,7 @@ internal sealed class ProgramBinder
             
             return diagnostics;
         }
+
 
         return (main, programType);
     }
@@ -356,13 +358,10 @@ internal sealed class ProgramBinder
                  || x == BuiltInTypeSymbols.String 
                  || x == BuiltInTypeSymbols.Error)
             .ToImmutableArray();
-        var availableTypes = globalScope.Types;
 
-        foreach (var type in typesToBind)
+        foreach (var typeBinder in _typeBinders)
         {
-            var binder = new TypeBinder(parentScope, isScript, new TypeBinderLookup(type, _lookup.Declarations));
-            binder.BindClassBody();
-            diagnostics.AddRange(binder.Diagnostics);
+            typeBinder.BindClassBody(diagnostics);
         }
 
         var boundProgram = new BoundProgram(

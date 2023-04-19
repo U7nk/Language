@@ -125,4 +125,11 @@ public class BoundScope
             .OfType<TypeSymbol>()
             .ToImmutableArray();
     }
+
+    public ImmutableArray<TypeSymbol> GetDeclaredTypesCurrentScope()
+    {
+        return _symbols.Values.SelectMany(x => x)
+            .OfType<TypeSymbol>()
+            .ToImmutableArray();
+    }
 }

@@ -140,8 +140,8 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
     public bool TryDeclareMethod(
         MethodSymbol method,
-        DiagnosticBag diagnostics, 
-        MethodSignatureBinderLookup lookup)
+        DiagnosticBag diagnostics,
+        DeclarationsBag allDeclarations)
     {
         var canBeDeclared = true;
         if (Name == method.Name)
@@ -163,7 +163,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
                 method.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>().Identifier);
             foreach (var sameNameField in sameNameFields)
             {
-                var fieldDeclarations = lookup.LookupDeclarations<FieldDeclarationSyntax>(sameNameField)
+                var fieldDeclarations = allDeclarations.LookupDeclarations<FieldDeclarationSyntax>(sameNameField)
                     .Add(sameNameField.DeclarationSyntax.UnwrapAs<FieldDeclarationSyntax>());
                 foreach (var fieldDeclaration in fieldDeclarations)
                     diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
@@ -189,7 +189,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
                 var alreadyReportedMethodDeclarations = methodsFromBaseTypes
                     .Select(x => x.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>());
-                var existingMethodDeclarations = lookup.LookupDeclarations<MethodDeclarationSyntax>(method)
+                var existingMethodDeclarations = allDeclarations.LookupDeclarations<MethodDeclarationSyntax>(method)
                     .Except(alreadyReportedMethodDeclarations)
                     .ToList();
 
@@ -210,7 +210,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
             MethodTable.AddMethodDeclaration(method, new List<TypeSymbol>());
         }
 
-        return true;
+        return canBeDeclared;
     }
 
     public BoundBlockStatement LookupMethodBody(MethodSymbol methodSymbol)

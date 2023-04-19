@@ -11,45 +11,40 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 sealed class TypeBinder
 {
     readonly TypeBinderLookup _lookup;
+    readonly TypeSymbol _typeSymbol;
     readonly BoundScope _scope;
     readonly bool _isScript;
     readonly DiagnosticBag _diagnostics;
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
-    public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup lookup)
+    public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup lookup, TypeSymbol typeSymbol)
     {
         _scope = scope;
         _isScript = isScript;
         _lookup = lookup;
+        _typeSymbol = typeSymbol;
         _diagnostics = new DiagnosticBag();
     }
 
-    public void BindClassBody()
+    public void BindClassBody(IEnumerable<FullMethodBinder> methodBinders, IEnumerable<FullFieldBinder> fullFieldBinders)
     {
-        var typeScope = new BoundScope(_scope);
-
-        foreach (var methodSymbol in _lookup.CurrentType.MethodTable.Select(x => x.MethodSymbol))
+        foreach (var methodBinder in methodBinders)
         {
-            var methodBinder = new MethodBinder(typeScope, _isScript, new MethodBinderLookup(
-                                                    _lookup.Declarations, 
-                                                    _lookup.CurrentType,
-                                                    methodSymbol));
-            
-            var body = methodBinder.BindMethodBody(methodSymbol);
+            var body = methodBinder.BindMethodBody(_diagnostics);
             var loweredBody = Lowerer.Lower(body);
 
-            if (!Equals(methodSymbol.ReturnType, BuiltInTypeSymbols.Void) &&
+            if (!Equals(methodBinder.MethodSymbol.ReturnType, BuiltInTypeSymbols.Void) &&
                 !ControlFlowGraph.AllPathsReturn(loweredBody))
             {
-                _diagnostics.ReportAllPathsMustReturn(methodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>()
+                _diagnostics.ReportAllPathsMustReturn(methodBinder.MethodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>()
                                                           .Identifier.Location);
             }
 
             ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, _diagnostics);
-
-            _diagnostics.MergeWith(methodBinder.Diagnostics);
-
-            _lookup.CurrentType.MethodTable.SetMethodBody(methodSymbol, loweredBody);
+            if (methodBinder.SuccessfullyDeclaredInType.Unwrap())
+            {
+                _lookup.CurrentType.MethodTable.SetMethodBody(methodBinder.MethodSymbol, loweredBody);
+            }
         }
     }
 }

@@ -11,19 +11,19 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 sealed class TypeSignatureBinder
 {
-    readonly BoundScope _outerScope;
-    readonly BinderLookup _lookup;
+    readonly BoundScope _typeScope;
+    readonly BoundScope _parentScope;
+    readonly DeclarationsBag _allDeclarations;
 
-    public TypeSignatureBinder(BoundScope outerScope, BinderLookup lookup)
+    public TypeSignatureBinder(BoundScope typeScope, BoundScope parentScope, DeclarationsBag allDeclarations)
     {
-        _outerScope = outerScope;
-        _lookup = lookup;
+        _typeScope = typeScope;
+        _parentScope = parentScope;
+        _allDeclarations = allDeclarations;
     }
 
-    public Result<TypeBindingUnit, Unit> BindClassDeclaration(ClassDeclarationSyntax classDeclaration, DiagnosticBag diagnostics)
+    public Result<TypeSymbol, Unit> BindClassDeclaration(ClassDeclarationSyntax classDeclaration, DiagnosticBag diagnostics)
     {
-        var typeScope = new BoundScope(_outerScope);
-        
         var typeConstraintsByGenericName = new Dictionary<string, IEnumerable<TypeSymbol>>();
         var genericParameters = new List<TypeSymbol>();
         if (classDeclaration.GenericParametersSyntax.IsSome)
@@ -37,7 +37,7 @@ sealed class TypeSignatureBinder
                     foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
                     {
                         var genericTypeConstraintName = genericTypeConstraintIdentifier.Identifier.Text;
-                        if (!_outerScope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
+                        if (!_typeScope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
                         {
                             diagnostics.ReportUndefinedType(genericTypeConstraintIdentifier.Location,
                                                             genericTypeConstraintName);
@@ -74,11 +74,11 @@ sealed class TypeSignatureBinder
                                                  Option.None, typeConstraints);
 
                 
-                if (!typeScope.TryDeclareType(genericType))
+                if (!_typeScope.TryDeclareType(genericType))
                 {
                     diagnostics.ReportAmbiguousType(genericArgumentSyntax.Location,
                                                     genericArgumentName,
-                                                    _outerScope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName));
+                                                    _typeScope.GetDeclaredTypes().Where(x => x.Name == genericArgumentName));
                 }
                 else
                 {
@@ -98,11 +98,11 @@ sealed class TypeSignatureBinder
                                         isGenericClassParameter: false,
                                         genericParameters: genericParameters.ToImmutableArray(),
                                         genericParameterTypeConstraints: Option.None);
-        _lookup.AddDeclaration(typeSymbol, classDeclaration);
+        _allDeclarations.AddDeclaration(typeSymbol, classDeclaration);
         
-        if (!_outerScope.TryDeclareType(typeSymbol))
+        if (!_parentScope.TryDeclareType(typeSymbol))
         {
-            var existingClassDeclarationsIdentifiers = _lookup.LookupDeclarations<ClassDeclarationSyntax>(typeSymbol)
+            var existingClassDeclarationsIdentifiers = _allDeclarations.LookupDeclarations<ClassDeclarationSyntax>(typeSymbol)
                 .Select(x => x.Identifier);
             foreach (var identifier in existingClassDeclarationsIdentifiers)
             {
@@ -114,13 +114,13 @@ sealed class TypeSignatureBinder
             return Unit.Default;
         }
 
-        return new TypeBindingUnit(typeSymbol, typeScope);
+        return typeSymbol;
     }
     
-    public void BindInheritanceClause(TypeBindingUnit typeBindingUnit, DiagnosticBag diagnostics)
+    public void BindInheritanceClause(TypeSymbol typeSymbol, DiagnosticBag diagnostics)
     {
-        var baseTypes = BindInheritanceClause(typeBindingUnit.Type.InheritanceClauseSyntax, diagnostics);
-        AddBaseTypesToCurrentType(typeBindingUnit.Type, baseTypes);
+        var baseTypes = BindInheritanceClause(typeSymbol.InheritanceClauseSyntax, diagnostics);
+        AddBaseTypesToCurrentType(typeSymbol, baseTypes);
     } 
     
     void AddBaseTypesToCurrentType(TypeSymbol currentType, ImmutableArray<TypeSymbol> baseTypes)
@@ -161,7 +161,7 @@ sealed class TypeSignatureBinder
 
         if (currentType.DeclarationEquals(checkingType))
         {
-            var existingDeclarationSyntax = _lookup.LookupDeclarations<ClassDeclarationSyntax>(currentType);
+            var existingDeclarationSyntax = _allDeclarations.LookupDeclarations<ClassDeclarationSyntax>(currentType);
             foreach (var declarationSyntax in existingDeclarationSyntax)
             {
                 diagnostics.ReportClassCannotInheritFromSelf(declarationSyntax.Identifier);
@@ -194,7 +194,7 @@ sealed class TypeSignatureBinder
             foreach (var baseTypeIdentifier in syntax.Unwrap().BaseTypes)
             {
                 var baseTypeName = baseTypeIdentifier.Text;
-                if (!_outerScope.TryLookupType(baseTypeName, out var baseTypeSymbol))
+                if (!_typeScope.TryLookupType(baseTypeName, out var baseTypeSymbol))
                 {
                     diagnostics.ReportUndefinedType(baseTypeIdentifier.Location, baseTypeName);
                     continue;
