@@ -1,27 +1,25 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Field;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Class;
 
-sealed class TypeBinder
+sealed class ClassBinder
 {
-    readonly TypeBinderLookup _lookup;
     readonly TypeSymbol _typeSymbol;
     readonly BoundScope _scope;
     readonly bool _isScript;
     readonly DiagnosticBag _diagnostics;
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
-    public TypeBinder(BoundScope scope, bool isScript, TypeBinderLookup lookup, TypeSymbol typeSymbol)
+    public ClassBinder(BoundScope scope, bool isScript, TypeSymbol typeSymbol)
     {
         _scope = scope;
         _isScript = isScript;
-        _lookup = lookup;
         _typeSymbol = typeSymbol;
         _diagnostics = new DiagnosticBag();
     }
@@ -43,7 +41,7 @@ sealed class TypeBinder
             ControlFlowGraph.AllVariablesInitializedBeforeUse(loweredBody, _diagnostics);
             if (methodBinder.SuccessfullyDeclaredInType.Unwrap())
             {
-                _lookup.CurrentType.MethodTable.SetMethodBody(methodBinder.MethodSymbol, loweredBody);
+                _typeSymbol.MethodTable.SetMethodBody(methodBinder.MethodSymbol, loweredBody);
             }
         }
     }

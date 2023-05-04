@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Common;
 using Language.Analysis.Extensions;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 
 class MethodDeclarationBinder
 {
@@ -77,7 +76,7 @@ class MethodDeclarationBinder
                                                  baseTypes,
                                                  isGenericMethodParameter: true,
                                                  isGenericClassParameter: false, 
-                                                 genericParameters: Option.None, genericParameterTypeConstraints);
+                                                 genericParameters: Option.None, genericParameterTypeConstraints: genericParameterTypeConstraints, isGenericTypeDefinition: false);
 
                 if (!_methodScope.TryDeclareType(genericParameter))
                 {

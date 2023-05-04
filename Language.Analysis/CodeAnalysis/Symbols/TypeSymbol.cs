@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Common;
 using Language.Analysis.Extensions;
@@ -20,7 +19,7 @@ static class BuiltInTypeSymbols
                                                              isGenericMethodParameter: false,
                                                              isGenericClassParameter: false,
                                                             
-                                                             genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                                             genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
     public static readonly TypeSymbol Void = TypeSymbol.New("void", Option.None,
                                                             inheritanceClauseSyntax: null,
@@ -29,7 +28,7 @@ static class BuiltInTypeSymbols
                                                             baseTypes: new SingleOccurenceList<TypeSymbol>(),
                                                             isGenericMethodParameter: false,
                                                             isGenericClassParameter: false,
-                                                            genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                                            genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
     public static readonly TypeSymbol Bool = TypeSymbol.New("bool", Option.None,
                                                             inheritanceClauseSyntax: null,
@@ -38,7 +37,7 @@ static class BuiltInTypeSymbols
                                                             baseTypes: new SingleOccurenceList<TypeSymbol>(), 
                                                             isGenericMethodParameter: false,
                                                             isGenericClassParameter: false,
-                                                            genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                                            genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
     public static readonly TypeSymbol Int = TypeSymbol.New("int", Option.None,
                                                            inheritanceClauseSyntax: null,
@@ -47,7 +46,7 @@ static class BuiltInTypeSymbols
                                                            baseTypes: new SingleOccurenceList<TypeSymbol>(), 
                                                            isGenericMethodParameter: false,
                                                            isGenericClassParameter: false,
-                                                           genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                                           genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
     public static readonly TypeSymbol String = TypeSymbol.New("string", Option.None,
                                                               inheritanceClauseSyntax: null,
@@ -56,7 +55,7 @@ static class BuiltInTypeSymbols
                                                               baseTypes: new SingleOccurenceList<TypeSymbol>(), 
                                                               isGenericMethodParameter: false,
                                                               isGenericClassParameter: false,
-                                                              genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                                              genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
     public static readonly TypeSymbol Object = InitializeObject();
     public static readonly IEnumerable<TypeSymbol> All = new[] { Error, Void, Bool, Int, String, Object };
@@ -69,8 +68,7 @@ static class BuiltInTypeSymbols
                        methodTable: new MethodTable(),
                        fieldTable: new FieldTable(), baseTypes: new SingleOccurenceList<TypeSymbol>(), 
                        isGenericMethodParameter: false,
-                       isGenericClassParameter: false,
-                       genericParameterTypeConstraints: Option.None, genericParameters: Option.None);
+                       isGenericClassParameter: false, genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
         return symbol;
     }
@@ -91,16 +89,27 @@ public class TypeSymbol : Symbol, ITypedSymbol
         return BuiltInTypeSymbols.Error;
     }
 
+    public static TypeSymbol FromNamedTypeExpression(NamedTypeExpressionSyntax namedTypeExpression)
+    {
+        Option<ImmutableArray<TypeSymbol>> genericParameters = namedTypeExpression.GenericClause.IsSome
+            ? namedTypeExpression.GenericClause.Unwrap().Arguments.Select(TypeSymbol.FromNamedTypeExpression).ToImmutableArray()
+            : Option.None;
+
+        return new TypeSymbol(namedTypeExpression.Identifier.Text, Option.None, null, null, new MethodTable(), new FieldTable(),
+                       new SingleOccurenceList<TypeSymbol>(), false, false, genericParameters, Option.None, isGenericTypeDefinition: false);
+    }
+
     public static TypeSymbol New(string name, Option<SyntaxNode> declaration,
                                  InheritanceClauseSyntax? inheritanceClauseSyntax,
                                  MethodTable methodTable, FieldTable fieldTable,
                                  SingleOccurenceList<TypeSymbol> baseTypes,
                                  bool isGenericMethodParameter, bool isGenericClassParameter,
                                  Option<ImmutableArray<TypeSymbol>> genericParameters,
-                                 Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints)
+                                 Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints,
+                                 bool isGenericTypeDefinition)
         => new(name, declaration, inheritanceClauseSyntax, containingType: null, methodTable,
                fieldTable, baseTypes, isGenericMethodParameter, isGenericClassParameter, 
-               genericParameters, genericParameterTypeConstraints);
+               genericParameters, genericParameterTypeConstraints, isGenericTypeDefinition);
 
     TypeSymbol(string name, Option<SyntaxNode> declaration,
                InheritanceClauseSyntax? inheritanceClauseSyntax,
@@ -108,7 +117,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
                FieldTable fieldTable, SingleOccurenceList<TypeSymbol> baseTypes,
                bool isGenericMethodParameter, bool isGenericClassParameter,
                Option<ImmutableArray<TypeSymbol>> genericParameters,
-               Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints)
+               Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints, bool isGenericTypeDefinition)
         : base(declaration, name, containingType)
     {
         MethodTable = methodTable;
@@ -117,6 +126,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
         BaseTypes = baseTypes;
         IsGenericMethodParameter = isGenericMethodParameter;
         GenericParameterTypeConstraints = genericParameterTypeConstraints;
+        IsGenericTypeDefinition = isGenericTypeDefinition;
         GenericParameters = genericParameters;
         IsGenericClassParameter = isGenericClassParameter;
     }
@@ -124,6 +134,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
     public bool IsGenericType => GenericParameters.IsSome && GenericParameters.Unwrap().Any(); 
     public bool IsGenericMethodParameter { get; }
     public bool IsGenericClassParameter { get; }
+    public bool IsGenericTypeDefinition { get; }
     public Option<ImmutableArray<TypeSymbol>> GenericParameterTypeConstraints { get; }
     public Option<ImmutableArray<TypeSymbol>> GenericParameters { get; }
     public MethodTable MethodTable { get; }
@@ -322,5 +333,41 @@ public class TypeSymbol : Symbol, ITypedSymbol
             return true;
 
         return false;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not TypeSymbol)
+            return false;
+        var other = (TypeSymbol)obj;
+
+        if (this.IsGenericType != other.IsGenericType)
+            return false;
+
+        if (this.IsGenericType)
+        {
+            if (this.GenericParameters.Unwrap().Length != other.GenericParameters.Unwrap().Length)
+                return false;
+            
+            bool genericParametersAreEqual = this.GenericParameters.Unwrap().Zip(other.GenericParameters.Unwrap())
+                .All(x => x.First.Equals(x.Second));
+            if (!genericParametersAreEqual)
+                return false;
+        }
+
+        return base.Equals(obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode() + GenericParameters.GetHashCode();
+    }
+
+    public override string ToString()
+    {
+        var genericClause = GenericParameters.IsSome
+            ?"<" + string.Join(",", GenericParameters.Unwrap().Select(x => x.ToString())) + ">"
+            : string.Empty;
+        return $"{Name}{genericClause}";
     }
 }

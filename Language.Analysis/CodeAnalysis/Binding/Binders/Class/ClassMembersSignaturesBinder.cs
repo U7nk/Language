@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Field;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Extensions;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Class;
 
 
-sealed class TypeMembersSignaturesBinder
+sealed class ClassMembersSignaturesBinder
 {
     readonly TypeSymbol _currentType;
     readonly BoundScope _scope;
@@ -20,7 +20,7 @@ sealed class TypeMembersSignaturesBinder
     readonly List<FullFieldBinder> _fieldBinders = new();
     readonly DeclarationsBag _allDeclarations;
 
-    public TypeMembersSignaturesBinder(TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope scope, bool isScript)
+    public ClassMembersSignaturesBinder(TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope scope, bool isScript)
     {
         _currentType = currentType;
         _allDeclarations = allDeclarations;

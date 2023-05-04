@@ -1,8 +1,7 @@
-﻿using Language.Analysis.CodeAnalysis.Binding.Lookup;
-using Language.Analysis.CodeAnalysis.Symbols;
+﻿using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Field;
 
 internal class FullFieldBinder
 {

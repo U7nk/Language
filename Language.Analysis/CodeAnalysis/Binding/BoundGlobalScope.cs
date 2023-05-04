@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Binding.Binders;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Class;
 using Language.Analysis.CodeAnalysis.Symbols;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
@@ -13,7 +13,7 @@ internal sealed class BoundGlobalScope
         MethodSymbol? scriptMainMethod,
         ImmutableArray<TypeSymbol> types,
         ImmutableArray<VariableSymbol> variables,
-        DeclarationsBag declarationsBag, ImmutableArray<FullTypeBinder> typeBinders)
+        DeclarationsBag declarationsBag, ImmutableArray<FullClassBinder> typeBinders)
     {
         Previous = previous;
         Diagnostics = diagnostics;
@@ -33,5 +33,5 @@ internal sealed class BoundGlobalScope
     public MethodSymbol? ScriptMainMethod { get; }
     public ImmutableArray<TypeSymbol> Types { get; }
     
-    internal ImmutableArray<FullTypeBinder> TypeBinders { get; }
+    internal ImmutableArray<FullClassBinder> TypeBinders { get; }
 }

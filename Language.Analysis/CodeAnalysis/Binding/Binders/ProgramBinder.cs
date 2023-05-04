@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Class;
+using Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
@@ -56,7 +57,7 @@ internal sealed class ProgramBinder
         _scope.TryDeclareType(BuiltInTypeSymbols.Void);
     }
 
-    List<FullTypeBinder> _typeBinders = new();
+    List<FullClassBinder> _typeBinders = new();
     public BoundGlobalScope BindGlobalScope()
     {
         DeclareBuiltInTypes();
@@ -68,9 +69,9 @@ internal sealed class ProgramBinder
         
         foreach (var classDeclaration in classDeclarations)
         {
-            var typeBinder = new FullTypeBinder(_scope, _allDeclarations, IsScript);
-            var typeSignatureBindResult = typeBinder.BindClassDeclaration(classDeclaration, _diagnostics);
-            if (typeSignatureBindResult.IsOk)
+            var typeBinder = new FullClassBinder(_scope, _allDeclarations, IsScript);
+            var typeSignatureBindSuccess = typeBinder.BindClassDeclaration(classDeclaration, _diagnostics);
+            if (typeSignatureBindSuccess)
             {
                 _typeBinders.Add(typeBinder);   
             }
@@ -163,7 +164,7 @@ internal sealed class ProgramBinder
         Option<TypeSymbol> programType = mainMethodGeneration.Ok.Type;
         BindTopMethodsDeclarations(programType.Unwrap());
         
-        var programTypeBinder = new FullTypeBinder(_scope, _allDeclarations, IsScript, programType.Unwrap(), isTopMethod: true);
+        var programTypeBinder = new FullClassBinder(_scope, _allDeclarations, IsScript, programType.Unwrap(), isTopMethod: true);
         _typeBinders.Add(programTypeBinder);
     }
 
@@ -207,7 +208,7 @@ internal sealed class ProgramBinder
                                          baseTypes: new SingleOccurenceList<TypeSymbol>(), 
                                          isGenericMethodParameter: false, 
                                          isGenericClassParameter: false,
-                                         genericParameters: Option.None, genericParameterTypeConstraints: Option.None);
+                                         genericParameters: Option.None, genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: false);
 
 
         var mainMethodDeclarationSyntax = globalStatements.IsSome

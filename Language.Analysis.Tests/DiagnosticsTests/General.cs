@@ -775,6 +775,66 @@ public class General
     }
     
     [Fact]
+    public void GenericClassDeclarationShouldBeValid222()
+    {
+        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+
+            class SecondClass<T> { }
+            class Program
+            {
+                static function main()
+                {
+                    var f = new SecondClass<MyClass<[int]>>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassDeclarationShouldBeVali22d()
+    {
+        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
+        // TODO: MyClass is undefined on generic constraints binding, because we bind class at the same time as its generic constraints
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class SecondClass<T> where T : MyClass<[int]> { }
+
+            class Program
+            {
+                static function main()
+                {
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
     public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
     {
         var source = """            
@@ -796,6 +856,36 @@ public class General
         
         var diagnostics = new[]
         {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenNestedTypeConstraintDontMatch()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class SecondClass<T> where T : MyClass<string> { }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass<[int]>();
+                    var secondClass = new SecondClass<[MyClass<int>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);

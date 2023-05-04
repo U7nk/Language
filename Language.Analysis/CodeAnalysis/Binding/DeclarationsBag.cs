@@ -5,7 +5,7 @@ using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Extensions;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 
 public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
@@ -58,37 +58,5 @@ public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
         }
         
         declarations.Add(declaration);
-    }
-}
-
-public class BinderLookup
-{
-    public BinderLookup(DeclarationsBag declarationsBag)
-    {
-    
-        Declarations = declarationsBag;
-    }
-    
-    protected internal DeclarationsBag Declarations { get; }
-
-    public static ImmutableArray<Symbol> LookupSymbols(string name, BoundScope scope, TypeSymbol type)
-    {
-        var symbols = new List<Symbol>();
-        var methods = type.LookupMethod(name);
-        symbols.AddRange(methods);
-
-        var field = type.LookupField(name);
-        if (field is { })
-            symbols.Add(field);
-        
-        scope.TryLookupVariable(name, out var variable);
-        if (variable != null) 
-            symbols.Add(variable);
-
-        scope.TryLookupType(name, out var scopeType);
-        if (scopeType != null)
-            symbols.Add(scopeType);
-        
-        return symbols.ToImmutableArray();
     }
 }

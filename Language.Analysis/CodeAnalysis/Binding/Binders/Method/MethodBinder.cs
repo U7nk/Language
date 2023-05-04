@@ -3,40 +3,61 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
-using Language.Analysis.CodeAnalysis.Lowering;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
 using OneOf;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 
 sealed class MethodBinder
 {
     BoundScope _scope;
     readonly DiagnosticBag _diagnostics = new();
     readonly bool _isScript;
-    readonly MethodBinderLookup _lookup;
+    readonly TypeSymbol _containingType;
+    readonly MethodSymbol _currentMethod;
 
     readonly Stack<(LabelSymbol BreakLabel, LabelSymbol ContinueLabel)> _loopStack = new();
 
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
 
-    public MethodBinder(BoundScope scope, bool isScript, MethodBinderLookup lookup)
+    public MethodBinder(BoundScope scope, bool isScript, TypeSymbol containingType, MethodSymbol currentMethod)
     {
         _scope = scope;
         _isScript = isScript;
-        _lookup = lookup;
+        _containingType = containingType;
+        _currentMethod = currentMethod;
     }
 
+    public static ImmutableArray<Symbol> LookupSymbols(string name, BoundScope scope, TypeSymbol type)
+    {
+        var symbols = new List<Symbol>();
+        var methods = type.LookupMethod(name);
+        symbols.AddRange(methods);
+
+        var field = type.LookupField(name);
+        if (field is { })
+            symbols.Add(field);
+        
+        scope.TryLookupVariable(name, out var variable);
+        if (variable != null) 
+            symbols.Add(variable);
+
+        scope.TryLookupType(name, out var scopeType);
+        if (scopeType != null)
+            symbols.Add(scopeType);
+        
+        return symbols.ToImmutableArray();
+    }
+    
     public BoundBlockStatement BindMethodBody(MethodSymbol methodSymbol)
     {
         _scope = new(_scope);
         BoundBlockStatement result;
         if (methodSymbol.Name is SyntaxFacts.MAIN_METHOD_NAME or SyntaxFacts.SCRIPT_MAIN_METHOD_NAME
-            && _lookup.CurrentType.Name == SyntaxFacts.START_TYPE_NAME)
+            && _containingType.Name == SyntaxFacts.START_TYPE_NAME)
         {
             // method may be generated from global statements
             // so it needs special handling
@@ -189,7 +210,7 @@ sealed class MethodBinder
             : BindExpression(syntax.Expression);
 
 
-        if (Equals(_lookup.CurrentMethod.ReturnType, BuiltInTypeSymbols.Void))
+        if (Equals(_currentMethod.ReturnType, BuiltInTypeSymbols.Void))
         {
             if (expression is not null)
                 _diagnostics.ReportReturnStatementIsInvalidForVoidMethod(syntax.Location);
@@ -203,13 +224,13 @@ sealed class MethodBinder
                 else
                 {
                     _diagnostics.ReportReturnStatementIsInvalidForNonVoidMethod(syntax.Location,
-                        _lookup.CurrentMethod.ReturnType);
+                        _currentMethod.ReturnType);
                 }
             }
             else
             {
                 Debug.Assert(syntax.Expression != null, "syntax.Expression != null");
-                expression = BindConversion(expression, _lookup.CurrentMethod.ReturnType, syntax.Expression.Location);
+                expression = BindConversion(expression, _currentMethod.ReturnType, syntax.Expression.Location);
             }
         }
 
@@ -288,8 +309,6 @@ sealed class MethodBinder
         if (typeClause is null)
             return null;
 
-        _lookup.NullGuard();
-        
         var type = _scope.GetDeclaredTypes().SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
         if (type != null)
             return type;
@@ -322,7 +341,7 @@ sealed class MethodBinder
 
             _scope.TryLookupVariable(variable.Name, out var existingSymbol)
                 .EnsureTrue();
-            var existingVariables = _lookup.CurrentMethod.Parameters.Append(existingSymbol);
+            var existingVariables = _currentMethod.Parameters.Append(existingSymbol);
 
             foreach (var existingVariable in existingVariables)
             {
@@ -420,9 +439,9 @@ sealed class MethodBinder
                 return BindCastExpression(syntax.As<CastExpressionSyntax>());
             case SyntaxKind.NameExpression:
                 return BindNameExpression((NameExpressionSyntax)syntax,
-                                          type: _lookup.CurrentType,
+                                          type: _containingType,
                                           // if method is static, it can be only static member access
-                                          _lookup.CurrentMethod.IsStatic);
+                                          _currentMethod.IsStatic);
             case SyntaxKind.ThisExpression:
                 return BindThisExpression((ThisExpressionSyntax)syntax);
             case SyntaxKind.ObjectCreationExpression:
@@ -433,9 +452,9 @@ sealed class MethodBinder
                 return BindMemberAssignmentExpression((MemberAssignmentExpressionSyntax)syntax);
             case SyntaxKind.MethodCallExpression:
                 return BindMethodCallExpression((MethodCallExpressionSyntax)syntax, 
-                                                _lookup.CurrentType,
+                                                _containingType,
                                                 // if method is static, it can be only static member access
-                                                isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
+                                                isCalledOnStatic: _currentMethod.IsStatic);
             default:
                 throw new Exception($"Unexpected syntax {syntax.Kind}");
         }
@@ -455,11 +474,11 @@ sealed class MethodBinder
 
     BoundExpression BindThisExpression(ThisExpressionSyntax syntax)
     {
-        if (_lookup.CurrentMethod.IsStatic)
+        if (_currentMethod.IsStatic)
         {
             _diagnostics.ReportThisExpressionNotAllowedInStaticContext(syntax.ThisKeyword);
         }
-        return new BoundThisExpression(syntax, _lookup.CurrentType);
+        return new BoundThisExpression(syntax, _containingType);
     }
 
     BoundExpression BindMemberAssignmentExpression(MemberAssignmentExpressionSyntax syntax)
@@ -470,8 +489,8 @@ sealed class MethodBinder
         {
             var nameExpression = (NameExpressionSyntax)syntax.MemberAccess;
             member = BindNameExpression(nameExpression,
-                                        _lookup.CurrentType,
-                                        isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
+                                        _containingType,
+                                        isCalledOnStatic: _currentMethod.IsStatic);
             if (member.Kind is BoundNodeKind.VariableExpression)
             {
                 var variableExpression = (BoundVariableExpression)member;
@@ -590,9 +609,8 @@ sealed class MethodBinder
         {
             var genericParameter = genericParametersOfClass[i];
             var genericArgumentSyntax = genericArguments[i];
-            if (!_scope.TryLookupType(genericArgumentSyntax.Identifier.Text, out var genericArgumentType))
-                continue;
 
+            var fromNamedTypeExpression = TypeSymbol.FromNamedTypeExpression(genericArgumentSyntax);
             var constraintTypesOption = genericParameter.GenericParameterTypeConstraints;
             if (constraintTypesOption.IsNone)
                 continue;
@@ -600,28 +618,27 @@ sealed class MethodBinder
             var constraintTypes = constraintTypesOption.Unwrap();
             foreach (var constraintType in constraintTypes)
             {
-                if (genericArgumentType.CanBeCastedTo(constraintType) is false)
+                if (fromNamedTypeExpression.CanBeCastedTo(constraintType) is false)
                 {
                     _diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
                         genericArgumentSyntax,
-                        genericArgumentType,
+                        fromNamedTypeExpression,
                         constraintType);
                 }
             }
         }
     }
-
     BoundExpression BindMemberAccessExpression(ExpressionSyntax syntax)
     {
         if (syntax.Kind is SyntaxKind.NameExpression)
             return BindNameExpression((NameExpressionSyntax)syntax, 
-                                      _lookup.CurrentType,
-                                      isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
+                                      _containingType,
+                                      isCalledOnStatic: _currentMethod.IsStatic);
 
         if (syntax.Kind is SyntaxKind.MethodCallExpression)
             return BindMethodCallExpression((MethodCallExpressionSyntax)syntax,
-                                            _lookup.CurrentType,
-                                            isCalledOnStatic: _lookup.CurrentMethod.IsStatic);
+                                            _containingType,
+                                            isCalledOnStatic: _currentMethod.IsStatic);
 
         Debug.Assert(
             syntax.Kind is SyntaxKind.MemberAccessExpression,
@@ -634,7 +651,7 @@ sealed class MethodBinder
         if (memberAccess.Left.Kind is SyntaxKind.NameExpression)
         {
             var nameExpression = (NameExpressionSyntax)memberAccess.Left;
-            var symbols = BinderLookup.LookupSymbols(nameExpression.Identifier.Text, _scope, _lookup.CurrentType);
+            var symbols = LookupSymbols(nameExpression.Identifier.Text, _scope, _containingType);
             if (symbols.Length == 0)
             {
                 _diagnostics.ReportUndefinedName(nameExpression.Identifier.Location, nameExpression.Identifier.Text);
@@ -964,7 +981,7 @@ sealed class MethodBinder
             return new BoundVariableExpression(syntax, variable);
         }
 
-        if (field is null && !type.Equals(_lookup.CurrentType))
+        if (field is null && !type.Equals(_containingType))
         {
             _diagnostics.ReportUndefinedFieldAccess(syntax.Identifier, type);
             return new BoundErrorExpression(null);

@@ -1,11 +1,8 @@
-using System.Collections.Immutable;
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
-using Language.Analysis.Extensions;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Binders;
+namespace Language.Analysis.CodeAnalysis.Binding.Binders.Field;
 
 public sealed class FieldSignatureBinder
 {
