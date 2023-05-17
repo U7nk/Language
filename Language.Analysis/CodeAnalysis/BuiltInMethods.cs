@@ -20,7 +20,9 @@ internal static class BuiltInMethods
                                                                   containingType: null,
                                                                   BuiltInTypeSymbols.String)),
             returnType: BuiltInTypeSymbols.Void,
-            containingType: null);
+            containingType: null,
+            isGeneric: false,
+            genericParameters: Option.None);
 
     public static readonly MethodSymbol
         Input = new(
@@ -31,7 +33,9 @@ internal static class BuiltInMethods
             name: "input",
             parameters: ImmutableArray<ParameterSymbol>.Empty,
             returnType: BuiltInTypeSymbols.String, 
-            containingType: null);
+            containingType: null,
+            isGeneric: false,
+            genericParameters: Option.None);
 
     public static IEnumerable<MethodSymbol> GetAll() =>
         typeof(BuiltInMethods).GetFields(BindingFlags.Public | BindingFlags.Static)

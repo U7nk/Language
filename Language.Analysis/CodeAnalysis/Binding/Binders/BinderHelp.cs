@@ -1,5 +1,4 @@
 using System.Linq;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 
@@ -11,12 +10,12 @@ static class BinderHelp
     {
         if (syntax is null)
             return null;
-        
-        var type = scope.GetDeclaredTypes().SingleOrDefault(x=> x.Name == syntax.Identifier.Text);
-        if (type != null)
-            return type;
 
-        diagnostics.ReportUndefinedType(syntax.Identifier.Location, syntax.Identifier.Text);
+        var type = TypeSymbol.FromNamedTypeExpression(syntax.NamedTypeExpression, scope, diagnostics);
+        
+        if (Equals(type, BuiltInTypeSymbols.Error))
+            return null;
+        
         return type;
     }
 }

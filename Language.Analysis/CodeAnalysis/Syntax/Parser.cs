@@ -156,17 +156,17 @@ public class Parser
     {
         var classKeyword = Match(SyntaxKind.ClassKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
+        var optionalGenericClause = ParseOptionalGenericClause();
         var inheritanceClause = ParseOptionalInheritanceClause();
+        var optionalGenericConstraints = ParseOptionalGenericConstraintsClause();
         var openBraceToken = Match(SyntaxKind.OpenBraceToken);
         var members = ParseClassMembers();
         var closeBraceToken = Match(SyntaxKind.CloseBraceToken);
-        
         return new ClassDeclarationSyntax(
                     _syntaxTree, classKeyword,
-                    identifier, inheritanceClause,
-                    openBraceToken, 
-                    members,
-                    closeBraceToken);
+                    identifier, optionalGenericClause,
+                    inheritanceClause, optionalGenericConstraints, openBraceToken,
+                    members, closeBraceToken);
     }
 
     InheritanceClauseSyntax? ParseOptionalInheritanceClause()
@@ -271,22 +271,40 @@ public class Parser
 
             var identifier = Match(SyntaxKind.IdentifierToken);
             var colonToken = Match(SyntaxKind.ColonToken);
-            var typeConstraints = ImmutableArray.CreateBuilder<SyntaxToken>();
-            Match(SyntaxKind.IdentifierToken).AddTo(typeConstraints);
+            var separatedTypeConstraintsSyntax = ImmutableArray.CreateBuilder<SyntaxNode>();
+
+            ParseNamedTypeExpression().AddTo(separatedTypeConstraintsSyntax);
             while (Current is { Kind: SyntaxKind.CommaToken })
             {
-                Match(SyntaxKind.CommaToken);
-                Match(SyntaxKind.IdentifierToken).AddTo(typeConstraints);
+                Match(SyntaxKind.CommaToken).AddTo(separatedTypeConstraintsSyntax);
+                ParseNamedTypeExpression().AddTo(separatedTypeConstraintsSyntax);
             }
-
+            
             var typeConstraintSyntax = _syntaxTree.NewGenericConstraintsClause(whereKeyword.Unwrap(),
                                                                                identifier,
                                                                                colonToken,
-                                                                               new SeparatedSyntaxList<SyntaxToken>(typeConstraints.ToImmutable()));
+                                                                               new SeparatedSyntaxList<NamedTypeExpressionSyntax>(separatedTypeConstraintsSyntax.ToImmutable()));
             constraints.Add(typeConstraintSyntax);
         }
 
         return constraints.ToImmutableArray();
+    }
+
+    NamedTypeExpressionSyntax ParseNamedTypeExpression()
+    {
+        var identifier = Match(SyntaxKind.IdentifierToken);
+        var optionalGenericClause = ParseOptionalGenericClause();
+        return _syntaxTree.NewNamedTypeExpression(identifier, optionalGenericClause);
+    }
+
+    Option<NamedTypeExpressionSyntax> ParseOptionalNamedTypeExpression()
+    {
+        var identifier = OptionalMatch(SyntaxKind.IdentifierToken);
+        if (identifier.IsNone)
+            return Option.None;
+        
+        var optionalGenericClause = ParseOptionalGenericClause();
+        return _syntaxTree.NewNamedTypeExpression(identifier.Unwrap(), optionalGenericClause);
     }
 
     Option<GenericClauseSyntax> ParseOptionalGenericClause()
@@ -295,20 +313,19 @@ public class Parser
         if (lessThanToken.IsNone)
             return Option.None;
 
-        var arguments = ImmutableArray.CreateBuilder<SyntaxToken>();
-        var currentToken = Match(SyntaxKind.IdentifierToken);
-        arguments.Add(currentToken);
+        var separatedTypes = ImmutableArray.CreateBuilder<SyntaxNode>();
+        ParseNamedTypeExpression().AddTo(separatedTypes);
         
         while (Current is { Kind: SyntaxKind.CommaToken })
         {
-            Match(SyntaxKind.CommaToken).AddTo(arguments);
-            Match(SyntaxKind.IdentifierToken).AddTo(arguments);
+            Match(SyntaxKind.CommaToken).AddTo(separatedTypes);
+            ParseNamedTypeExpression().AddTo(separatedTypes);
         }
-        
+
         var greaterThanToken = Match(SyntaxKind.GreaterThanToken);
         return _syntaxTree.NewGenericClause(lessThanToken.Unwrap(),
-                                                   new SeparatedSyntaxList<SyntaxToken>(arguments.ToImmutable()),
-                                                   greaterThanToken);
+                                                         new SeparatedSyntaxList<NamedTypeExpressionSyntax>(separatedTypes.ToImmutable()),
+                                                         greaterThanToken);
     }
 
     GlobalStatementDeclarationSyntax ParseGlobalStatement()
@@ -499,14 +516,14 @@ public class Parser
             return null;
 
         var colon = NextToken();
-        var type = Match(SyntaxKind.IdentifierToken);
+        var type = ParseNamedTypeExpression();
         return new(_syntaxTree, colon, type);
     }
 
     TypeClauseSyntax ParseTypeClause()
     {
         var colon = Match(SyntaxKind.ColonToken);
-        var type = Match(SyntaxKind.IdentifierToken);
+        var type = ParseNamedTypeExpression();
         return _syntaxTree.NewTypeClause(colon, type);
     }
 
@@ -591,16 +608,16 @@ public class Parser
         return left;
     }
 
-    ObjectCreationExpressionSyntax ParseObjectCreationExpression()
+    NewExpressionSyntax ParseObjectCreationExpression()
     {
         var newKeyword = Match(SyntaxKind.NewKeyword);
         var identifier = Match(SyntaxKind.IdentifierToken);
+        var optionalGenericArguments = ParseOptionalGenericClause();
         var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
         var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
         
-        return _syntaxTree.NewObjectCreationExpression(
-            newKeyword, identifier,
-            openParenthesis, closeParenthesis);
+        return _syntaxTree.NewNewExpression(newKeyword, identifier, optionalGenericArguments,
+                                                       openParenthesis, closeParenthesis);
     }
 
     AssignmentExpressionSyntax ParseAssignmentExpression()
