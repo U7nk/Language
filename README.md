@@ -1,16 +1,12 @@
 [![Build Status](http://84.38.184.25:8080/buildStatus/icon?subject=Build_and_tests&job=language-ci%2Fmaster)](http://84.38.184.25:8080/job/language-ci/job/master/)
-# Language
-Statically typed, object oriented Language with garbage collection.
+# My programming language pet project
+Features
+* Classes
+* Methods
+* Fields
+* Generics
+* Static type checking
 
-Made for learning and fun.
-
-This project contains of:
-  * Language interpreter written in C#
-  * Language to bytecode compiler in C#
-  * Language runtime written in C++
-
-## runtime
-Stack based virtual machine.
 
 ## syntax
 Complex Hello World program:
