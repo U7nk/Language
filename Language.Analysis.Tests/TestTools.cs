@@ -12,6 +12,103 @@ namespace Language.Analysis.Tests;
 
 public static class TestTools
 {
+    static string GetEnumeratedTextWithDiagnostics(string sourceText,
+                                                   IList<(TextSpan Span, string Code)> diagnostics)
+    {
+        var charCount = 0;
+        var lines = sourceText.Split(Environment.NewLine)
+            .Select((lineText, i) =>
+            {
+                var charCountBefore = charCount;
+                charCount += lineText.Length + Environment.NewLine.Length;
+                
+                return new
+                {
+                    IsError = false,
+                    Text = lineText,
+                    CharacterRange = new Range(charCountBefore, charCount),
+                    LineIndex = i
+                };
+            })
+            .ToList();
+
+        var inserts = new List<(int Index, string Text)>();
+        foreach (var diagnostic in diagnostics)
+        {
+            var linesUsedForDiagnostic =
+                lines.Where(
+                        x => diagnostic.Span.Start.InRange(x.CharacterRange.Start.Value, x.CharacterRange.End.Value))
+                    .ToList();
+            var startLineIndex = linesUsedForDiagnostic.First().LineIndex;
+            var endLineIndex = linesUsedForDiagnostic.Last().LineIndex;
+            inserts.Add((startLineIndex + 1, $"Error: {diagnostic.Code}"));
+            var startLine = lines[startLineIndex];
+            var endLine = lines[endLineIndex];
+            if (startLine == endLine)
+            {
+                var line = lines[startLineIndex];
+                var start = diagnostic.Span.Start - startLine.CharacterRange.Start.Value;
+                var end = (diagnostic.Span.End - startLine.CharacterRange.Start.Value);
+                var newLine = line.Text.Insert(start, "[");
+                newLine = newLine.Insert(end + 1, "]");
+                lines[startLineIndex] = new
+                {
+                    IsError = false, Text = newLine,
+                    CharacterRange = new Range(line.CharacterRange.Start.Value, line.CharacterRange.End.Value + 2),
+                    LineIndex = line.LineIndex
+                };
+            }
+            else
+            {
+                var start = diagnostic.Span.Start - startLine.CharacterRange.Start.Value;
+                var end = (diagnostic.Span.End - startLine.CharacterRange.Start.Value);
+                startLine = new
+                {
+                    IsError = false,
+                    Text = startLine.Text[..start] + "[" +
+                           startLine.Text[start..],
+                    CharacterRange = 
+                        new Range(startLine.CharacterRange.Start.Value, startLine.CharacterRange.End.Value + 1),
+                    LineIndex = startLine.LineIndex
+                };
+                endLine = new
+                {
+                    IsError = false,
+                    Text = endLine.Text[..end] + "]" +
+                           endLine.Text[end..],
+                    CharacterRange =
+                        new Range(endLine.CharacterRange.Start.Value, endLine.CharacterRange.End.Value + 1),
+                    LineIndex = endLine.LineIndex
+                };
+
+                lines[startLineIndex] = startLine;
+                lines[endLineIndex] = endLine;
+            }
+        }
+        
+        var insertedLines = 0;
+        foreach (var insert in inserts)
+        {
+            lines.Insert(insert.Index + insertedLines, new {IsError = true, Text = insert.Text, CharacterRange = new Range(0, 0), LineIndex = 0});
+            insertedLines++;
+        }
+        
+        // enumerate lines
+        var lineCounter = 0;
+        var enumeratedLines = lines.Select(line =>
+        {
+            if (line.IsError)
+                return line.Text;
+            
+            var newText = $"{lineCounter}: {line.Text}";
+            lineCounter++;
+            return newText;
+        }).ToList();
+        
+        sourceText = string.Join(Environment.NewLine, enumeratedLines);
+        return sourceText;
+    }
+
     /// <summary>
     /// Doesn't work when diagnostics are from different SourceText's
     /// </summary>
@@ -194,27 +291,37 @@ public static class TestTools
             var expectedCode = diagnosticsCodes[i];
             var expectedSpan = annotatedText.Spans[i];
             
-            var diagnostic = diagnostics.FirstOrDefault(x=> x.TextLocation.Span == expectedSpan && x.Code == expectedCode);
-            if (diagnostic == null)
+            var matchedDiagnostic = diagnostics.FirstOrDefault(x=> x.TextLocation.Span == expectedSpan && x.Code == expectedCode);
+            if (matchedDiagnostic != null)
+                continue;
+
+
+            var diagnosticsWithOnlySpanMatch = diagnostics.Where(x => x.TextLocation.Span == expectedSpan).ToArray();
+            if (diagnosticsWithOnlySpanMatch.Length != 0)
             {
-                var diagnosticsWithSameSpan = diagnostics.Where(x=> x.TextLocation.Span == expectedSpan).ToArray();
-                if (diagnosticsWithSameSpan.Length != 0)
-                {
-                    Assert.Fail($"Expected diagnostic with code {expectedCode} at {expectedSpan}, but got {diagnosticsWithSameSpan.Length} with different codes:\n" +
-                                $"{string.Join(",\n", diagnosticsWithSameSpan.Select(x=> x.Code + x.Message))}");
-                }
+                // diagnostics dont match code
                 
-                var diagnosticsWithSameCode = diagnostics.Where(x=> x.Code == expectedCode).ToArray();
-                if (diagnosticsWithSameCode.Length != 0)
-                {
-                    Assert.Fail($"Expected diagnostic with code {expectedCode} at {expectedSpan}, but got {diagnosticsWithSameCode.Length} with different spans:\n" +
-                                $"{string.Join(",\n", diagnosticsWithSameCode.Select(x=> x.TextLocation.Span + x.Message))}");
-                }
-                
-                Assert.Fail($"Expected diagnostic with code {expectedCode} at {expectedSpan}, but got none.\n" +
-                            $"Expected: \n{string.Join(",\n", diagnosticsCodes)}\n" +
-                            $"Actual: \n{string.Join(",\n", actualDiagnosticsTexts)}");
+                Assert.Fail(
+                    $"There diagnostics with same span Expected:{Environment.NewLine}" +
+                    $"{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}{Environment.NewLine}" +
+                    $"But got:\n" +
+                    $"{GetEnumeratedTextWithDiagnostics(ImmutableArray.Create(diagnosticsWithOnlySpanMatch))}");
             }
+
+            var diagnosticsWithOnlyCodeMatch = diagnostics.Where(x => x.Code == expectedCode).ToArray();
+            if (diagnosticsWithOnlyCodeMatch.Length != 0)
+            {
+                // diagnostics dont match span
+                Assert.Fail(
+                    $"No matched diagnostics. There is diagnostics with same codes.{Environment.NewLine}Expected: {Environment.NewLine}" +
+                    $"{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}{Environment.NewLine}" +
+                    $"But got:{Environment.NewLine}" +
+                    $"{GetEnumeratedTextWithDiagnostics(ImmutableArray.Create(diagnosticsWithOnlyCodeMatch))}\n");
+            }
+
+            Assert.Fail($"Expected diagnostic with code {expectedCode} at {expectedSpan}, but got none.\n" +
+                        $"Expected that we have this diagnostic: \n{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}\n" +
+                        $"Actual: \n{GetEnumeratedTextWithDiagnostics(diagnostics)}");
         }
     }
 

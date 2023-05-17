@@ -20,12 +20,3 @@ Complex Hello World program:
 Simple Hello World program on top level statements:
 
 ![image](https://user-images.githubusercontent.com/69924108/197232400-5300537a-6138-45a6-95cb-64b14b00cdea.png)
-
-## source code to execution pipeline
-Green - compilation
-
-Red - runtime
-
-![image](https://user-images.githubusercontent.com/69924108/197239235-e47e8994-dfce-4e36-942d-9e6e7523b7dd.png)
-* Bound tree - Syntax tree with types
-* Lowered tree - Bound tree without loops and ifs(labels and goto instead)

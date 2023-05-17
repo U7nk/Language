@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
 
@@ -13,6 +16,7 @@ public interface ISyntaxNode
     public abstract SyntaxKind Kind { get; }
 }
 
+[DebuggerDisplay("{ToSourceCodeString()}")]
 public abstract class SyntaxNode : ISyntaxNode
 {
     protected SyntaxNode(SyntaxTree syntaxTree)
@@ -40,24 +44,51 @@ public abstract class SyntaxNode : ISyntaxNode
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
         foreach (var property in properties)
         {
-            if (property.PropertyType.CanBeConvertedTo<SyntaxNode>())
+            object? GetValue(PropertyInfo property)
             {
-                var value = property.GetValue(this); 
+                if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Option<>))
+                {
+                    var value = property.GetValue(this);
+                    return property.PropertyType.GetMethod(nameof(Option<Unit>.Unwrap))
+                        .NullGuard()
+                        .Invoke(value, Array.Empty<object>())
+                        .NullGuard();
+                }
+
+                return property.GetValue(this);
+            }
+            
+            var propertyType = property.PropertyType;
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(Option<>))
+            {
+                var isSome = (bool)propertyType.GetProperty(nameof(Option<Unit>.IsSome))
+                    .NullGuard()
+                    .GetValue(property.GetValue(this))
+                    .NullGuard();
+                if (isSome)
+                {
+                    var value = GetValue(property);
+                    propertyType = value.NullGuard().GetType();
+                }
+            }
+            
+            if (propertyType.CanBeConvertedTo<SyntaxNode>())
+            {
+                var value = GetValue(property);
                 if (value != null)
                     yield return (SyntaxNode)value;
             }
-            else if (property.PropertyType.CanBeConvertedTo<SeparatedSyntaxList>())
+            else if (propertyType.CanBeConvertedTo<SeparatedSyntaxList>())
             {
-                var value = (SeparatedSyntaxList?)property.GetValue(this);
-                value.NullGuard();
-                
+                var value = (SeparatedSyntaxList)property.GetValue(this).NullGuard();
+
                 foreach (var child in value.GetWithSeparators())
                     yield return child;
 
             }
-            else if (property.PropertyType.CanBeConvertedTo<IEnumerable<SyntaxNode>>())
+            else if (propertyType.CanBeConvertedTo<IEnumerable<SyntaxNode>>())
             {
-                var children = (IEnumerable<SyntaxNode>)(property.GetValue(this) ?? throw new InvalidOperationException());
+                var children = (IEnumerable<SyntaxNode>)GetValue(property).NullGuard();
                 foreach (var child in children)
                 {
                     yield return child;
@@ -75,6 +106,32 @@ public abstract class SyntaxNode : ISyntaxNode
         return GetChildren().Last().GetLastToken();
     }
 
+    public string ToSourceCodeString()
+    {
+        return ToSourceCodeStringInternal(this);
+    }
+
+    string ToSourceCodeStringInternal(SyntaxNode node)
+    {
+        var str = new StringBuilder();
+        if (node.Kind is SyntaxKind.OpenBraceToken)
+        {
+            str.Append(Environment.NewLine);
+        }
+
+        if (node is SyntaxToken token)
+        {
+            str.Append(token.Text).Append(' ');
+        }
+
+        foreach (var child in node.GetChildren())
+        {
+            str.Append(ToSourceCodeStringInternal(child));
+        }
+
+        return str.ToString();
+    }
+    
     public override string ToString()
     {
         using var sw = new StringWriter();

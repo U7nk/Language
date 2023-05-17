@@ -83,7 +83,9 @@ public enum SyntaxKind
     MemberAssignmentExpression,
     ThisExpression,
     CastExpression,
-
+    NamedTypeExpression,
+    
+    
     // statements
     BlockStatement,
     ExpressionStatement,

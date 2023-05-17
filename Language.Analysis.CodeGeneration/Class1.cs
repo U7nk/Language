@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace CodeGen;
+namespace Language.Analysis.CodeGeneration;
 
 internal static class Extensions
 {

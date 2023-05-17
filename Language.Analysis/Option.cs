@@ -2,10 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis;
 
-public struct Unit { }
+public struct Unit
+{
+    public static readonly Unit Default = default;
+}
 public static class Option
 {
     public static Option<T> Some<T>(T value) => new(value, hasValue: true);
@@ -30,7 +35,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         Value = value;
         HasValue = hasValue;
     }
-
+    
     bool HasValue { get; }
 
     public T SomeOr(T defaultValue)
@@ -46,7 +51,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     [StackTraceHidden]
     public T Unwrap()
     {
-        if (Value is null)
+        if (HasValue is false || Value is null)
             throw new InvalidOperationException("Option is empty");
         
         return Value;
@@ -99,5 +104,23 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         if (HasValue)
             action(Value!);
         
+    }
+    
+    public IEnumerable<Y> SomeOrEmpty<Y>()
+    {
+        if (!typeof(T).CanBeConvertedTo<IEnumerable<Y>>())
+        {
+            throw new Exception("method can be used only with IEnumerable<Y>");
+        }
+        
+        if (this.IsSome)
+        {
+            return (IEnumerable<Y>)this.Unwrap();
+        }
+        
+        return (IEnumerable<Y>)typeof(Enumerable).GetMethod("Empty").NullGuard()
+            .GetGenericMethodDefinition().MakeGenericMethod(typeof(Y))
+            .Invoke(null, null)
+            .NullGuard();
     }
 }

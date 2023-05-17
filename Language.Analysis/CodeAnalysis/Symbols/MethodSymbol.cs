@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
@@ -13,13 +14,18 @@ public class MethodSymbol : MemberSymbol
                         bool isOverriding,
                         string name, 
                         ImmutableArray<ParameterSymbol> parameters,
-                        TypeSymbol returnType) 
+                        TypeSymbol returnType, bool isGeneric, Option<ImmutableArray<TypeSymbol>> genericParameters) 
         : base(declaration, name, containingType, returnType)
     {
         Parameters = parameters;
+        IsGeneric = isGeneric;
+        GenericParameters = genericParameters;
         IsVirtual = isVirtual;
         IsOverriding = isOverriding;
         IsStatic = isStatic;
+
+        (!genericParameters.IsSome && isGeneric || genericParameters.IsSome && !isGeneric)
+            .EnsureFalse("Method cannot be generic and not define generic parameters.");
     }
     
     public bool IsGeneratedFromGlobalStatements => DeclarationSyntax.IsSome &&
@@ -28,6 +34,9 @@ public class MethodSymbol : MemberSymbol
     public bool IsStatic { get; }
     public bool IsVirtual { get; }
     public bool IsOverriding { get; }
+
+    public bool IsGeneric { get; } 
+    public Option<ImmutableArray<TypeSymbol>> GenericParameters { get; }
     public ImmutableArray<ParameterSymbol> Parameters { get; }
     public TypeSymbol ReturnType => Type;
     public override SymbolKind Kind => SymbolKind.Method;

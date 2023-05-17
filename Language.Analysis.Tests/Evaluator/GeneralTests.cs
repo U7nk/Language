@@ -811,6 +811,42 @@ public class EvaluatorTests
     }
     
     [Fact]
+    public void EvaluatorEvaluatesMethodWithClassGenericParameterCall()
+    {
+        var source = """
+            class MyClass<T>
+            {
+            
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClassString = new MyClass<string>();
+                    var myClassInt = new MyClass<int>();
+                    myClassInt.TestMethod(10);
+                    myClassString.TestMethod("foo");
+                }
+            }
+            """;
+        
+        AssertValue(
+            source,
+            result =>
+            {
+                Assert.NotNull(result);
+                result.Type.Should().Be(BuiltInTypeSymbols.String);
+                result.LiteralValue.Should().Be("foo");
+            },
+            isScript: false,
+            Option.Some(_testOutputHelper));
+    }
+    
+    [Fact]
     public void MethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
     {
         var source = """
@@ -839,6 +875,10 @@ public class EvaluatorTests
         (TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper).Ok is { LiteralValue: 10, Type.Name: "int" })
             .Should().BeTrue();
     }
+    
+
+    
+    
 
     static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
     {

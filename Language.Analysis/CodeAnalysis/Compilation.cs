@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Binding.Binders;
-using Language.Analysis.CodeAnalysis.Binding.Lookup;
 using Language.Analysis.CodeAnalysis.Emit;
 using Language.Analysis.CodeAnalysis.Interpretation;
 using Language.Analysis.CodeAnalysis.Symbols;
@@ -38,46 +37,41 @@ public sealed class Compilation
     public bool IsScript { get; }
     public Compilation? Previous { get; }
 
-    BoundGlobalScope? _globalScope;
-    internal BoundGlobalScope GlobalScope
+
+    static readonly object Lock = new();
+    Option<FullBoundProgram> _fullBoundProgram;
+
+    FullBoundProgram GetFullBoundProgram()
     {
-        get
+        lock (Lock)
         {
-            if (_globalScope is not null)
-                return _globalScope;
-
-            var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, new DeclarationsBag());
-            var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
-            var boundGlobalScope = programBinder.BindGlobalScope();
-            Interlocked.CompareExchange(ref _globalScope, boundGlobalScope, null);
-
-            return _globalScope;
+            if (_fullBoundProgram.IsSome)
+                return _fullBoundProgram.Unwrap();   
         }
-    }
-    
-    BoundProgram? _boundProgram;
-    
-    BoundProgram GetProgram()
-    {
-        var previous = Previous?.GetProgram();
-        if (_boundProgram is not null)
-            return _boundProgram;
+
+        var previous = Previous?.GetFullBoundProgram();
+
+        var declarations = new DeclarationsBag();
+        var programBinder = new ProgramBinder(IsScript, previous?.GlobalScope, SyntaxTrees, declarations);
+        var boundGlobalScope = programBinder.BindGlobalScope();
+
+        var program = programBinder.BindProgram(IsScript, previous?.Program, boundGlobalScope);
+        var fullBoundProgram = Option.Some(new FullBoundProgram(boundGlobalScope, program));
+        lock (Lock)
+        {
+            _fullBoundProgram = fullBoundProgram;
+        }
         
-        
-        var lookup = new BinderLookup(ImmutableArray<TypeSymbol>.Empty, GlobalScope.DeclarationsBag);
-        var programBinder = new ProgramBinder(IsScript, Previous?._globalScope, SyntaxTrees, lookup);
-        var program = programBinder.BindProgram(IsScript, previous, GlobalScope);
-        Interlocked.CompareExchange(ref _boundProgram, program, null);
-        return _boundProgram;
+        return _fullBoundProgram.Unwrap();
     }
 
     public EvaluationResult Evaluate(Dictionary<VariableSymbol, ObjectInstance?> variables)
     {
         var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
-        var program = GetProgram();
+        var program = GetFullBoundProgram();
         var diagnostics = parseDiagnostics
-            .Concat(GlobalScope.Diagnostics)
-            .Concat(program.Diagnostics)
+            .Concat(program.GlobalScope.Diagnostics)
+            .Concat(program.Program.Diagnostics)
             .ToImmutableArray();
         
         if (diagnostics.Any())
@@ -90,19 +84,19 @@ public sealed class Compilation
         //         : Lowerer.Lower(GlobalScope.Statement));        // using (var streamWriter = new StreamWriter(cfgPath)) 
         //     cfg.WriteTo(streamWriter);
 
-        var evaluator = new Evaluator(program, variables);
+        var evaluator = new Evaluator(program.Program, variables);
         var result = evaluator.Evaluate();
         return new(ImmutableArray<Diagnostic>.Empty, result);
     }
 
     public void EmitTree(IndentedTextWriter writer)
     {
-        if (GlobalScope.MainMethod.IsSome)
-            EmitTree(GlobalScope.MainMethod.Unwrap(), writer);
-        else if (GlobalScope.ScriptMainMethod is not null)
-            EmitTree(GlobalScope.ScriptMainMethod, writer);
+        if (GetFullBoundProgram().GlobalScope.MainMethod.IsSome)
+            EmitTree(GetFullBoundProgram().GlobalScope.MainMethod.Unwrap(), writer);
+        else if (GetFullBoundProgram().GlobalScope.ScriptMainMethod is not null)
+            EmitTree(GetFullBoundProgram().GlobalScope.ScriptMainMethod, writer);
 
-        foreach (var type in GlobalScope.Types)
+        foreach (var type in GetFullBoundProgram().GlobalScope.Types)
         {
             EmitTree(type, writer);
         }
@@ -126,10 +120,10 @@ public sealed class Compilation
     
     public void EmitTree(MethodSymbol method, TextWriter writer)
     {
-        var program = GetProgram();
+        var program = GetFullBoundProgram();
         method.WriteTo(writer);
         writer.WriteLine();
-        var type = program.Types.SingleOrNone(x => x.MethodTable.FirstOrNone(x => x.MethodSymbol.Equals(method)).IsSome);
+        var type = program.Program.Types.SingleOrNone(x => x.MethodTable.FirstOrNone(x => x.MethodSymbol.Equals(method)).IsSome);
         if (type.IsNone)
             return;
 
@@ -140,7 +134,7 @@ public sealed class Compilation
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, string[] refernces, string outputPaths)
     {
-        var program = GetProgram();
-        return new Emitter().Emit(program, moduleName, refernces, outputPaths);
+        var program = GetFullBoundProgram();
+        return new Emitter().Emit(program.Program, moduleName, refernces, outputPaths);
     }
 }

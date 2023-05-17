@@ -1,4 +1,4 @@
-namespace compiler;
+namespace Language.Compiler;
 
 internal static class ConsoleEx
 {
