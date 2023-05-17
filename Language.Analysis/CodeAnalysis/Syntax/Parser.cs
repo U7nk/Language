@@ -273,11 +273,11 @@ public class Parser
             var colonToken = Match(SyntaxKind.ColonToken);
             var separatedTypeConstraintsSyntax = ImmutableArray.CreateBuilder<SyntaxNode>();
 
-            ParseNamedType().AddTo(separatedTypeConstraintsSyntax);
+            ParseNamedTypeExpression().AddTo(separatedTypeConstraintsSyntax);
             while (Current is { Kind: SyntaxKind.CommaToken })
             {
                 Match(SyntaxKind.CommaToken).AddTo(separatedTypeConstraintsSyntax);
-                ParseNamedType().AddTo(separatedTypeConstraintsSyntax);
+                ParseNamedTypeExpression().AddTo(separatedTypeConstraintsSyntax);
             }
             
             var typeConstraintSyntax = _syntaxTree.NewGenericConstraintsClause(whereKeyword.Unwrap(),
@@ -290,11 +290,21 @@ public class Parser
         return constraints.ToImmutableArray();
     }
 
-    NamedTypeExpressionSyntax ParseNamedType()
+    NamedTypeExpressionSyntax ParseNamedTypeExpression()
     {
         var identifier = Match(SyntaxKind.IdentifierToken);
         var optionalGenericClause = ParseOptionalGenericClause();
         return _syntaxTree.NewNamedTypeExpression(identifier, optionalGenericClause);
+    }
+
+    Option<NamedTypeExpressionSyntax> ParseOptionalNamedTypeExpression()
+    {
+        var identifier = OptionalMatch(SyntaxKind.IdentifierToken);
+        if (identifier.IsNone)
+            return Option.None;
+        
+        var optionalGenericClause = ParseOptionalGenericClause();
+        return _syntaxTree.NewNamedTypeExpression(identifier.Unwrap(), optionalGenericClause);
     }
 
     Option<GenericClauseSyntax> ParseOptionalGenericClause()
@@ -304,12 +314,12 @@ public class Parser
             return Option.None;
 
         var separatedTypes = ImmutableArray.CreateBuilder<SyntaxNode>();
-        ParseNamedType().AddTo(separatedTypes);
+        ParseNamedTypeExpression().AddTo(separatedTypes);
         
         while (Current is { Kind: SyntaxKind.CommaToken })
         {
             Match(SyntaxKind.CommaToken).AddTo(separatedTypes);
-            ParseNamedType().AddTo(separatedTypes);
+            ParseNamedTypeExpression().AddTo(separatedTypes);
         }
 
         var greaterThanToken = Match(SyntaxKind.GreaterThanToken);
@@ -506,14 +516,14 @@ public class Parser
             return null;
 
         var colon = NextToken();
-        var type = Match(SyntaxKind.IdentifierToken);
+        var type = ParseNamedTypeExpression();
         return new(_syntaxTree, colon, type);
     }
 
     TypeClauseSyntax ParseTypeClause()
     {
         var colon = Match(SyntaxKind.ColonToken);
-        var type = Match(SyntaxKind.IdentifierToken);
+        var type = ParseNamedTypeExpression();
         return _syntaxTree.NewTypeClause(colon, type);
     }
 

@@ -747,10 +747,8 @@ public class General
     }
     
     [Fact]
-    public void GenericClassDeclarationShouldBeValid()
+    public void GenericClassConstraintsShouldReportWhenTheyDoesntSatisfyThemselves()
     {
-        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
-        // TODO: MyClass is undefined on generic constraints binding, because we bind class at the same time as its generic constraints
         var source = """            
             class MyClass<T> where T : MyClass<[string]>
             {
@@ -775,9 +773,8 @@ public class General
     }
     
     [Fact]
-    public void GenericClassDeclarationShouldBeValid222()
+    public void GenericClassConstructorCalReportsViolationOfOtherClassGenericConstraints()
     {
-        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
         var source = """            
             class MyClass<T> where T : string
             {
@@ -805,10 +802,8 @@ public class General
     }
     
     [Fact]
-    public void GenericClassDeclarationShouldBeVali22d()
+    public void GenericConstraintsOnDeclarationReportsViolationOfOtherClassGenericConstraints()
     {
-        // TODO: Bad test name, rename it. Also need to add diagnostic for this case.
-        // TODO: MyClass is undefined on generic constraints binding, because we bind class at the same time as its generic constraints
         var source = """            
             class MyClass<T> where T : string
             {
@@ -878,13 +873,14 @@ public class General
                 static function main()
                 {
                     var myClass = new MyClass<[int]>();
-                    var secondClass = new SecondClass<[MyClass<int>]>();
+                    var secondClass = new SecondClass<[MyClass<[int]>]>();
                 }
             }
             """;
         
         var diagnostics = new[]
         {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
@@ -943,6 +939,140 @@ public class General
             DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void VariableDeclaredWithWrongGenericTypeReportsWrongGenericArgument()
+    {
+        var source = """
+            class MyClass<T> where T : string
+            {
+               
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<[int]>;
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericTypeClauseReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<[OtherClass<[int]>]>; 
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericMethodCallReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var x = new MyClass<OtherClass<string>>();
+                    x.GenericMethod<[OtherClass<[int]>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassConstructorCallReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var x = new MyClass<[OtherClass<[int]>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    
+    [Fact]
+    public void AllGenericTypeUsageIsProperlyParsed()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<OtherClass<string>>;
+                    var x = new MyClass<OtherClass<string>>();
+                    x.GenericMethod<OtherClass<string>>();
+                }
+            }
+            """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(Output);
     }
 
 }

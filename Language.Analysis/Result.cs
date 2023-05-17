@@ -15,7 +15,7 @@ public class Result<TOk, TFail>
             if (IsOk)
                 return _success!;
 
-            throw new InvalidOperationException("Cannot get success value from failed result");
+            throw new InvalidOperationException($"Cannot get success value from failed result. {Error}");
         }
     }
 

@@ -89,14 +89,55 @@ public class TypeSymbol : Symbol, ITypedSymbol
         return BuiltInTypeSymbols.Error;
     }
 
-    public static TypeSymbol FromNamedTypeExpression(NamedTypeExpressionSyntax namedTypeExpression)
-    {
-        Option<ImmutableArray<TypeSymbol>> genericParameters = namedTypeExpression.GenericClause.IsSome
-            ? namedTypeExpression.GenericClause.Unwrap().Arguments.Select(TypeSymbol.FromNamedTypeExpression).ToImmutableArray()
-            : Option.None;
+    
 
-        return new TypeSymbol(namedTypeExpression.Identifier.Text, Option.None, null, null, new MethodTable(), new FieldTable(),
-                       new SingleOccurenceList<TypeSymbol>(), false, false, genericParameters, Option.None, isGenericTypeDefinition: false);
+    public static TypeSymbol FromNamedTypeExpression(NamedTypeExpressionSyntax namedTypeExpression, BoundScope lookupScope, DiagnosticBag diagnostics)
+    {
+        TypeSymbol ReportUndefinedAndReturnError(NamedTypeExpressionSyntax namedTypeExpressionLocal)
+        {
+            diagnostics.ReportUndefinedType(namedTypeExpressionLocal.Identifier.Location, namedTypeExpressionLocal.Identifier.Text);
+            return BuiltInTypeSymbols.Error;
+        }
+        
+        if (namedTypeExpression.GenericClause.IsNone)
+        {
+            return lookupScope.TryLookupType(namedTypeExpression.Identifier.Text, out var nonGenericType) 
+                ? nonGenericType 
+                : ReportUndefinedAndReturnError(namedTypeExpression);
+        }
+        
+        lookupScope.TryLookupType(namedTypeExpression.Identifier.Text, out var genericTypeDefinition)
+            .EnsureTrue();
+        
+        genericTypeDefinition.NullGuard().IsGenericTypeDefinition
+            .EnsureTrue();
+        
+        var genericArguments = namedTypeExpression.GenericClause.Unwrap().Arguments
+            .Select(x => x.GenericClause.IsSome
+                        ? FromNamedTypeExpression(x, lookupScope, diagnostics)
+                        : lookupScope.TryLookupType(x.Identifier.Text, out var type)
+                            ? type
+                            : ReportUndefinedAndReturnError(x))
+            .ToImmutableArray();
+        
+        CheckGenericConstraints(genericTypeDefinition.GenericParameters.Unwrap().ToList(), namedTypeExpression.GenericClause.Unwrap().Arguments.ToList(), lookupScope, diagnostics);
+        
+        var type = new TypeSymbol(
+            namedTypeExpression.Identifier.Text,
+            Option.None, 
+            Option.None, 
+            Option.None,
+            genericTypeDefinition.MethodTable /* TODO */,
+            genericTypeDefinition.FieldTable  /* TODO */,
+            new SingleOccurenceList<TypeSymbol>(),
+            false, 
+            false,
+            genericArguments, 
+            Option.None, 
+            false,
+            genericTypeDefinition);
+
+        return type;
     }
 
     public static TypeSymbol New(string name, Option<SyntaxNode> declaration,
@@ -107,17 +148,25 @@ public class TypeSymbol : Symbol, ITypedSymbol
                                  Option<ImmutableArray<TypeSymbol>> genericParameters,
                                  Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints,
                                  bool isGenericTypeDefinition)
-        => new(name, declaration, inheritanceClauseSyntax, containingType: null, methodTable,
-               fieldTable, baseTypes, isGenericMethodParameter, isGenericClassParameter, 
-               genericParameters, genericParameterTypeConstraints, isGenericTypeDefinition);
+        => new(name, declaration, inheritanceClauseSyntax, containingType: null, methodTable: methodTable,
+               fieldTable: fieldTable, 
+               baseTypes: baseTypes, 
+               isGenericMethodParameter: isGenericMethodParameter,
+               isGenericClassParameter: isGenericClassParameter, 
+               genericParameters: genericParameters,
+               genericParameterTypeConstraints: genericParameterTypeConstraints,
+               isGenericTypeDefinition: isGenericTypeDefinition, 
+               genericTypeDefinition: Option.None);
 
     TypeSymbol(string name, Option<SyntaxNode> declaration,
-               InheritanceClauseSyntax? inheritanceClauseSyntax,
-               TypeSymbol? containingType, MethodTable methodTable,
+               Option<InheritanceClauseSyntax> inheritanceClauseSyntax,
+               Option<TypeSymbol> containingType, MethodTable methodTable,
                FieldTable fieldTable, SingleOccurenceList<TypeSymbol> baseTypes,
                bool isGenericMethodParameter, bool isGenericClassParameter,
                Option<ImmutableArray<TypeSymbol>> genericParameters,
-               Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints, bool isGenericTypeDefinition)
+               Option<ImmutableArray<TypeSymbol>> genericParameterTypeConstraints,
+               bool isGenericTypeDefinition,
+               Option<TypeSymbol> genericTypeDefinition)
         : base(declaration, name, containingType)
     {
         MethodTable = methodTable;
@@ -127,6 +176,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
         IsGenericMethodParameter = isGenericMethodParameter;
         GenericParameterTypeConstraints = genericParameterTypeConstraints;
         IsGenericTypeDefinition = isGenericTypeDefinition;
+        GenericTypeDefinition = genericTypeDefinition;
         GenericParameters = genericParameters;
         IsGenericClassParameter = isGenericClassParameter;
     }
@@ -135,6 +185,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
     public bool IsGenericMethodParameter { get; }
     public bool IsGenericClassParameter { get; }
     public bool IsGenericTypeDefinition { get; }
+    public Option<TypeSymbol> GenericTypeDefinition { get; }
     public Option<ImmutableArray<TypeSymbol>> GenericParameterTypeConstraints { get; }
     public Option<ImmutableArray<TypeSymbol>> GenericParameters { get; }
     public MethodTable MethodTable { get; }
@@ -369,5 +420,44 @@ public class TypeSymbol : Symbol, ITypedSymbol
             ?"<" + string.Join(",", GenericParameters.Unwrap().Select(x => x.ToString())) + ">"
             : string.Empty;
         return $"{Name}{genericClause}";
+    }
+
+    public static void CheckGenericConstraints(List<TypeSymbol> genericParametersOfClass, 
+                                               List<NamedTypeExpressionSyntax> genericArguments,
+                                               BoundScope scope,
+                                               DiagnosticBag diagnostics)
+    {
+        foreach (var genericArg in genericArguments)
+        {
+            if (!scope.TryLookupType(genericArg.Identifier.Text, out _))
+            {
+                diagnostics.ReportUndefinedType(genericArg.Location, genericArg.Identifier.Text);
+            }
+        }
+
+        foreach (var i in 0..genericParametersOfClass.Count)
+        {
+            var genericParameter = genericParametersOfClass[i];
+            var genericArgumentSyntax = genericArguments[i];
+
+            var fromNamedTypeExpression = FromNamedTypeExpression(genericArgumentSyntax, scope, diagnostics);
+            var constraintTypesOption = genericParameter.GenericParameterTypeConstraints;
+            if (constraintTypesOption.IsNone)
+                continue;
+
+            var constraintTypes = constraintTypesOption.Unwrap();
+            foreach (var constraintType in constraintTypes)
+            {
+                if (fromNamedTypeExpression.CanBeCastedTo(constraintType))
+                {
+                    continue;
+                }
+
+                diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
+                    genericArgumentSyntax,
+                    fromNamedTypeExpression,
+                    constraintType);
+            }
+        }
     }
 }

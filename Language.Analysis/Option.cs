@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis;
 
@@ -102,5 +104,23 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         if (HasValue)
             action(Value!);
         
+    }
+    
+    public IEnumerable<Y> SomeOrEmpty<Y>()
+    {
+        if (!typeof(T).CanBeConvertedTo<IEnumerable<Y>>())
+        {
+            throw new Exception("method can be used only with IEnumerable<Y>");
+        }
+        
+        if (this.IsSome)
+        {
+            return (IEnumerable<Y>)this.Unwrap();
+        }
+        
+        return (IEnumerable<Y>)typeof(Enumerable).GetMethod("Empty").NullGuard()
+            .GetGenericMethodDefinition().MakeGenericMethod(typeof(Y))
+            .Invoke(null, null)
+            .NullGuard();
     }
 }

@@ -309,11 +309,11 @@ sealed class MethodBinder
         if (typeClause is null)
             return null;
 
-        var type = _scope.GetDeclaredTypes().SingleOrDefault(x => x.Name == typeClause.Identifier.Text);
-        if (type != null)
-            return type;
-
-        _diagnostics.ReportUndefinedType(typeClause.Identifier.Location, typeClause.Identifier.Text);
+        var type = TypeSymbol.FromNamedTypeExpression(typeClause.NamedTypeExpression, _scope, _diagnostics);
+        
+        if (Equals(type, BuiltInTypeSymbols.Error))
+            return null;
+        
         return type;
     }
 
@@ -536,9 +536,7 @@ sealed class MethodBinder
         {
             _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(methodCallExpressionSyntax.Identifier);
         }
-        
-        List<ParameterSymbol> genericParameters = methodSymbol.Parameters.Where(x => x.Type.IsGenericMethodParameter).ToList();
-        
+
         if (methodSymbol.IsGeneric)
         {
             if (methodCallExpressionSyntax.GenericClause.IsNone)
@@ -547,12 +545,13 @@ sealed class MethodBinder
             }
             else
             {
+                var genericParameters = methodSymbol.GenericParameters.Unwrap().ToList();
                 if (genericParameters.Count != methodCallExpressionSyntax.GenericClause.Unwrap().Arguments.Count)
                 {
-                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(methodCallExpressionSyntax, genericParameters.Select(x=> x.Type));
+                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgumentsCount(methodCallExpressionSyntax, genericParameters);
                 }
 
-                var genericParametersTypes = genericParameters.Select(x => x.Type).ToList();
+                var genericParametersTypes = genericParameters.ToList();
                 CheckGenericTypeConstraintsForGenericClassMemberInvocation(genericParametersTypes, methodCallExpressionSyntax);
             }
         }
@@ -594,40 +593,13 @@ sealed class MethodBinder
 
         if (optionalGenericArguments.IsNone)
             return;
-        var genericArguments = optionalGenericArguments.Unwrap();
+        
+        SeparatedSyntaxList<NamedTypeExpressionSyntax> genericArguments = optionalGenericArguments.Unwrap();
 
-
-        foreach (var genericArg in genericArguments)
-        {
-            if (!_scope.TryLookupType(genericArg.Identifier.Text, out _))
-            {
-                _diagnostics.ReportUndefinedType(genericArg.Location, genericArg.Identifier.Text);
-            }
-        }
-                
-        foreach (var i in 0..genericParametersOfClass.Count)
-        {
-            var genericParameter = genericParametersOfClass[i];
-            var genericArgumentSyntax = genericArguments[i];
-
-            var fromNamedTypeExpression = TypeSymbol.FromNamedTypeExpression(genericArgumentSyntax);
-            var constraintTypesOption = genericParameter.GenericParameterTypeConstraints;
-            if (constraintTypesOption.IsNone)
-                continue;
-                    
-            var constraintTypes = constraintTypesOption.Unwrap();
-            foreach (var constraintType in constraintTypes)
-            {
-                if (fromNamedTypeExpression.CanBeCastedTo(constraintType) is false)
-                {
-                    _diagnostics.ReportGenericMethodCallWithWrongTypeArgument(
-                        genericArgumentSyntax,
-                        fromNamedTypeExpression,
-                        constraintType);
-                }
-            }
-        }
+        
+        TypeSymbol.CheckGenericConstraints(genericParametersOfClass, genericArguments.ToList(), _scope, _diagnostics);
     }
+    
     BoundExpression BindMemberAccessExpression(ExpressionSyntax syntax)
     {
         if (syntax.Kind is SyntaxKind.NameExpression)
@@ -976,8 +948,6 @@ sealed class MethodBinder
 
         if (_scope.TryLookupVariable(name, out var variable))
         {
-            // TODO: warn that variable is shadowing a field
-            // im not sure if it should be here or in the flow analysis
             return new BoundVariableExpression(syntax, variable);
         }
 

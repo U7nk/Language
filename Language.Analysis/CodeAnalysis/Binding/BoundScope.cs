@@ -92,7 +92,7 @@ public class BoundScope
         return true;
     }
     
-    public bool TryLookupType(string name, [NotNullWhen(true)] out TypeSymbol? type)
+    public bool TryLookupType(string name, [NotNullWhen(true)] out TypeSymbol type)
     {
         type = null;
         if (_symbols.TryGetValue(name, out var sameNamers))

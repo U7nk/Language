@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
 
@@ -14,6 +16,7 @@ public interface ISyntaxNode
     public abstract SyntaxKind Kind { get; }
 }
 
+[DebuggerDisplay("{ToSourceCodeString()}")]
 public abstract class SyntaxNode : ISyntaxNode
 {
     protected SyntaxNode(SyntaxTree syntaxTree)
@@ -103,6 +106,32 @@ public abstract class SyntaxNode : ISyntaxNode
         return GetChildren().Last().GetLastToken();
     }
 
+    public string ToSourceCodeString()
+    {
+        return ToSourceCodeStringInternal(this);
+    }
+
+    string ToSourceCodeStringInternal(SyntaxNode node)
+    {
+        var str = new StringBuilder();
+        if (node.Kind is SyntaxKind.OpenBraceToken)
+        {
+            str.Append(Environment.NewLine);
+        }
+
+        if (node is SyntaxToken token)
+        {
+            str.Append(token.Text).Append(' ');
+        }
+
+        foreach (var child in node.GetChildren())
+        {
+            str.Append(ToSourceCodeStringInternal(child));
+        }
+
+        return str.ToString();
+    }
+    
     public override string ToString()
     {
         using var sw = new StringWriter();

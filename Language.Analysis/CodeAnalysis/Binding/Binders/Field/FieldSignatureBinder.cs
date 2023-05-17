@@ -21,11 +21,11 @@ public sealed class FieldSignatureBinder
 
     public FieldSymbol BindDeclaration(FieldDeclarationSyntax fieldDeclaration, DiagnosticBag diagnostics)
     {
-        if (!_scope.TryLookupType(fieldDeclaration.TypeClause.Identifier.Text, out var fieldType))
+        if (!_scope.TryLookupType(fieldDeclaration.TypeClause.NamedTypeExpression.Identifier.Text, out var fieldType))
         {
             diagnostics.ReportUndefinedType(
                 fieldDeclaration.TypeClause.Location,
-                fieldDeclaration.TypeClause.Identifier.Text);
+                fieldDeclaration.TypeClause.NamedTypeExpression.Identifier.Text);
         }
 
         // if diagnostics are reported field should not be used later in binding

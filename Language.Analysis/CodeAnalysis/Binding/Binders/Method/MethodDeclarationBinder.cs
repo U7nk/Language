@@ -27,14 +27,14 @@ class MethodDeclarationBinder
         SuccessfullyDeclaredInType = successfullyDeclaredInType;
     }
 
-    public MethodSymbol BindMethodDeclaration(MethodDeclarationSyntax method, DiagnosticBag diagnostics)
+    public MethodSymbol BindMethodDeclaration(MethodDeclarationSyntax methodDeclaration, DiagnosticBag diagnostics)
     {
         var typeConstraintsByGenericName = new Dictionary<string, IEnumerable<TypeSymbol>>();
-        if (method.GenericParametersSyntax.IsSome)
+        if (methodDeclaration.GenericParametersSyntax.IsSome)
         {
-            foreach (var x in method.GenericConstraintsClauseSyntax.SomeOr(ImmutableArray<GenericConstraintsClauseSyntax>.Empty))
+            foreach (var x in methodDeclaration.GenericConstraintsClause.SomeOrEmpty<GenericConstraintsClauseSyntax>())
             {
-                if (method.GenericConstraintsClauseSyntax.IsSome)
+                if (methodDeclaration.GenericConstraintsClause.IsSome)
                 {
                     var typeConstraintsSyntax = x.TypeConstraints;
                     var typeConstraints = new List<TypeSymbol>();
@@ -48,22 +48,24 @@ class MethodDeclarationBinder
                             continue;
                         }
 
+                        if (genericTypeConstraintType.IsGenericType)
+                        {
+                            genericTypeConstraintType = TypeSymbol.FromNamedTypeExpression(genericTypeConstraintIdentifier, _methodScope, diagnostics);
+                        }
+                            
                         typeConstraints.Add(genericTypeConstraintType);
                     }
-
                     typeConstraintsByGenericName.Add(x.Identifier.Text, typeConstraints);
                 }
             }
-
             
-            var genericParametersSyntax = method.GenericParametersSyntax.Unwrap();
+            var genericParametersSyntax = methodDeclaration.GenericParametersSyntax.Unwrap();
             foreach (var genericParameterSyntax in genericParametersSyntax.Arguments)
             {
                 var genericParameterName = genericParameterSyntax.Identifier.Text;
                 var genericParameterTypeConstraints = typeConstraintsByGenericName.TryGetValue(genericParameterName, out var value) 
                     ? Option.Some(value.ToImmutableArray()) 
                     : Option.None;
-
                 var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
                 if (genericParameterTypeConstraints.IsSome) 
                     genericParameterTypeConstraints.Unwrap().AddRangeTo(baseTypes);
@@ -77,7 +79,6 @@ class MethodDeclarationBinder
                                                  isGenericMethodParameter: true,
                                                  isGenericClassParameter: false, 
                                                  genericParameters: Option.None, genericParameterTypeConstraints: genericParameterTypeConstraints, isGenericTypeDefinition: false);
-
                 if (!_methodScope.TryDeclareType(genericParameter))
                 {
                     diagnostics.ReportAmbiguousType(genericParameterSyntax.Location,
@@ -89,7 +90,7 @@ class MethodDeclarationBinder
         
         
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-        foreach (var parameter in method.Parameters)
+        foreach (var parameter in methodDeclaration.Parameters)
         {
             var parameterName = parameter.Identifier.Text;
 
@@ -120,28 +121,28 @@ class MethodDeclarationBinder
             }
         }
 
-        var returnType = BinderHelp.BindTypeClause(method.ReturnType, diagnostics, _methodScope) ?? BuiltInTypeSymbols.Void;
+        var returnType = BinderHelp.BindTypeClause(methodDeclaration.ReturnType, diagnostics, _methodScope) ?? BuiltInTypeSymbols.Void;
 
-        var isStatic = method.StaticKeyword.IsSome || _isTopMethod;
+        var isStatic = methodDeclaration.StaticKeyword.IsSome || _isTopMethod;
 
-        var isVirtual = method.VirtualKeyword.IsSome;
-        var isOverriding = method.OverrideKeyword.IsSome;
+        var isVirtual = methodDeclaration.VirtualKeyword.IsSome;
+        var isOverriding = methodDeclaration.OverrideKeyword.IsSome;
         
         var genericParameters = _methodScope.GetDeclaredTypesCurrentScope().Where(x => x.IsGenericMethodParameter).ToList();
         var isGeneric = genericParameters.Any(); 
         var currentMethodSymbol = new MethodSymbol(
-            method,
+            methodDeclaration,
             _containingType,
             isStatic,
             isVirtual,
             isOverriding,
-            method.Identifier.Text,
+            methodDeclaration.Identifier.Text,
             parameters.ToImmutable(),
             returnType, 
             isGeneric,
             isGeneric ? genericParameters.ToImmutableArray() : Option.None);
 
-        _allDeclarations.AddDeclaration(currentMethodSymbol, method);
+        _allDeclarations.AddDeclaration(currentMethodSymbol, methodDeclaration);
         SuccessfullyDeclaredInType = _containingType.TryDeclareMethod(currentMethodSymbol, diagnostics, _allDeclarations);
 
         ReportModifiersMisuseIfAny(currentMethodSymbol, diagnostics);

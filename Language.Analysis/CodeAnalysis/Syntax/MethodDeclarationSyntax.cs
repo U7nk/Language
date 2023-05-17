@@ -33,7 +33,7 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
                                    SeparatedSyntaxList<ParameterSyntax> parameters, 
                                    SyntaxToken closeParenthesisToken, 
                                    TypeClauseSyntax? returnType,
-                                   Option<ImmutableArray<GenericConstraintsClauseSyntax>> genericConstraintsClauseSyntax,
+                                   Option<ImmutableArray<GenericConstraintsClauseSyntax>> genericConstraintsClause,
                                    BlockStatementSyntax body) 
         : base(syntaxTree)
     {
@@ -47,7 +47,7 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
         Parameters = parameters;
         CloseParenthesisToken = closeParenthesisToken;
         ReturnType = returnType;
-        GenericConstraintsClauseSyntax = genericConstraintsClauseSyntax;
+        GenericConstraintsClause = genericConstraintsClause;
         Body = body;
     }
 
@@ -61,7 +61,7 @@ public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, 
     public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }
     public SyntaxToken CloseParenthesisToken { get; }
     public TypeClauseSyntax? ReturnType { get; }
-    public Option<ImmutableArray<GenericConstraintsClauseSyntax>> GenericConstraintsClauseSyntax { get; }
+    public Option<ImmutableArray<GenericConstraintsClauseSyntax>> GenericConstraintsClause { get; }
     public BlockStatementSyntax Body { get; }
     
     public override SyntaxKind Kind => SyntaxKind.MethodDeclaration;
