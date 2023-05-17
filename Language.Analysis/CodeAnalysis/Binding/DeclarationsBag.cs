@@ -5,7 +5,7 @@ using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Extensions;
 
-namespace Language.Analysis.CodeAnalysis.Binding.Lookup;
+namespace Language.Analysis.CodeAnalysis.Binding;
 
 
 public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
@@ -28,26 +28,14 @@ public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
     public DeclarationsBag() : base(new DeclarationEqualityComparer())
     {
     }
-}
-
-public class BinderLookup
-{
-    public BinderLookup(ImmutableArray<TypeSymbol> availableTypes, DeclarationsBag declarationsBag)
-    {
-        AvailableTypes = availableTypes;
-        Declarations = declarationsBag;
-    }
     
-    public ImmutableArray<TypeSymbol> AvailableTypes { get; }
-    protected internal DeclarationsBag Declarations { get; }
-
     /// <summary>
     /// Retrieves all declarations(including redeclaration) for the given bound node. <br/>
     /// </summary>
     /// <param name="symbol"></param>
     /// <returns>List of declarations</returns>
     public ImmutableArray<SyntaxNode> LookupDeclarations(Symbol symbol) =>
-        Declarations.TryGetValue(symbol, out var declarations) 
+        this.TryGetValue(symbol, out var declarations) 
             ? declarations.ToImmutableArray() 
             : ImmutableArray<SyntaxNode>.Empty;
 
@@ -57,39 +45,18 @@ public class BinderLookup
     /// <param name="symbol"></param>
     /// <returns>List of declarations</returns>
     public ImmutableArray<T> LookupDeclarations<T>(Symbol symbol) where T : SyntaxNode =>
-        Declarations.TryGetValue(symbol, out var declarations) 
+        this.TryGetValue(symbol, out var declarations) 
             ? declarations.Cast<T>().ToImmutableArray() 
             : ImmutableArray<T>.Empty;
 
     public void AddDeclaration(Symbol boundNode, SyntaxNode declaration)
     {
-        if (!Declarations.TryGetValue(boundNode, out var declarations))
+        if (!this.TryGetValue(boundNode, out var declarations))
         {
             declarations = new List<SyntaxNode>();
-            Declarations.Add(boundNode, declarations);
+            this.Add(boundNode, declarations);
         }
         
         declarations.Add(declaration);
-    }
-
-    public static ImmutableArray<Symbol> LookupSymbols(string name, BoundScope scope, TypeSymbol type)
-    {
-        var symbols = new List<Symbol>();
-        var methods = type.LookupMethod(name);
-        symbols.AddRange(methods);
-
-        var field = type.LookupField(name);
-        if (field is { })
-            symbols.Add(field);
-        
-        scope.TryLookupVariable(name, out var variable);
-        if (variable != null) 
-            symbols.Add(variable);
-
-        scope.TryLookupType(name, out var scopeType);
-        if (scopeType != null)
-            symbols.Add(scopeType);
-        
-        return symbols.ToImmutableArray();
     }
 }

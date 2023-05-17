@@ -626,7 +626,7 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE,
+            DiagnosticBag.GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }
@@ -683,7 +683,7 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
     }
@@ -711,9 +711,368 @@ public class General
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
         TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeParametersCallReportsWhenNoGenericTypeArguments()
+    {
+        var source = """
+            class MyClass<T>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new [MyClass]();
+                    myClass.TestMethod(10);
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassConstraintsShouldReportWhenTheyDoesntSatisfyThemselves()
+    {
+        var source = """            
+            class MyClass<T> where T : MyClass<[string]>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassConstructorCalReportsViolationOfOtherClassGenericConstraints()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+
+            class SecondClass<T> { }
+            class Program
+            {
+                static function main()
+                {
+                    var f = new SecondClass<MyClass<[int]>>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericConstraintsOnDeclarationReportsViolationOfOtherClassGenericConstraints()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class SecondClass<T> where T : MyClass<[int]> { }
+
+            class Program
+            {
+                static function main()
+                {
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass<[int]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenNestedTypeConstraintDontMatch()
+    {
+        var source = """            
+            class MyClass<T> where T : string
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class SecondClass<T> where T : MyClass<string> { }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass<[int]>();
+                    var secondClass = new SecondClass<[MyClass<[int]>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+
+    [Fact]
+    public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenTooMuchTypeArguments()
+    {
+        var source = """
+            class MyClass<T>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass[<int, string>]();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenNotEnoughTypeArguments()
+    {
+        var source = """
+            class MyClass<T, TY, TX>
+            {
+                function TestMethod(parameter : T) : T
+                {
+                    return parameter;
+                }
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass = new MyClass[<int, string>]();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void VariableDeclaredWithWrongGenericTypeReportsWrongGenericArgument()
+    {
+        var source = """
+            class MyClass<T> where T : string
+            {
+               
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<[int]>;
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericTypeClauseReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<[OtherClass<[int]>]>; 
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericMethodCallReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var x = new MyClass<OtherClass<string>>();
+                    x.GenericMethod<[OtherClass<[int]>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    [Fact]
+    public void GenericClassConstructorCallReportsWrongTypeArguments()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var x = new MyClass<[OtherClass<[int]>]>();
+                }
+            }
+            """;
+        
+        var diagnostics = new[]
+        {
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+            // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
+            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
+        };
+        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+    }
+    
+    
+    [Fact]
+    public void AllGenericTypeUsageIsProperlyParsed()
+    {
+        var source = """
+            class OtherClass<T> where T : string { }
+            class MyClass<T> where T : OtherClass<string>
+            {
+               function GenericMethod<Y>() where Y : OtherClass<string> { } 
+            }
+            class Program
+            {
+                static function main()
+                {
+                    var myClass : MyClass<OtherClass<string>>;
+                    var x = new MyClass<OtherClass<string>>();
+                    x.GenericMethod<OtherClass<string>>();
+                }
+            }
+            """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(Output);
     }
 
 }

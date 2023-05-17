@@ -3,7 +3,7 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 public class MethodCallExpressionSyntax : ExpressionSyntax
 {
     public SyntaxToken Identifier { get; }
-    public Option<GenericClauseSyntax> GenericArgumentsSyntax { get; }
+    public Option<GenericClauseSyntax> GenericClause { get; }
     public SyntaxToken OpenParenthesis { get; }
     public SeparatedSyntaxList<ExpressionSyntax> Arguments { get; }
     public SyntaxToken CloseParenthesis { get; }
@@ -11,13 +11,13 @@ public class MethodCallExpressionSyntax : ExpressionSyntax
 
     public MethodCallExpressionSyntax(SyntaxTree syntaxTree, 
         SyntaxToken identifier,
-        Option<GenericClauseSyntax> genericArgumentsSyntax,
+        Option<GenericClauseSyntax> genericClause,
         SyntaxToken openParenthesis,
         SeparatedSyntaxList<ExpressionSyntax> arguments,
         SyntaxToken closeParenthesis) : base(syntaxTree)
     {
         Identifier = identifier;
-        GenericArgumentsSyntax = genericArgumentsSyntax;
+        GenericClause = genericClause;
         OpenParenthesis = openParenthesis;
         Arguments = arguments;
         CloseParenthesis = closeParenthesis;

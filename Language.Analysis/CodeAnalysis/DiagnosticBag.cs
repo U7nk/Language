@@ -461,26 +461,40 @@ public class DiagnosticBag : List<Diagnostic>
     }
     
     public const string GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE = "[0052:Error]";
-    public void ReportGenericMethodCallWithWrongTypeArgument(SyntaxToken genericArgument, TypeSymbol genericArgumentType, TypeSymbol constraintType)
+    public void ReportGenericMethodCallWithWrongTypeArgument(NamedTypeExpressionSyntax genericArgument, TypeSymbol genericArgumentType, TypeSymbol constraintType)
     {
         var message = $"Generic method call with wrong type argument. Type '{genericArgumentType}' does not satisfy type constraint '{constraintType}'.";
         Report(genericArgument.Location, message, GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE);
     }
     
-    public const string GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE = "[0053:Error]";
-    public void ReportGenericMethodCallWithWrongTypeArgumentsCount(GenericClauseSyntax genericClauseSyntax, 
-                                                                  SyntaxToken identifier, 
-                                                                  IEnumerable<SyntaxToken> typeArguments,
-                                                                  IEnumerable<TypeSymbol> expectedTypeArguments)
+    public const string GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE = "[0053:Error]";
+    public void ReportGenericMethodCallWithWrongTypeArgumentsCount(MethodCallExpressionSyntax methodCallExpressionSyntax, IEnumerable<TypeSymbol> expectedTypeArguments)
     {
-        var message = $"Generic method call with wrong type arguments count. Method '{identifier.Text}' expects {expectedTypeArguments.Count()} type arguments, but {typeArguments.Count()} were provided.";
-        Report(genericClauseSyntax.Location, message, GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENTS_COUNT_CODE);
+        var identifier = methodCallExpressionSyntax.Identifier;
+        var providedGenericArguments = methodCallExpressionSyntax.GenericClause.Unwrap().Arguments;
+        var message = $"Generic method call with wrong generic arguments count. Method '{identifier.Text}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
+        Report(methodCallExpressionSyntax.GenericClause.Unwrap().Location, message, GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE);
     }
 
-    public const string GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE = "[0054:Error]";
-    public void ReportGenericMethodParametersNotSpecified(SyntaxToken methodIdentifier)
+    public const string GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE = "[0054:Error]";
+    public void ReportGenericMethodGenericArgumentsNotSpecified(SyntaxToken methodIdentifier)
     {
         var message = $"Generic method parameters not specified.";
-        Report(methodIdentifier.Location, message, GENERIC_METHOD_PARAMETERS_NOT_SPECIFIED_CODE);
+        Report(methodIdentifier.Location, message, GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE);
+    }
+    
+    public const string GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE = "[0055:Error]";
+    public void NewExpressionGenericArgumentsNotSpecified(SyntaxToken newExpressionClassIdentifier, TypeSymbol typeBeingCreated)
+    {
+        var message = $"Constructor invocation for generic class should contain {typeBeingCreated.GenericParameters.Unwrap().Length} arguments but no generic arguments is provided.";
+        Report(newExpressionClassIdentifier.Location, message, GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE);
+    }
+    
+    public const string GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT = "[0056:Error]";
+    public void NewExpressionGenericArgumentsWrongCount(NewExpressionSyntax newExpressionSyntax, IEnumerable<TypeSymbol> expectedTypeArguments)
+    {
+        var providedGenericArguments = newExpressionSyntax.GenericClause.Unwrap().Arguments;
+        var message = $"Generic class constructor call with wrong generic arguments count. Constructor for '{newExpressionSyntax.TypeIdentifier}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
+        Report(newExpressionSyntax.GenericClause.Unwrap().Location, message, GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT);
     }
 }

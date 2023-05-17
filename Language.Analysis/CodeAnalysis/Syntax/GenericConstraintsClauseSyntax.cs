@@ -2,7 +2,7 @@
 
 public class GenericConstraintsClauseSyntax : SyntaxNode 
 {
-    public GenericConstraintsClauseSyntax(SyntaxTree syntaxTree, SyntaxToken whereKeyword, SyntaxToken identifier, SyntaxToken colonToken, SeparatedSyntaxList<SyntaxToken> typeConstraints) 
+    public GenericConstraintsClauseSyntax(SyntaxTree syntaxTree, SyntaxToken whereKeyword, SyntaxToken identifier, SyntaxToken colonToken, SeparatedSyntaxList<NamedTypeExpressionSyntax> typeConstraints) 
         : base(syntaxTree)
     {
         WhereKeyword = whereKeyword;
@@ -14,6 +14,6 @@ public class GenericConstraintsClauseSyntax : SyntaxNode
     public SyntaxToken WhereKeyword { get; }
     public SyntaxToken Identifier { get; }
     public SyntaxToken ColonToken { get; }
-    public SeparatedSyntaxList<SyntaxToken> TypeConstraints { get; }
+    public SeparatedSyntaxList<NamedTypeExpressionSyntax> TypeConstraints { get; }
     public override SyntaxKind Kind => SyntaxKind.GenericConstraintsClause;
 }
