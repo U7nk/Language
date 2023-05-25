@@ -58,6 +58,7 @@ public enum SyntaxKind
     
     // nodes
     CompilationUnit,
+    NamespaceSyntax,
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
     TypeClause,

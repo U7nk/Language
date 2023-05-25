@@ -876,10 +876,46 @@ public class EvaluatorTests
             .Should().BeTrue();
     }
     
-
+    [Fact]
+    public void NamespaceIsCorrectlyParsed()
+    {
+        var source = """
+            namespace MyProgram
+            {
+                class Program
+                {
+                    static function main()
+                    {
+                        
+                    }
+                }
+            }
+            """;
+        
+        (TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper).Ok is { LiteralValue: 10, Type.Name: "int" })
+            .Should().BeTrue();
+    }
     
+    [Fact]
+    public void MultiPartNamespaceIsCorrectlyParsed()
+    {
+        var source = """
+            namespace MyNamespace.MyProgram
+            {
+                class Program
+                {
+                    static function main()
+                    {
+                        
+                    }
+                }
+            }
+            """;
+        
+        (TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper).Ok is { LiteralValue: 10, Type.Name: "int" })
+            .Should().BeTrue();
+    }
     
-
     static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
