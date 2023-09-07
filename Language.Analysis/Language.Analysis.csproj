@@ -19,6 +19,6 @@
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
-      <PackageReference Include="OneOf" Version="3.0.255" />
+      <PackageReference Include="OneOf" Version="3.0.263" />
     </ItemGroup>
 </Project>
