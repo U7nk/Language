@@ -9,10 +9,4 @@ Features
 
 
 ## syntax
-Complex Hello World program:
-
 ![image](https://user-images.githubusercontent.com/69924108/197231823-2921e525-ce81-477c-a3d5-6b58c5e85acd.png)
-
-Simple Hello World program on top level statements:
-
-![image](https://user-images.githubusercontent.com/69924108/197232400-5300537a-6138-45a6-95cb-64b14b00cdea.png)
