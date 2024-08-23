@@ -6,5 +6,6 @@ public enum SymbolKind
     Type,
     Parameter,
     Method,
-    Field
+    Field,
+    Namespace
 }

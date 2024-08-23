@@ -106,6 +106,7 @@ internal static class SyntaxFacts
             "virtual" => SyntaxKind.VirtualKeyword,
             "override" => SyntaxKind.OverrideKeyword,
             "where" => SyntaxKind.WhereKeyword,
+            "namespace" => SyntaxKind.NamespaceKeyword,
             _ => SyntaxKind.IdentifierToken,
         };
     }
@@ -160,6 +161,7 @@ internal static class SyntaxFacts
             SyntaxKind.VirtualKeyword => "virtual",
             SyntaxKind.OverrideKeyword => "override",
             SyntaxKind.WhereKeyword => "where",
+            SyntaxKind.NamespaceKeyword => "namespace",
             _ => null
         };
     }

@@ -3,9 +3,14 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
+[OneOf(typeof(NameExpressionSyntax), "NameExpression", typeof(MemberAccessExpressionSyntax), "MemberAccess")]
+partial class NameExpressionOrMemberAccessExpressionSyntax;
+
+
 class BoundNamedTypeExpression : BoundExpression
 {
-    public BoundNamedTypeExpression(NameExpressionSyntax nameExpression, TypeSymbol symbol) : base(nameExpression)
+    public BoundNamedTypeExpression(NameExpressionOrMemberAccessExpressionSyntax syntax, TypeSymbol symbol) 
+        : base(syntax.IsNameExpression ? syntax.NameExpression : syntax.MemberAccess )
     {
         Type = symbol;
     }

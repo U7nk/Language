@@ -19,25 +19,26 @@ sealed class ClassMembersSignaturesBinder
     readonly List<FullMethodBinder> _methodBinders = new();
     readonly List<FullFieldBinder> _fieldBinders = new();
     readonly DeclarationsBag _allDeclarations;
+    private BoundScope _globalScope;
 
-    public ClassMembersSignaturesBinder(TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope scope, bool isScript)
+    public ClassMembersSignaturesBinder(TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope scope, BoundScope globalScope)
     {
         _currentType = currentType;
         _allDeclarations = allDeclarations;
         _scope = scope;
-        _isScript = isScript;
+        _globalScope = globalScope;
     }
 
     public (List<FullMethodBinder>, List<FullFieldBinder>) BindMembersSignatures(DiagnosticBag diagnostics)
     {
         var classDeclaration = _currentType.DeclarationSyntax.UnwrapAs<ClassDeclarationSyntax>();
-        var typeScope = new BoundScope(_scope);
+        var typeScope = _scope.CreateChild();
         foreach (var member in classDeclaration.Members)
         {
             if (member.Kind is SyntaxKind.MethodDeclaration)
             {
-                var methodScope = new BoundScope(typeScope);
-                var methodBinder = new FullMethodBinder(methodScope, _currentType, _allDeclarations, _isScript, isTopMethod: false);
+                var methodScope = typeScope.CreateChild();
+                var methodBinder = new FullMethodBinder(methodScope, _currentType, _allDeclarations, _globalScope );
                 _methodBinders.Add(methodBinder);
                 
                 var methodDeclarationSyntax = (MethodDeclarationSyntax) member;
@@ -46,7 +47,7 @@ sealed class ClassMembersSignaturesBinder
             else if (member.Kind is SyntaxKind.FieldDeclaration)
             {
                 var field = (FieldDeclarationSyntax)member;
-                var fieldBinder = new FullFieldBinder(typeScope, _isScript, _currentType, _allDeclarations);
+                var fieldBinder = new FullFieldBinder(typeScope, _currentType, _allDeclarations);
                 _fieldBinders.Add(fieldBinder);
                 
                 fieldBinder.BindDeclaration(field, diagnostics);

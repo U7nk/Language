@@ -3,12 +3,9 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
-public abstract class MemberSymbol : Symbol, ITypedSymbol
+public abstract class MemberSymbol(Option<SyntaxNode> declarationSyntax, string name, TypeSymbol containingType, TypeSymbol type) 
+    : Symbol(declarationSyntax, name), ITypedSymbol, ITypeMemberSymbol
 {
-    protected MemberSymbol(Option<SyntaxNode> declarationSyntax, string name,TypeSymbol? containingType, TypeSymbol type) 
-        : base(declarationSyntax, name, containingType)
-    {
-        Type = type;
-    }
-    public TypeSymbol Type { get; }
+    public TypeSymbol Type { get; } = type;
+    public Option<TypeSymbol> ContainingType { get; } = containingType;
 }

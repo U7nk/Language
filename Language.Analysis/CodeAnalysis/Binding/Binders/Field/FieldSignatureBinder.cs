@@ -7,25 +7,24 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders.Field;
 public sealed class FieldSignatureBinder
 {
     readonly BoundScope _scope;
-    readonly bool _isScript;
     readonly TypeSymbol _containingType;
     readonly DeclarationsBag _allDeclarations;
 
-    public FieldSignatureBinder(BoundScope scope, bool isScript, TypeSymbol containingType, DeclarationsBag allDeclarations)
+    public FieldSignatureBinder(BoundScope scope, TypeSymbol containingType, DeclarationsBag allDeclarations)
     {
         _scope = scope;
-        _isScript = isScript;
         _containingType = containingType;
         _allDeclarations = allDeclarations;
     }
 
     public FieldSymbol BindDeclaration(FieldDeclarationSyntax fieldDeclaration, DiagnosticBag diagnostics)
     {
-        if (!_scope.TryLookupType(fieldDeclaration.TypeClause.NamedTypeExpression.Identifier.Text, out var fieldType))
+        var fieldTypeOrNone = _scope.TryLookupType(fieldDeclaration.TypeClause.NamedTypeExpression.GetName(), _containingType.ContainingNamespace); 
+        if (fieldTypeOrNone.IsNone)
         {
             diagnostics.ReportUndefinedType(
                 fieldDeclaration.TypeClause.Location,
-                fieldDeclaration.TypeClause.NamedTypeExpression.Identifier.Text);
+                fieldDeclaration.TypeClause.NamedTypeExpression.GetName());
         }
 
         // if diagnostics are reported field should not be used later in binding
@@ -34,37 +33,8 @@ public sealed class FieldSignatureBinder
                                     fieldDeclaration.StaticKeyword.IsSome,
                                     fieldDeclaration.Identifier.Text,
                                     _containingType, 
-                                    fieldType!);
-        _allDeclarations.AddDeclaration(fieldSymbol, fieldDeclaration);
-        if (!_containingType.TryDeclareField(fieldSymbol))
-        {
-            if (fieldSymbol.Name == _containingType.Name)
-                diagnostics.ReportClassMemberCannotHaveNameOfClass(fieldDeclaration.Identifier);
-
-            var existingFieldDeclarations = _allDeclarations.LookupDeclarations<FieldDeclarationSyntax>(fieldSymbol);
-            if (existingFieldDeclarations.Length > 1)
-            {
-                foreach (var existingFieldDeclaration in existingFieldDeclarations)
-                {
-                    diagnostics.ReportFieldAlreadyDeclared(existingFieldDeclaration.Identifier);
-                }
-            }
-
-            
-            var sameNameMethods = _containingType.MethodTable.Where(x => x.MethodSymbol.Name == fieldSymbol.Name).ToList();
-            if (sameNameMethods.Any())
-            {
-                diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
-                foreach (var declaration in sameNameMethods)
-                {
-                    var sameNameMethodDeclarations = _allDeclarations.LookupDeclarations<MethodDeclarationSyntax>(declaration.MethodSymbol);
-                    foreach (var sameNameMethodDeclaration in sameNameMethodDeclarations)
-                    {
-                        diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(sameNameMethodDeclaration.Identifier);    
-                    }
-                }
-            }
-        }
+                                    fieldTypeOrNone.SomeOr(TypeSymbol.BuiltIn.Error));
+        _allDeclarations.AddDeclaration(fieldSymbol, fieldDeclaration, diagnostics);
 
         return fieldSymbol;
     }

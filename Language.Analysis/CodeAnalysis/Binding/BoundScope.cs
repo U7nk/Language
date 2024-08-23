@@ -1,35 +1,86 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.Extensions;
+
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
 public class BoundScope
 {
-    public BoundScope? Parent { get; }
-    
-    readonly Dictionary<string, List<Symbol>> _symbols = new();
+    public Option<BoundScope> Parent { get; }
 
-    public BoundScope(BoundScope? parent)
+    readonly Dictionary<string, List<Symbol>> _symbols = new();
+    readonly List<BoundScope> _children = new();
+    readonly List<NamespaceSymbol> _namespaces = new();
+    readonly List<TypeSymbol> _allTypes = new();
+
+    public static BoundScope CreateRootScope(Option<BoundScope> parent)
+    {
+        return new BoundScope(parent);
+    }
+    
+    private BoundScope(Option<BoundScope> parent)
     {
         Parent = parent;
+        parent.OnSome(x => x._children.Add(this));
+    }
+    
+    private BoundScope(BoundScope parent, List<TypeSymbol> allTypes)
+    {
+        _allTypes = allTypes;
+        Parent = parent;
+        parent._children.Add(this);
+    }
+
+    public BoundScope CreateChild()
+    {
+        return new BoundScope(this, _allTypes);
+    }
+
+    public Option<BoundScope> GetScopeFor(Symbol symbol) => GetScopeForInternal(symbol, new List<BoundScope>());
+
+    private Option<BoundScope> GetScopeForInternal(Symbol symbol, List<BoundScope> alreadyChecked)
+    {
+        if (alreadyChecked.Contains(this))
+        {
+            return Option.None;
+        }
+
+        var sym = _symbols.Values.SelectMany(x => x).SingleOrNone(x => Equals(x, symbol));
+        if (sym.IsSome)
+            return this;
+        alreadyChecked.Add(this);
+
+        var parentSearch = Parent.OnSome(x => x.GetScopeForInternal(symbol, alreadyChecked));
+        if (parentSearch.IsSome)
+            return parentSearch;
+        foreach (var child in _children)
+        {
+            var childSearch = child.GetScopeForInternal(symbol, alreadyChecked);
+            if (childSearch.IsSome)
+                return childSearch;
+        }
+
+        return Option.None;
     }
 
     public bool TryDeclareVariable(VariableSymbol variable)
     {
-        if (Parent?.TryLookupVariable(variable.Name, out _) is true)
+        if (Parent.IsSome && Parent.Unwrap().TryLookupVariable(variable.Name, out _))
             return false;
-        
+
         if (_symbols.TryGetValue(variable.Name, out var sameNamers))
         {
-            var parameters = sameNamers.Where(x=> x.Kind == SymbolKind.Parameter);
+            var parameters = sameNamers.Where(x => x.Kind == SymbolKind.Parameter);
             if (parameters.Any())
                 return false;
-        
-            var variables = sameNamers.Where(x=> x.Kind == SymbolKind.Variable);
+
+            var variables = sameNamers.Where(x => x.Kind == SymbolKind.Variable);
             if (variables.Any())
                 return false;
 
@@ -37,10 +88,12 @@ public class BoundScope
         }
         else
         {
-            _symbols.Add(variable.Name, new List<Symbol> {variable});
+            _symbols.Add(variable.Name, new List<Symbol> { variable });
         }
+
         return true;
     }
+
     public bool TryLookupVariable(string name, [NotNullWhen(true)] out VariableSymbol? variable)
     {
         variable = null;
@@ -55,74 +108,87 @@ public class BoundScope
             }
         }
 
-        // ReSharper disable once ConvertIfStatementToReturnStatement
-        if (Parent != null)
-            return Parent.TryLookupVariable(name, out variable);
-        
-        return false;
+        return Parent.IsSome && Parent.Unwrap().TryLookupVariable(name, out variable);
     }
-    public ImmutableArray<VariableSymbol> GetDeclaredVariables() 
+
+    public ImmutableArray<VariableSymbol> GetDeclaredVariables()
         => _symbols.Values.SelectMany(x => x)
             .OfType<VariableSymbol>()
             .ToImmutableArray();
 
-    public bool TryDeclareType(TypeSymbol typeSymbol)
+    
+    public bool TryDeclareType(TypeSymbol typeSymbol, Option<NamespaceSymbol> containingNamespace, bool isScopeTied = false)
     {
-        if (Parent?.TryLookupType(typeSymbol.Name, out _) is true)
+        if (Parent.OnSome(x => x.TryLookupType(typeSymbol.Name, containingNamespace)).IsSome)
             return false;
-        
+
         if (_symbols.TryGetValue(typeSymbol.Name, out var sameNamers))
         {
             var functionsAndFieldsAndTypes = sameNamers.Where(
-                x => x.Kind 
-                    is SymbolKind.Method 
-                    or SymbolKind.Field 
+                x => x.Kind
+                    is SymbolKind.Method
+                    or SymbolKind.Field
                     or SymbolKind.Type);
-            
+
             if (functionsAndFieldsAndTypes.Any())
                 return false;
-            
+
             sameNamers.Add(typeSymbol);
         }
         else
         {
-            _symbols.Add(typeSymbol.Name,new List<Symbol>{ typeSymbol });    
+            _symbols.Add(typeSymbol.Name, new List<Symbol> { typeSymbol });
         }
-        
+
+        if (!isScopeTied)
+        {
+            _allTypes.Add(typeSymbol);
+        }
+
         return true;
     }
-    
-    public bool TryLookupType(string name, [NotNullWhen(true)] out TypeSymbol type)
+
+    public Option<TypeSymbol> TryLookupType(string name, Option<NamespaceSymbol> containingNamespace)
     {
-        type = null;
-        if (_symbols.TryGetValue(name, out var sameNamers))
+        var isTypeMatchByName = new Func<TypeSymbol, bool> ((x) => x.GetFullName() == name || x.GetFullName() == containingNamespace.Unwrap().FullName + "." + name);
+        
+        var scoped = _symbols.Values.SelectMany(x=>x).Where(x=> x.Kind is SymbolKind.Type).Cast<TypeSymbol>().SingleOrNone(isTypeMatchByName);
+        if (scoped.IsSome)
+            return scoped;
+        
+        if (containingNamespace.IsSome)
         {
-            var types = sameNamers.Where(x => x.Kind == SymbolKind.Type).ToList();
-            Debug.Assert(types.Count <= 1);
-            if (types.Any())
+            var type = _allTypes.SingleOrNone(isTypeMatchByName);
+            if (type.IsSome)
+                return type;
+        }
+        
+        foreach (var type in _allTypes)
+        {
+            if (isTypeMatchByName(type))
             {
-                type = (TypeSymbol)types.First();
-                return true;
+                return type;
             }
         }
 
-        if (Parent?.TryLookupType(name, out type) is true)
-            return Parent.TryLookupType(name, out type);
-        
-        return false;
+        return Parent.OnSome(x => x.TryLookupType(name, containingNamespace));
     }
+
     public ImmutableArray<TypeSymbol> GetDeclaredTypes()
     {
-        if (Parent is { })
+        if (Parent.IsSome)
         {
-            var symbols = Parent.GetDeclaredTypes();
-            return symbols.AddRange(_symbols.Values.SelectMany(x => x)
-                .OfType<TypeSymbol>()
-                .ToImmutableArray());
+            var symbols = Parent.Unwrap().GetDeclaredTypes();
+            _namespaces
+                .SelectMany(x => x.GetAllTypesFromNamespaces())
+                .ToImmutableArray()
+                .AddRangeTo(symbols);
+            return symbols;
         }
-        
-        return _symbols.Values.SelectMany(x => x)
-            .OfType<TypeSymbol>()
+
+        return _namespaces
+            .SelectMany(x => x.GetAllTypesFromNamespaces())
+            .Distinct()
             .ToImmutableArray();
     }
 
@@ -131,5 +197,27 @@ public class BoundScope
         return _symbols.Values.SelectMany(x => x)
             .OfType<TypeSymbol>()
             .ToImmutableArray();
+    }
+
+    public Option<NamespaceSymbol> TryLookupNamespace(string name)
+    {
+        if (_namespaces.SingleOrNone(x => x.FullName == name) is { IsSome: true } ns)
+        {
+            return ns;
+        }
+
+        return Parent.OnSome(parent => parent.TryLookupNamespace(name));
+    }
+
+    public bool TryDeclareNamespace(NamespaceSymbol namespaceSymbol)
+    {
+        var sameNamers = _namespaces.Where(x => x.FullName == namespaceSymbol.FullName).ToList();
+        if (sameNamers.Any())
+        {
+            return false;
+        }
+
+        _namespaces.Add(namespaceSymbol);
+        return true;
     }
 }

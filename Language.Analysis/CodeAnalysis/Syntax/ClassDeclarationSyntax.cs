@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
-public class ClassDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax
+public class ClassDeclarationSyntax : SyntaxNode
 {
     public ClassDeclarationSyntax(
         SyntaxTree syntaxTree, SyntaxToken classKeyword,

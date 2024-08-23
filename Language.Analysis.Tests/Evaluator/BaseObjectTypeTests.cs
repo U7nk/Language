@@ -17,18 +17,21 @@ public class BaseObjectTypeTests
     [Fact]
     public void ClassCanBeImplicitlyCastedToObject()
     {
-        var code = """  
-            class MyClass
-            {    
-            }
-            
-            class Program
+        var code = """
+            namespace Project
             {
+                class MyClass
+                {    
+                }
                 
-                static function main()
+                class Program
                 {
-                    let myClass = new MyClass();
-                    let obj : object = myClass;
+                    
+                    static function main()
+                    {
+                        let myClass = new MyClass();
+                        let obj : object = myClass;
+                    }
                 }
             }
             """;
@@ -48,18 +51,21 @@ public class BaseObjectTypeTests
     [Fact]
     public void ClassCanExplicitlyInheritFromObject()
     {
-        var code = """  
-            class MyClass : object
+        var code = """
+            namespace Project
             {
-            }
-            
-            class Program
-            {  
-                
-                static function main()
+                class MyClass : object
                 {
-                    let myClass = new MyClass();
-                    let obj : object = myClass;
+                }
+                
+                class Program
+                {  
+                    
+                    static function main()
+                    {
+                        let myClass = new MyClass();
+                        let obj : object = myClass;
+                    }
                 }
             }
             """;
@@ -76,44 +82,50 @@ public class BaseObjectTypeTests
     [Fact]
     public void ObjectsEqualsOperatorComparesSameInstanceByReferenceReturnsTrue()
     {
-        var code = """  
-            class MyClass : object
-            {
-            }
-            
-            class Program
-            {   
-                static function main()
+        var code = """
+            namespace Project
+            {  
+                class MyClass : object
                 {
-                    let myClass = new MyClass();
-                    let myClassSame : object = myClass;
-                    let refEquality = myClassSame == myClass;
-                    
+                }
+                
+                class Program
+                {   
+                    static function main()
+                    {
+                        let myClass = new MyClass();
+                        let myClassSame : object = myClass;
+                        let refEquality = myClassSame == myClass;
+                        
+                    }
                 }
             }
             """;
         
         var result = TestTools.Evaluate(code);
         result.Ok.NullGuard();
-        result.Ok.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
+        result.Ok.Type.Name.Should().Be(TypeSymbol.BuiltIn.Bool().Name);
         result.Ok.LiteralValue.Should().Be(true);
     }
     
     [Fact]
     public void ObjectsEqualsOperatorComparesDifferentInstancesByReferenceReturnsFalse()
     {
-        var code = """  
-            class MyClass : object
-            {
-            }
-            
-            class Program
-            {   
-                static function main()
+        var code = """
+            namespace Project
+            {  
+                class MyClass : object
                 {
-                    let myClass = new MyClass();
-                    let myClassSame = new MyClass();
-                    let refEquality = myClassSame == myClass;
+                }
+                
+                class Program
+                {   
+                    static function main()
+                    {
+                        let myClass = new MyClass();
+                        let myClassSame = new MyClass();
+                        let refEquality = myClassSame == myClass;
+                    }
                 }
             }
             """;
@@ -121,7 +133,7 @@ public class BaseObjectTypeTests
         var result = TestTools.Evaluate(code);
         
         result.Ok.NullGuard();
-        result.Ok.Type.Name.Should().Be(BuiltInTypeSymbols.Bool.Name);
+        result.Ok.Type.Name.Should().Be(TypeSymbol.BuiltIn.Bool().Name);
         result.Ok.LiteralValue.Should().Be(false);
     }
     

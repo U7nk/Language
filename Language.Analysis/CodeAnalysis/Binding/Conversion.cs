@@ -20,21 +20,21 @@ internal sealed class Conversion
         if (Equals(from, to))
             return Identity;
 
-        if (!Equals(from, BuiltInTypeSymbols.Void) && Equals(to, BuiltInTypeSymbols.Object))
+        if (!Equals(from, TypeSymbol.BuiltIn.Void()) && Equals(to, TypeSymbol.BuiltIn.Object()))
             return Implicit;
         
-        if (Equals(from, BuiltInTypeSymbols.Object) && !Equals(to, BuiltInTypeSymbols.Void))
+        if (Equals(from, TypeSymbol.BuiltIn.Object()) && !Equals(to, TypeSymbol.BuiltIn.Void()))
             return Explicit; 
         
-        if (Equals(from, BuiltInTypeSymbols.Bool) || Equals(from, BuiltInTypeSymbols.Int))
+        if (Equals(from, TypeSymbol.BuiltIn.Bool()) || Equals(from, TypeSymbol.BuiltIn.Int()))
         {
-            if (Equals(to, BuiltInTypeSymbols.String))
+            if (Equals(to, TypeSymbol.BuiltIn.String()))
                 return Explicit;
         }
 
-        if (Equals(from, BuiltInTypeSymbols.String))
+        if (Equals(from, TypeSymbol.BuiltIn.String()))
         {
-            if (Equals(to, BuiltInTypeSymbols.Bool) || Equals(to, BuiltInTypeSymbols.Int))
+            if (Equals(to, TypeSymbol.BuiltIn.Bool()) || Equals(to, TypeSymbol.BuiltIn.Int()))
                 return Explicit;
         }
 

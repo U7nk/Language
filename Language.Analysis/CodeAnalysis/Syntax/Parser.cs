@@ -10,14 +10,16 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 public class Parser
 {
     int _position;
-    readonly ImmutableArray<SyntaxToken> _tokens;
-    readonly DiagnosticBag _diagnostics = new();
-    readonly SyntaxTree _syntaxTree;
-    readonly SourceText _sourceText;
+    ImmutableArray<SyntaxToken> _tokens;
+    DiagnosticBag _diagnostics = new();
+    SyntaxTree _syntaxTree;
+    SourceText _sourceText;
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
-    public Parser(SyntaxTree syntaxTree)
+    public Parser(SourceText sourceText)
     {
+        _sourceText = sourceText;
+        var syntaxTree = new SyntaxTree(_sourceText, _diagnostics);
         var lexer = new Lexer(syntaxTree);
         SyntaxToken token = null!;
         var tokens = new List<SyntaxToken>();
@@ -33,10 +35,17 @@ public class Parser
 
         _syntaxTree = syntaxTree;
         _sourceText = syntaxTree.SourceText;
+        syntaxTree.Diagnostics.AddRange(_diagnostics);
         _tokens = tokens.ToImmutableArray();
         _diagnostics.AddRange(lexer.Diagnostics);
     }
 
+    public SyntaxTree Parse()
+    {
+        _syntaxTree.Root = this.ParseCompilationUnit();
+        return _syntaxTree;
+    }
+    
     SyntaxToken Peek(int offset)
     {
         var index = _position + offset;
@@ -65,22 +74,19 @@ public class Parser
             return NextToken();
         }
 
-        return null;
+        return Option.None;
     }
     
     SyntaxToken Match(SyntaxKind kind)
     {
-        if (Current.Kind == kind)
-        {
+        if (AssertIsTokenKind(kind))
             return NextToken();
-        }
-
-        _diagnostics.ReportUnexpectedToken(
-            new TextLocation(_sourceText, Current.Span),
-            Current.Kind, kind);
+        
         return new SyntaxToken(_syntaxTree, kind, Current.Position, string.Empty, null);
     }
 
+    
+    
     ExpressionSyntax ParseBinaryExpression(int parentPrecedence = 0)
     {
         ExpressionSyntax left;
@@ -113,43 +119,91 @@ public class Parser
         return left;
     }
 
+    public Option<T> ParseOptional<T>(Func<T> func)
+    {
+        var oldDiagnostics = _diagnostics;
+        _diagnostics = new DiagnosticBag();
+        var oldPosition = _position;
+        var res = func();
+        if (_diagnostics.Any())
+        {
+            _diagnostics = oldDiagnostics;
+            _position = oldPosition;
+            return Option.None;
+        }
 
+        _diagnostics = oldDiagnostics;
+        return res;
+    }
+    
     public CompilationUnitSyntax ParseCompilationUnit()
     {
-        var members = ParseTopMembers();
-        var endOfFileToken = Match(SyntaxKind.EndOfFileToken);
-        return new CompilationUnitSyntax(_syntaxTree, members, endOfFileToken);
+        NamespacesOrGlobalStatements namespacesOrGlobalStatement = ParseNamespaces();
+        return new CompilationUnitSyntax(_syntaxTree, namespacesOrGlobalStatement, Match(SyntaxKind.EndOfFileToken));
     }
 
-    ImmutableArray<ITopMemberDeclarationSyntax> ParseTopMembers()
+    public bool AssertIsTokenKind(params SyntaxKind[] kind)
     {
-        var topMembers = ImmutableArray.CreateBuilder<ITopMemberDeclarationSyntax>();
-        while (Current.Kind is not SyntaxKind.EndOfFileToken)
+        foreach (var syntaxKind in kind)
+        {
+            if (Current.Kind == syntaxKind)
+                return true;
+        }
+        
+        _diagnostics.ReportUnexpectedToken(new TextLocation(_sourceText, Current.Span), Current.Kind, kind);
+        return false;
+    }
+
+    public List<NamespaceSyntax> ParseNamespaces()
+    {
+        var namespaces = new List<NamespaceSyntax>();
+        if (!AssertIsTokenKind(SyntaxKind.NamespaceKeyword))
+            return namespaces;
+        
+        while (Current.Kind == SyntaxKind.NamespaceKeyword)
+        {
+            var namespaceKeyword = Match(SyntaxKind.NamespaceKeyword);
+            var nameFirstPart = Match(SyntaxKind.IdentifierToken);
+            var otherPartsWithSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
+            otherPartsWithSeparators.Add(nameFirstPart);
+            while (Current.Kind is SyntaxKind.DotToken)
+            {
+                otherPartsWithSeparators.Add(Match(SyntaxKind.DotToken));
+                otherPartsWithSeparators.Add(Match(SyntaxKind.IdentifierToken));
+            }
+            var name = new SeparatedSyntaxList<SyntaxToken>(otherPartsWithSeparators.ToImmutable());
+            var openBrace = Match(SyntaxKind.OpenBraceToken);
+            var topMembers = ParseNamespaceMembers();
+            var closeBrace = Match(SyntaxKind.CloseBraceToken);
+            namespaces.Add(_syntaxTree.NewNamespace(namespaceKeyword, name, openBrace, topMembers, closeBrace));
+        }
+
+        AssertIsTokenKind(SyntaxKind.EndOfFileToken);
+
+        return namespaces;
+    }
+    
+    ImmutableArray<ClassDeclarationSyntax> ParseNamespaceMembers()
+    {
+        var topMembers = ImmutableArray.CreateBuilder<ClassDeclarationSyntax>();
+        // close braceToken of namespace syntax
+        while (Current.Kind is not SyntaxKind.CloseBraceToken and not SyntaxKind.EndOfFileToken) 
         {
             var startToken = Current;
-            var topMember = ParseTopMember();
+            var topMember = ParseClassDeclaration();
             topMembers.Add(topMember);
 
             // if ParseStatement() did not consume any tokens, we're in an infinite loop
             // so we need to consume at least one token to prevent looping
             //
-            // no need for error reporting, because ParseStatement() already reported it
+            // no need for error reporting, because ParseTopMember() already reported it
             if (ReferenceEquals(Current, startToken))
+            {
                 NextToken();
+            }
         }
 
         return topMembers.ToImmutable();
-    }
-
-    ITopMemberDeclarationSyntax ParseTopMember()
-    {
-        if (Current.Kind == SyntaxKind.ClassKeyword)
-            return ParseClassDeclaration();
-        
-        if (Current.Kind == SyntaxKind.FunctionKeyword)
-            return ParseMethodDeclaration();
-        
-        return ParseGlobalStatement();
     }
 
     ClassDeclarationSyntax ParseClassDeclaration()
@@ -260,6 +314,9 @@ public class Parser
                                                 optionalGenericConstraintClause, body);
     }
 
+
+   
+    
     Option<ImmutableArray<GenericConstraintsClauseSyntax>> ParseOptionalGenericConstraintsClause()
     {
         var constraints = ImmutableArray.CreateBuilder<GenericConstraintsClauseSyntax>();
@@ -292,20 +349,40 @@ public class Parser
 
     NamedTypeExpressionSyntax ParseNamedTypeExpression()
     {
-        var identifier = Match(SyntaxKind.IdentifierToken);
-        var optionalGenericClause = ParseOptionalGenericClause();
-        return _syntaxTree.NewNamedTypeExpression(identifier, optionalGenericClause);
-    }
+        var dotSeparatedNamespaceParts = ImmutableArray.CreateBuilder<SyntaxNode>();
+        var namespaceOrClass = Match(SyntaxKind.IdentifierToken);
+        
+        Option<SeparatedSyntaxList<SyntaxNode>> namespaceParts = Option.None;
+        
+        Option<SyntaxToken> dot;
+        dotSeparatedNamespaceParts.Add(namespaceOrClass);
+        while ((dot = ParseOptional(() => Match(SyntaxKind.DotToken))).IsSome)
+        {
+            dotSeparatedNamespaceParts.Add(dot.Unwrap());
+            dotSeparatedNamespaceParts.Add(Match(SyntaxKind.IdentifierToken));
+        }
 
-    Option<NamedTypeExpressionSyntax> ParseOptionalNamedTypeExpression()
-    {
-        var identifier = OptionalMatch(SyntaxKind.IdentifierToken);
-        if (identifier.IsNone)
-            return Option.None;
+        SyntaxToken classNameIdentifier;
+        Option<SyntaxToken> dotToken = Option.None;
+        if (dotSeparatedNamespaceParts.Count > 1)
+        {
+            classNameIdentifier = dotSeparatedNamespaceParts.Last().As<SyntaxToken>();
+            dotSeparatedNamespaceParts.RemoveAt(dotSeparatedNamespaceParts.Count - 1);
+            dotToken = dotSeparatedNamespaceParts.Last().As<SyntaxToken>();
+            dotSeparatedNamespaceParts.RemoveAt(dotSeparatedNamespaceParts.Count - 1);
+            namespaceParts = new SeparatedSyntaxList<SyntaxNode>(dotSeparatedNamespaceParts.ToImmutableArray());
+        }
+        else
+        {
+            classNameIdentifier = namespaceOrClass;
+        }
+        
         
         var optionalGenericClause = ParseOptionalGenericClause();
-        return _syntaxTree.NewNamedTypeExpression(identifier.Unwrap(), optionalGenericClause);
+        return _syntaxTree.NewNamedTypeExpression(namespaceParts, dotToken, classNameIdentifier, optionalGenericClause);
     }
+    
+    
 
     Option<GenericClauseSyntax> ParseOptionalGenericClause()
     {
@@ -328,10 +405,18 @@ public class Parser
                                                          greaterThanToken);
     }
 
-    GlobalStatementDeclarationSyntax ParseGlobalStatement()
+    IGlobalMemberSyntax ParseGlobalMember()
+    {
+        if (Current.Kind is SyntaxKind.FunctionKeyword)
+            return _syntaxTree.NewGlobalFunctionDeclaration(ParseMethodDeclaration());
+
+        return ParseGlobalStatement();
+    }
+    
+    GlobalStatementSyntax ParseGlobalStatement()
     {
         var statement = ParseStatement();
-        return new GlobalStatementDeclarationSyntax(_syntaxTree, statement);
+        return new GlobalStatementSyntax(_syntaxTree, statement);
     }
 
     SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
@@ -558,7 +643,8 @@ public class Parser
         return _syntaxTree.NewExpressionStatement(expression, semicolonToken);
     }
 
-    ExpressionSyntax ParseExpression()
+    
+    public ExpressionSyntax ParseExpression()
     {
         var binary =  ParseBinaryExpression();
 
@@ -611,13 +697,11 @@ public class Parser
     NewExpressionSyntax ParseObjectCreationExpression()
     {
         var newKeyword = Match(SyntaxKind.NewKeyword);
-        var identifier = Match(SyntaxKind.IdentifierToken);
-        var optionalGenericArguments = ParseOptionalGenericClause();
+        var namedTypeExpression = ParseNamedTypeExpression();
         var openParenthesis = Match(SyntaxKind.OpenParenthesisToken);
         var closeParenthesis = Match(SyntaxKind.CloseParenthesisToken);
         
-        return _syntaxTree.NewNewExpression(newKeyword, identifier, optionalGenericArguments,
-                                                       openParenthesis, closeParenthesis);
+        return _syntaxTree.NewNewExpression(newKeyword, namedTypeExpression, openParenthesis, closeParenthesis);
     }
 
     AssignmentExpressionSyntax ParseAssignmentExpression()

@@ -9,11 +9,12 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders.Class;
 
 internal sealed class FullClassBinder
 {
-    readonly bool _isScript;
     public BoundScope ParentScope { get; }
     public BoundScope TypeScope { get; }
+    private readonly BoundScope _globalScope;
     readonly DeclarationsBag _allDeclarations;
-    
+    private readonly NamespaceSymbol _containingNamespace;
+
     Option<ClassSignatureBinder> ClassSignatureBinder { get; set; }
     public Option<ClassBinder> ClassBinder { get; private set; }
     public Option<TypeSymbol> TypeSymbol { get; private set; }
@@ -22,50 +23,43 @@ internal sealed class FullClassBinder
     public Option<ClassMembersSignaturesBinder> ClassMembersSignatureBinder { get; private set; }
     
     
-    public FullClassBinder(BoundScope parentScope, DeclarationsBag allDeclarations, bool isScript)
+    public FullClassBinder(BoundScope parentScope, BoundScope globalScope, DeclarationsBag allDeclarations, NamespaceSymbol containingNamespace)
     {
-        TypeScope = new BoundScope(parentScope);
+        TypeScope = parentScope.CreateChild();
         ParentScope = parentScope;
+        _globalScope = globalScope;
         _allDeclarations = allDeclarations;
-        _isScript = isScript;
+        _containingNamespace = containingNamespace;
     }
-
-    /// <summary>
-    /// Used for generated symbols.
-    /// </summary>
-    /// <param name="parentScope"></param>
-    /// <param name="allDeclarations"></param>
-    /// <param name="isScript"></param>
-    /// <param name="typeSymbol"></param>
-    /// <param name="isTopMethod"></param>
-    public FullClassBinder(BoundScope parentScope, DeclarationsBag allDeclarations, bool isScript, TypeSymbol typeSymbol, bool isTopMethod)
+    
+    public FullClassBinder(BoundScope parentScope, BoundScope globalScope, DeclarationsBag allDeclarations, TypeSymbol typeSymbol)
     {
+        _globalScope = globalScope;
         _allDeclarations = allDeclarations;
-        TypeScope = new BoundScope(parentScope);
+        TypeScope = parentScope.CreateChild();
         ParentScope = parentScope;
-        _isScript = isScript;
-        ClassBinder = new ClassBinder(parentScope, isScript, typeSymbol);
+        ClassBinder = new ClassBinder(parentScope, typeSymbol);
         TypeSymbol = typeSymbol;
         _allDeclarations = allDeclarations;
 
         MethodBinders = typeSymbol.MethodTable
-            .Select(x => new FullMethodBinder(new BoundScope(TypeScope), typeSymbol, isScript, x.MethodSymbol, isTopMethod, allDeclarations))
+            .Select(x => new FullMethodBinder(TypeScope.CreateChild(), globalScope, typeSymbol, x.MethodSymbol, allDeclarations))
             .ToList();
         FieldBinders = typeSymbol.FieldTable
-            .Select(x => new FullFieldBinder(new BoundScope(TypeScope), _isScript, typeSymbol, _allDeclarations))
+            .Select(x => new FullFieldBinder(TypeScope.CreateChild(), typeSymbol, _allDeclarations))
             .ToList();
     }
 
     
-    public bool BindClassDeclaration(ClassDeclarationSyntax classDeclaration, DiagnosticBag diagnostics)
+    public TypeSymbol BindClassDeclaration(ClassDeclarationSyntax classDeclaration, DiagnosticBag diagnostics)
     {
-        ClassSignatureBinder = new ClassSignatureBinder(TypeScope, ParentScope, _allDeclarations);
+        ClassSignatureBinder = new ClassSignatureBinder(TypeScope, ParentScope, _allDeclarations, _containingNamespace);
         var classDeclarationBind = ClassSignatureBinder.Unwrap().BindClassDeclaration(classDeclaration, diagnostics);
-        ClassBinder = new ClassBinder(TypeScope, _isScript, classDeclarationBind.Ok);
+        ClassBinder = new ClassBinder(TypeScope, classDeclarationBind.Ok);
         TypeSymbol = classDeclarationBind.Ok;
 
-        ClassMembersSignatureBinder = new ClassMembersSignaturesBinder(TypeSymbol.Unwrap(), _allDeclarations, TypeScope, _isScript);
-        return classDeclarationBind.IsOk;
+        ClassMembersSignatureBinder = new ClassMembersSignaturesBinder(TypeSymbol.Unwrap(), _allDeclarations, TypeScope, _globalScope);
+        return classDeclarationBind.Ok;
     }
 
     public void BindInheritanceClause(DiagnosticBag diagnostics)

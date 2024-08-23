@@ -19,16 +19,16 @@ internal class BoundUnaryExpression : BoundExpression
 
     public static BoundExpression? Negate(BoundExpression condition)
     {
-        if (Equals(condition.Type, BuiltInTypeSymbols.Bool))
+        if (Equals(condition.Type, TypeSymbol.BuiltIn.Bool()))
         {
             if (condition is BoundLiteralExpression literal)
             {
                 var value = (bool)(literal.Value ?? throw new InvalidOperationException());
-                return new BoundLiteralExpression(literal.Syntax, !value, BuiltInTypeSymbols.Bool);
+                return new BoundLiteralExpression(literal.Syntax, !value, TypeSymbol.BuiltIn.Bool());
             }
 
             return new BoundUnaryExpression(null,
-                BoundUnaryOperator.Bind(SyntaxKind.BangToken, BuiltInTypeSymbols.Bool) ?? throw new InvalidOperationException(),
+                BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.BuiltIn.Bool()) ?? throw new InvalidOperationException(),
                 condition);
         }
 

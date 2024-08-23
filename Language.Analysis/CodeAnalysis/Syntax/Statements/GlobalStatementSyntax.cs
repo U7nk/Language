@@ -1,8 +1,8 @@
 namespace Language.Analysis.CodeAnalysis.Syntax;
 
-public class GlobalStatementDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax
+public class GlobalStatementSyntax : SyntaxNode, IGlobalMemberSyntax
 {
-    public GlobalStatementDeclarationSyntax(SyntaxTree syntaxTree, StatementSyntax statement) : base(syntaxTree)
+    public GlobalStatementSyntax(SyntaxTree syntaxTree, StatementSyntax statement) : base(syntaxTree)
     {
         Statement = statement;
     }

@@ -4,17 +4,12 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
-public class VariableSymbol : Symbol, ITypedSymbol
+public class VariableSymbol(Option<SyntaxNode> declarationSyntax,
+                            string name, TypeSymbol type, bool isReadonly) : Symbol(declarationSyntax, name), ITypedSymbol
 {
-    public TypeSymbol Type { get; }
-    public bool IsReadonly { get; }
-    public VariableSymbol(Option<SyntaxNode> declarationSyntax,
-                          string name, TypeSymbol? containingType, 
-                          TypeSymbol type, bool isReadonly) : base(declarationSyntax, name, containingType)
-    {
-        Type = type;
-        IsReadonly = isReadonly;
-    }
+    
+    public TypeSymbol Type { get; } = type;
+    public bool IsReadonly { get; } = isReadonly;
 
     public override SymbolKind Kind => SymbolKind.Variable;
     public override string ToString() => $"{Type}:{Name}";

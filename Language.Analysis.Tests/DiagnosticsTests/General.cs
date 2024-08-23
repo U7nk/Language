@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Language.Analysis.CodeAnalysis;
@@ -29,7 +30,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{BuiltInTypeSymbols.Bool}' to '{BuiltInTypeSymbols.Int}'.",
+            $"Cannot convert '{TypeSymbol.BuiltIn.Bool()}' to '{TypeSymbol.BuiltIn.Int()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text,contextType),
@@ -48,7 +49,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"No implicit conversion from '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.String}'.",
+            $"No implicit conversion from '{TypeSymbol.BuiltIn.Int()}' to '{TypeSymbol.BuiltIn.String()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
@@ -91,7 +92,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
+            $"Cannot convert '{TypeSymbol.BuiltIn.Int()}' to '{TypeSymbol.BuiltIn.Bool()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text,contextType), diagnostics);
     }
@@ -112,7 +113,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
+            $"Cannot convert '{TypeSymbol.BuiltIn.Int()}' to '{TypeSymbol.BuiltIn.Bool()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(
             TestTools.StatementsInContext(text, contextType),
@@ -135,7 +136,7 @@ public class General
             """ ;
         var diagnostics = new[]
         {
-            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
+            $"Cannot convert '{TypeSymbol.BuiltIn.Int()}' to '{TypeSymbol.BuiltIn.Bool()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
@@ -156,7 +157,7 @@ public class General
             """;
         var diagnostics = new[]
         {
-            $"Cannot convert '{BuiltInTypeSymbols.Int}' to '{BuiltInTypeSymbols.Bool}'.",
+            $"Cannot convert '{TypeSymbol.BuiltIn.Int()}' to '{TypeSymbol.BuiltIn.Bool()}'.",
         };
         TestTools.AssertDiagnosticsWithMessages(TestTools.StatementsInContext(text, contextType), diagnostics);
     }
@@ -167,7 +168,17 @@ public class General
     {
         var text =
             $$"""
-                {[[)]][]
+            namespace Foo
+            {
+                class Program
+                {
+                
+                    static function main()
+                    {
+                        {[[)]]
+                    }
+                }
+            }[]
             """ ;
         var diagnostics = new[]
         {
@@ -175,7 +186,7 @@ public class General
             "Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
-        TestTools.AssertDiagnosticsWithMessages(text, diagnostics);
+        TestTools.AssertDiagnosticsWithMessages(text,diagnostics);
     }
 
 
@@ -200,16 +211,6 @@ public class General
             diagnostics);
     }
 
-    [Fact]
-    public void Reports_NoError_For_Inserted_Token()
-    {
-        var text = "[]";
-        var diagnostics = new[]
-        {
-            DiagnosticBag.MAIN_METHOD_SHOULD_BE_DECLARED_CODE
-        };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
-    }
 
     [Theory]
     [MemberData(
@@ -315,7 +316,7 @@ public class General
             DiagnosticBag.REPORT_CANNOT_USE_UNINITIALIZED_VARIABLE_CODE,
         };
         
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
     }
     
     [Theory]
@@ -338,7 +339,7 @@ public class General
             
         };
         
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
     }
     
     [Fact]
@@ -353,7 +354,7 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), false, diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, TestTools.ContextType.Method), diagnostics, Output);
     }
     
     [Fact]
@@ -361,15 +362,19 @@ public class General
     {
         var text =
             """
-            class Program{
-                static StaticField : int;
-                static function main(){
+            namespace Project
+            {
+                class Program 
+                {
+                    static StaticField : int;
+                    static function main(){
+                        
+                    }
                     
-                }
-                
-                static function StaticMethod(){
-                    [StaticField;]
-                    [Program.StaticField;]
+                    static function StaticMethod(){
+                        [StaticField;]
+                        [Program.StaticField;]
+                    }
                 }
             } 
             """ ;
@@ -380,7 +385,7 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -388,14 +393,17 @@ public class General
     {
         var text =
             """
-            class Program{
-                static StaticField : int;
-                
-                static function main(){    
-                }
-                
-                function StaticMethod(){
-                    [[StaticField];]
+            namespace Project
+            {
+                class Program{
+                    static StaticField : int;
+                    
+                    static function main(){    
+                    }
+                    
+                    function StaticMethod(){
+                        [[StaticField];]
+                    }
                 }
             } 
             """ ;
@@ -406,36 +414,39 @@ public class General
             DiagnosticBag.INVALID_EXPRESSION_STATEMENT_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
     public void StaticMethodInsideClassCannotBeCalledOnThis()
     {
         var text =
-            $$"""
-            class Program
+            """
+            namespace Project
             {
-                static function main()
+                class Program
                 {
+                    static function main()
+                    {
+                        
+                    }
                     
-                }
-                
-                function nonStaticMethod()
-                {
-                    this.[staticMethod]();
-                }
-                
-                static function staticMethod() {
+                    function nonStaticMethod()
+                    {
+                        this.[staticMethod]();
+                    }
                     
-                } 
+                    static function staticMethod() {
+                        
+                    } 
+                }
             }
             """ ;
         var diagnostics = new[]
         {
             DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -443,24 +454,27 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                static staticField : int;
-                static function main() {  
+                class Program
+                {
+                    static staticField : int;
+                    static function main() {  
+                        
+                    }
+                    
+                    function method() {
+                        var x = this.[staticField];
+                    }
                     
                 }
-                
-                function method() {
-                    var x = this.[staticField];
-                }
-                
             }
             """ ;
         var diagnostics = new[]
         {
             DiagnosticBag.CANNOT_ACCESS_STATIC_ON_NON_STATIC_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -468,20 +482,23 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                static function main() {  
-                    var [x];
+                class Program
+                {
+                    static function main() {  
+                        var [x];
+                    }
+                    
+                    
                 }
-                
-                
             }
             """ ;
         var diagnostics = new[]
         {
             DiagnosticBag.TYPE_CLAUSE_EXPECTED_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -489,16 +506,19 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                nonStaticField : int;
-                static function main() {  
-                    var x = [this].nonStaticField;
-                    var y = [this].nonStaticMethod();
-                }
-                
-                function nonStaticMethod() : int {
-                    return 0;
+                class Program
+                {
+                    nonStaticField : int;
+                    static function main() {  
+                        var x = [this].nonStaticField;
+                        var y = [this].nonStaticMethod();
+                    }
+                    
+                    function nonStaticMethod() : int {
+                        return 0;
+                    }
                 }
             }
             """ ;
@@ -507,7 +527,7 @@ public class General
             DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
             DiagnosticBag.THIS_EXPRESSION_NOT_ALLOWED_IN_STATIC_CONTEXT_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -515,21 +535,24 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                static Field : InstanceField;
-                static function main() {   
-                    Field.[Foo]();   
+                class Program
+                {
+                    static Field : InstanceField;
+                    static function main() {   
+                        Field.[Foo]();   
+                    }
                 }
-            }
-            class Field{
-                static function Foo(){
-                    
+                class Field{
+                    static function Foo(){
+                        
+                    }
                 }
-            }
-            class InstanceField {
-                function Foo(){
-                    
+                class InstanceField {
+                    function Foo(){
+                        
+                    }
                 }
             }
             """ ;
@@ -537,7 +560,7 @@ public class General
         {
             DiagnosticBag.AMBIGUOUS_MEMBER_ACCESS_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -545,18 +568,21 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                function [main]() {   
-                    var x = 1;   
-                } 
+                class Program
+                {
+                    function [main]() {   
+                        var x = 1;   
+                    } 
+                }
             }
             """ ;
         var diagnostics = new[]
         {
             DiagnosticBag.MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE,
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
@@ -564,11 +590,14 @@ public class General
     {
         var text =
             """
-            class Program
+            namespace Project
             {
-                function NotMain() {   
-                    var x = 1;
-                } 
+                class Program
+                {
+                    function NotMain() {   
+                        var x = 1;
+                    } 
+                }
             }
             """ ;
         var diagnosticsExpected = new[]
@@ -581,74 +610,61 @@ public class General
         
         result.Error.Should().ContainSingle(diagnosticsExpected.Single());
     }
-
-    [Fact]
-    public void NoMainMethodAllowedInScriptMode()
-    {
-        var text =
-            """
-            class Program
-            {
-                static function [main]() {   
-                    var x = 1;   
-                } 
-            }
-            """ ;
-        var diagnostics = new[]
-        {
-            DiagnosticBag.NO_MAIN_METHOD_ALLOWED_IN_SCRIPT_MODE_CODE,
-        };
-        TestTools.AssertDiagnostics(text, isScript: true, diagnostics, Output);
-    }
     
     [Fact]
     public void MethodWithGenericTypeParametersCallReportsWhenNoGenericTypeArguments()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                
-                function TestMethod<T>(parameter : T) : T
-                    where T : MyClass
+                class MyClass
                 {
-                    return parameter;
+                    
+                    function TestMethod<T>(parameter : T) : T
+                        where T : MyClass
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass();
-                    myClass.[TestMethod](10);
+                    static function main()
+                    {
+                        var myClass = new MyClass();
+                        myClass.[TestMethod](10);
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
+            DiagnosticBag.GENERIC_CALL_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void MethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                function TestMethod<T>(parameter : T) : T
-                    where T : MyClass
+                class MyClass
                 {
-                    return parameter;
+                    function TestMethod<T>(parameter : T) : T
+                        where T : MyClass
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass();
-                    myClass.TestMethod<[int]>(10);
+                    static function main()
+                    {
+                        var myClass = new MyClass();
+                        myClass.TestMethod<[int]>(10);
+                    }
                 }
             }
             """;
@@ -657,63 +673,69 @@ public class General
         {
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
 
     [Fact]
     public void MethodWithGenericTypeConstraintsCallReportsWhenTooMuchTypeArguments()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                function TestMethod<T>(parameter : T) : T
+                class MyClass
                 {
-                    return parameter;
+                    function TestMethod<T>(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass();
-                    myClass.TestMethod[<int, string>](10);
+                    static function main()
+                    {
+                        var myClass = new MyClass();
+                        myClass.TestMethod[<int, string>](10);
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void MethodWithGenericTypeConstraintsCallReportsWhenNotEnoughTypeArguments()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                function TestMethod<T, TY, TX>(parameter : T) : T
+                class MyClass
                 {
-                    return parameter;
+                    function TestMethod<T, TY, TX>(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass();
-                    myClass.TestMethod[<int, string>](10);
+                    static function main()
+                    {
+                        var myClass = new MyClass();
+                        myClass.TestMethod[<int, string>](10);
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
+            DiagnosticBag.GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     
@@ -721,46 +743,52 @@ public class General
     public void InsideGenericClassMethodWithGenericTypeParametersCallReportsWhenNoGenericTypeArguments()
     {
         var source = """
-            class MyClass<T>
+            namespace Project
             {
-                function TestMethod(parameter : T) : T
+                class MyClass<T>
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-
-            class Program
-            {
-                static function main()
+                
+                class Program
                 {
-                    var myClass = new [MyClass]();
-                    myClass.TestMethod(10);
+                    static function main()
+                    {
+                        var myClass = new [MyClass]();
+                        myClass.TestMethod(10);
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE,
+            DiagnosticBag.GENERIC_CALL_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericClassConstraintsShouldReportWhenTheyDoesntSatisfyThemselves()
     {
-        var source = """            
-            class MyClass<T> where T : MyClass<[string]>
-            {
-                function TestMethod(parameter : T) : T
+        var source = """
+            namespace Project
+            {       
+                class MyClass<T> where T : MyClass<[string]>
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
+                    static function main()
+                    {
+                    }
                 }
             }
             """;
@@ -769,27 +797,30 @@ public class General
         {
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericClassConstructorCalReportsViolationOfOtherClassGenericConstraints()
     {
-        var source = """            
-            class MyClass<T> where T : string
-            {
-                function TestMethod(parameter : T) : T
+        var source = """
+            namespace Project
+            {            
+                class MyClass<T> where T : string
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-
-            class SecondClass<T> { }
-            class Program
-            {
-                static function main()
+                
+                class SecondClass<T> { }
+                class Program
                 {
-                    var f = new SecondClass<MyClass<[int]>>();
+                    static function main()
+                    {
+                        var f = new SecondClass<MyClass<[int]>>();
+                    }
                 }
             }
             """;
@@ -798,26 +829,29 @@ public class General
         {
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericConstraintsOnDeclarationReportsViolationOfOtherClassGenericConstraints()
     {
-        var source = """            
-            class MyClass<T> where T : string
-            {
-                function TestMethod(parameter : T) : T
+        var source = """
+            namespace Project
+            {            
+                class MyClass<T> where T : string
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class SecondClass<T> where T : MyClass<[int]> { }
-
-            class Program
-            {
-                static function main()
+                class SecondClass<T> where T : MyClass<[int]> { }
+                
+                class Program
                 {
+                    static function main()
+                    {
+                    }
                 }
             }
             """;
@@ -826,25 +860,28 @@ public class General
         {
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
     {
-        var source = """            
-            class MyClass<T> where T : string
-            {
-                function TestMethod(parameter : T) : T
+        var source = """
+            namespace Project
+            {            
+                class MyClass<T> where T : string
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass<[int]>();
+                    static function main()
+                    {
+                        var myClass = new MyClass<[int]>();
+                    }
                 }
             }
             """;
@@ -853,27 +890,30 @@ public class General
         {
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void InsideGenericClassMethodWithGenericTypeConstraintsCallReportsWhenNestedTypeConstraintDontMatch()
     {
-        var source = """            
-            class MyClass<T> where T : string
-            {
-                function TestMethod(parameter : T) : T
+        var source = """
+            namespace Project
+            {            
+                class MyClass<T> where T : string
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class SecondClass<T> where T : MyClass<string> { }
-            class Program
-            {
-                static function main()
+                class SecondClass<T> where T : MyClass<string> { }
+                class Program
                 {
-                    var myClass = new MyClass<[int]>();
-                    var secondClass = new SecondClass<[MyClass<[int]>]>();
+                    static function main()
+                    {
+                        var myClass = new MyClass<[int]>();
+                        var secondClass = new SecondClass<[MyClass<[int]>]>();
+                    }
                 }
             }
             """;
@@ -884,76 +924,85 @@ public class General
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
 
     [Fact]
     public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenTooMuchTypeArguments()
     {
         var source = """
-            class MyClass<T>
+            namespace Project
             {
-                function TestMethod(parameter : T) : T
+                class MyClass<T>
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass[<int, string>]();
+                    static function main()
+                    {
+                        var myClass = new MyClass[<int, string>]();
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
+            DiagnosticBag.GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void InsideClassMethodWithGenericTypeConstraintsCallReportsWhenNotEnoughTypeArguments()
     {
         var source = """
-            class MyClass<T, TY, TX>
+            namespace Project
             {
-                function TestMethod(parameter : T) : T
+                class MyClass<T, TY, TX>
                 {
-                    return parameter;
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass[<int, string>]();
+                    static function main()
+                    {
+                        var myClass = new MyClass[<int, string>]();
+                    }
                 }
             }
             """;
         
         var diagnostics = new[]
         {
-            DiagnosticBag.GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT,
+            DiagnosticBag.GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE,
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void VariableDeclaredWithWrongGenericTypeReportsWrongGenericArgument()
     {
         var source = """
-            class MyClass<T> where T : string
+            namespace Project
             {
-               
-            }
-            class Program
-            {
-                static function main()
+                class MyClass<T> where T : string
                 {
-                    var myClass : MyClass<[int]>;
+                   
+                }
+                class Program
+                {
+                    static function main()
+                    {
+                        var myClass : MyClass<[int]>;
+                    }
                 }
             }
             """;
@@ -963,23 +1012,26 @@ public class General
             // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericTypeClauseReportsWrongTypeArguments()
     {
         var source = """
-            class OtherClass<T> where T : string { }
-            class MyClass<T> where T : OtherClass<string>
+            namespace Project
             {
-               function GenericMethod<Y>() where Y : OtherClass<string> { } 
-            }
-            class Program
-            {
-                static function main()
+                class OtherClass<T> where T : string { }
+                class MyClass<T> where T : OtherClass<string>
                 {
-                    var myClass : MyClass<[OtherClass<[int]>]>; 
+                   function GenericMethod<Y>() where Y : OtherClass<string> { } 
+                }
+                class Program
+                {
+                    static function main()
+                    {
+                        var myClass : MyClass<[OtherClass<[int]>]>; 
+                    }
                 }
             }
             """;
@@ -991,24 +1043,27 @@ public class General
             // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericMethodCallReportsWrongTypeArguments()
     {
         var source = """
-            class OtherClass<T> where T : string { }
-            class MyClass<T> where T : OtherClass<string>
+            namespace Project
             {
-               function GenericMethod<Y>() where Y : OtherClass<string> { } 
-            }
-            class Program
-            {
-                static function main()
+                class OtherClass<T> where T : string { }
+                class MyClass<T> where T : OtherClass<string>
                 {
-                    var x = new MyClass<OtherClass<string>>();
-                    x.GenericMethod<[OtherClass<[int]>]>();
+                   function GenericMethod<Y>() where Y : OtherClass<string> { } 
+                }
+                class Program
+                {
+                    static function main()
+                    {
+                        var x = new MyClass<OtherClass<string>>();
+                        x.GenericMethod<[OtherClass<[int]>]>();
+                    }
                 }
             }
             """;
@@ -1020,23 +1075,26 @@ public class General
             // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     [Fact]
     public void GenericClassConstructorCallReportsWrongTypeArguments()
     {
         var source = """
-            class OtherClass<T> where T : string { }
-            class MyClass<T> where T : OtherClass<string>
+            namespace Project
             {
-               function GenericMethod<Y>() where Y : OtherClass<string> { } 
-            }
-            class Program
-            {
-                static function main()
+                class OtherClass<T> where T : string { }
+                class MyClass<T> where T : OtherClass<string>
                 {
-                    var x = new MyClass<[OtherClass<[int]>]>();
+                   function GenericMethod<Y>() where Y : OtherClass<string> { } 
+                }
+                class Program
+                {
+                    static function main()
+                    {
+                        var x = new MyClass<[OtherClass<[int]>]>();
+                    }
                 }
             }
             """;
@@ -1048,7 +1106,7 @@ public class General
             // todo this code is wrong for this type of diagnostic, we need to do create separate code for this case
             DiagnosticBag.GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE, 
         };
-        TestTools.AssertDiagnostics(source, isScript: false, diagnostics, Output);
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
     }
     
     
@@ -1056,18 +1114,21 @@ public class General
     public void AllGenericTypeUsageIsProperlyParsed()
     {
         var source = """
-            class OtherClass<T> where T : string { }
-            class MyClass<T> where T : OtherClass<string>
+            namespace MyProgram
             {
-               function GenericMethod<Y>() where Y : OtherClass<string> { } 
-            }
-            class Program
-            {
-                static function main()
+                class OtherClass<T> where T : string { }
+                class MyClass<T> where T : OtherClass<string>
                 {
-                    var myClass : MyClass<OtherClass<string>>;
-                    var x = new MyClass<OtherClass<string>>();
-                    x.GenericMethod<OtherClass<string>>();
+                   function GenericMethod<Y>() where Y : OtherClass<string> { } 
+                }
+                class Program
+                {
+                    static function main()
+                    {
+                        var myClass : MyClass<OtherClass<string>>;
+                        var x = new MyClass<OtherClass<string>>();
+                        x.GenericMethod<OtherClass<string>>();
+                    }
                 }
             }
             """;

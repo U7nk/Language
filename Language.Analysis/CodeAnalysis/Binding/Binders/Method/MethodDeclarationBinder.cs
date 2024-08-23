@@ -12,17 +12,16 @@ class MethodDeclarationBinder
 {
     readonly TypeSymbol _containingType;
     readonly BoundScope _methodScope;
-    readonly bool _isTopMethod;
     readonly DeclarationsBag _allDeclarations;
 
-    public MethodDeclarationBinder(BoundScope methodScope, TypeSymbol containingType, bool isTopMethod, DeclarationsBag allDeclarations)
+    public MethodDeclarationBinder(BoundScope methodScope, TypeSymbol containingType, DeclarationsBag allDeclarations)
     {
         _methodScope = methodScope;
-        _isTopMethod = isTopMethod;
         _allDeclarations = allDeclarations;
         _containingType = containingType;
     }
-    public MethodDeclarationBinder(BoundScope methodScope, bool successfullyDeclaredInType, bool isTopMethod,TypeSymbol containingType, DeclarationsBag allDeclarations) : this(methodScope, containingType, isTopMethod, allDeclarations)
+    public MethodDeclarationBinder(BoundScope methodScope, bool successfullyDeclaredInType, TypeSymbol containingType, DeclarationsBag allDeclarations) 
+        : this(methodScope, containingType, allDeclarations)
     {
         SuccessfullyDeclaredInType = successfullyDeclaredInType;
     }
@@ -40,20 +39,21 @@ class MethodDeclarationBinder
                     var typeConstraints = new List<TypeSymbol>();
                     foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
                     {
-                        var genericTypeConstraintName = genericTypeConstraintIdentifier.Identifier.Text;
-                        if (!_methodScope.TryLookupType(genericTypeConstraintName, out var genericTypeConstraintType))
+                        var genericTypeConstraintName = genericTypeConstraintIdentifier.GetName();
+                        var genericTypeConstraintType = _methodScope.TryLookupType(genericTypeConstraintName, _containingType.ContainingNamespace);
+                        if (genericTypeConstraintType.IsNone)
                         {
                             diagnostics.ReportUndefinedType(genericTypeConstraintIdentifier.Location,
                                                             genericTypeConstraintName);
                             continue;
                         }
 
-                        if (genericTypeConstraintType.IsGenericType)
+                        if (genericTypeConstraintType.Unwrap().IsGenericType)
                         {
-                            genericTypeConstraintType = TypeSymbol.FromNamedTypeExpression(genericTypeConstraintIdentifier, _methodScope, diagnostics);
+                            genericTypeConstraintType = TypeSymbol.FromNamedTypeExpression(genericTypeConstraintIdentifier, _methodScope, diagnostics, _containingType.ContainingNamespace);
                         }
                             
-                        typeConstraints.Add(genericTypeConstraintType);
+                        typeConstraints.Add(genericTypeConstraintType.Unwrap());
                     }
                     typeConstraintsByGenericName.Add(x.Identifier.Text, typeConstraints);
                 }
@@ -62,11 +62,11 @@ class MethodDeclarationBinder
             var genericParametersSyntax = methodDeclaration.GenericParametersSyntax.Unwrap();
             foreach (var genericParameterSyntax in genericParametersSyntax.Arguments)
             {
-                var genericParameterName = genericParameterSyntax.Identifier.Text;
+                var genericParameterName = genericParameterSyntax.GetName();
                 var genericParameterTypeConstraints = typeConstraintsByGenericName.TryGetValue(genericParameterName, out var value) 
                     ? Option.Some(value.ToImmutableArray()) 
                     : Option.None;
-                var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
+                var baseTypes = new SingleOccurenceList<TypeSymbol> { TypeSymbol.BuiltIn.Object() };
                 if (genericParameterTypeConstraints.IsSome) 
                     genericParameterTypeConstraints.Unwrap().AddRangeTo(baseTypes);
                 
@@ -78,8 +78,9 @@ class MethodDeclarationBinder
                                                  baseTypes,
                                                  isGenericMethodParameter: true,
                                                  isGenericClassParameter: false, 
-                                                 genericParameters: Option.None, genericParameterTypeConstraints: genericParameterTypeConstraints, isGenericTypeDefinition: false);
-                if (!_methodScope.TryDeclareType(genericParameter))
+                                                 genericParameters: Option.None, genericParameterTypeConstraints: genericParameterTypeConstraints, isGenericTypeDefinition: false,
+                                                 _containingType.ContainingNamespace);
+                if (!_methodScope.TryDeclareType(genericParameter, _containingType.ContainingNamespace))
                 {
                     diagnostics.ReportAmbiguousType(genericParameterSyntax.Location,
                                                     genericParameterName,
@@ -94,17 +95,16 @@ class MethodDeclarationBinder
         {
             var parameterName = parameter.Identifier.Text;
 
-            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _methodScope);
+            var parameterType = BinderHelp.BindTypeClause(parameter.Type, diagnostics, _methodScope, _containingType.ContainingNamespace);
             if (parameterType is null)
             {
                 diagnostics.ReportParameterShouldHaveTypeExplicitlyDefined(parameter.Location, parameterName);
-                parameterType = BuiltInTypeSymbols.Error;
+                parameterType = TypeSymbol.BuiltIn.Error();
             }
 
             parameters.Add(new ParameterSymbol(
                                parameter,
                                parameterName,
-                               containingType: null,
                                parameterType));
         }
 
@@ -121,9 +121,9 @@ class MethodDeclarationBinder
             }
         }
 
-        var returnType = BinderHelp.BindTypeClause(methodDeclaration.ReturnType, diagnostics, _methodScope) ?? BuiltInTypeSymbols.Void;
+        var returnType = BinderHelp.BindTypeClause(methodDeclaration.ReturnType, diagnostics, _methodScope, _containingType.ContainingNamespace) ?? TypeSymbol.BuiltIn.Void();
 
-        var isStatic = methodDeclaration.StaticKeyword.IsSome || _isTopMethod;
+        var isStatic = methodDeclaration.StaticKeyword.IsSome;
 
         var isVirtual = methodDeclaration.VirtualKeyword.IsSome;
         var isOverriding = methodDeclaration.OverrideKeyword.IsSome;

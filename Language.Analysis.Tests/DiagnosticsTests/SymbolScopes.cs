@@ -23,10 +23,13 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    [Program] : int;
                 }
-                [Program] : int;
             } 
             """ ;
         
@@ -35,19 +38,22 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
     public void VariableCannotHaveSameNameAsParameter()
     {
         const string text = """
-            class Program
+            namespace Project
             {
-                static function main(){
-                }
-                function Foo([a] : int) {
-                    var [a] : int = 0;
+                class Program
+                {
+                    static function main(){
+                    }
+                    function Foo([a] : int) {
+                        var [a] : int = 0;
+                    }
                 }
             }
             """ ;
@@ -58,19 +64,22 @@ public class SymbolScopes
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
     public void TwoParametersWithSameName()
     {
-        const string text = $$"""
-            class Program
+        const string text = """
+            namespace Project
             {
-                static function main(){
-                }
-                function Foo([a] : int, [a] : int) {
-                    
+                class Program
+                {
+                    static function main(){
+                    }
+                    function Foo([a] : int, [a] : int) {
+                        
+                    }
                 }
             }
             """ ;
@@ -81,76 +90,34 @@ public class SymbolScopes
             DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
     public void TwoParametersAndVariableWithSameName()
     {
         var text = """
-            class Program
+            namespace Project
             {
-                static function main(){
-                }
-                function Foo(a : int, a : int) {
-                    var a : int = 5;
+                class Program
+                {
+                    static function main(){
+                    }
+                    function Foo([[a]] : int, [[a]] : int) {
+                        var [a] : int = 5;
+                    }
                 }
             }
             """.Replace(Environment.NewLine, "\n\r");
         
-        var syntaxTree = SyntaxTree.Parse(text);
-        var compilation = Compilation.Create(syntaxTree);
-        var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
-        var diagnostics = result.Diagnostics.ToImmutableArray();
-
-        diagnostics.Any(x => x is
+        TestTools.AssertDiagnostics(text, new []
         {
-            Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span:
-            {
-                Start: 71,
-                End: 72
-            }
-        }).EnsureTrue();
-
-        diagnostics.Any(x => x is
-        {
-            Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span:
-            {
-                Start: 80,
-                End: 81
-            }
-        }).EnsureTrue();
-        
-        diagnostics.Any(x => x is {
-            Code: DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
-            TextLocation.Span: {
-                Start: 71,
-                End: 72
-            }
-        }).EnsureTrue();
-
-        diagnostics.Any(x => x is
-        {
-            Code: DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
-            TextLocation.Span:
-            {
-                Start: 104,
-                End: 105
-            }
-        }).EnsureTrue();
-
-        diagnostics.Any(x => x is
-        {
-            Code: DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
-            TextLocation.Span:
-            {
-                Start: 80,
-                End: 81
-            }
-        }).EnsureTrue();
-        diagnostics.Length.Should().Be(5);
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
+            DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
+            DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
+            DiagnosticBag.PARAMETER_ALREADY_DECLARED_CODE,
+        }, Output);
     }
     
     [Theory]
@@ -169,7 +136,7 @@ public class SymbolScopes
             DiagnosticBag.VARIABLE_ALREADY_DECLARED_CODE,
         };
 
-        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), false, diagnostics, Output);
+        TestTools.AssertDiagnostics(TestTools.StatementsInContext(text, contextType), diagnostics, Output);
     }
     
     [Theory]
@@ -191,7 +158,7 @@ public class SymbolScopes
         };
 
         TestTools.AssertDiagnostics(
-            TestTools.StatementsInContext(text, contextType), false, 
+            TestTools.StatementsInContext(text, contextType), 
             diagnostics, Output);
     }
 
@@ -200,12 +167,15 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
-                }
-                
-                function [Program]() {
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
                     
+                    function [Program]() {
+                        
+                    }
                 }
             } 
             """ ;
@@ -215,7 +185,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_CANNOT_HAVE_NAME_OF_CLASS_CODE
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
@@ -223,12 +193,15 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
-                }
-                [field] : int;
-                function [field]() {
-                    
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    [field] : int;
+                    function [field]() {
+                        
+                    }
                 }
             } 
             """ ;
@@ -239,7 +212,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -247,14 +220,17 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
-                }
-                function [FunctionName]() {
-                    
-                }
-                function [FunctionName]() {
-                    
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    function [FunctionName]() {
+                        
+                    }
+                    function [FunctionName]() {
+                        
+                    }
                 }
             } 
             """ ;
@@ -265,7 +241,7 @@ public class SymbolScopes
             DiagnosticBag.METHOD_ALREADY_DECLARED_CODE
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
     [Fact]
@@ -273,14 +249,17 @@ public class SymbolScopes
     {
         var text =
             """
-            class Base {
-                function virtual FunctionName() { }
-            }
-            class Inherited : Base {
-                function [FunctionName]() { }
-            } 
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Base {
+                    function virtual FunctionName() { }
+                }
+                class Inherited : Base {
+                    function [FunctionName]() { }
+                } 
+                class Program {
+                    static function main(){
+                    }
                 }
             } 
             """ ;
@@ -290,7 +269,7 @@ public class SymbolScopes
             DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -298,15 +277,18 @@ public class SymbolScopes
     {
         var text =
             """
-            class Base {
-                function virtual FunctionName() { }
-            }
-            class Inherited : Base {
-                function override [FunctionName]() { }
-                function virtual [[FunctionName]]() { }
-            } 
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Base {
+                    function virtual FunctionName() { }
+                }
+                class Inherited : Base {
+                    function override [FunctionName]() { }
+                    function virtual [[FunctionName]]() { }
+                } 
+                class Program {
+                    static function main(){
+                    }
                 }
             } 
             """ ;
@@ -318,7 +300,7 @@ public class SymbolScopes
             DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE,
         };
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -326,14 +308,17 @@ public class SymbolScopes
     {
         var text =
             """
-            class Base {
-                function virtual FunctionName() { }
-            }
-            class Inherited : Base {
-                function override FunctionName() { }
-            } 
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Base {
+                    function virtual FunctionName() { }
+                }
+                class Inherited : Base {
+                    function override FunctionName() { }
+                } 
+                class Program {
+                    static function main(){
+                    }
                 }
             } 
             """;
@@ -346,16 +331,19 @@ public class SymbolScopes
     {
         var text =
             """
-            class BaseClass {
-                function FunctionName() { }
-            }
-
-            class DerivedClass : BaseClass {
-                function [FunctionName]() { }
-            }
-
-            class Program {
-                static function main() { }
+            namespace Project
+            {
+                class BaseClass {
+                    function FunctionName() { }
+                }
+                
+                class DerivedClass : BaseClass {
+                    function [FunctionName]() { }
+                }
+                
+                class Program {
+                    static function main() { }
+                }
             } 
             """;
 
@@ -363,7 +351,7 @@ public class SymbolScopes
         {
             DiagnosticBag.METHOD_ALREADY_DECLARED_IN_BASE_CLASS_CODE
         };
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -371,12 +359,15 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    
+                    [field] : int;
+                    [field] : int;
                 }
-                
-                [field] : int;
-                [field] : int;
             } 
             """ ;
 
@@ -386,7 +377,7 @@ public class SymbolScopes
             DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
         };
         
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -394,15 +385,18 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    
+                    function [field]() { }
+                    
+                    [[field]] : int;
+                    [[field]] : int;
                 }
-                
-                function [field]() { }
-                
-                [[field]] : int;
-                [[field]] : int;
-            } 
+            }
             """ ;
 
         var diagnostics = new[]
@@ -416,7 +410,7 @@ public class SymbolScopes
             DiagnosticBag.FIELD_ALREADY_DECLARED_CODE,
         };
         
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -425,15 +419,18 @@ public class SymbolScopes
         
         var text =
             """
-            class Program {
-                static function main(){
-                }
-                
-                function [FunctionName]() {
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
                     
+                    function [FunctionName]() {
+                        
+                    }
+                    [FunctionName] : int;
                 }
-                [FunctionName] : int;
-            } 
+            }
             """ ;
         
         var diagnostics = new[]
@@ -442,7 +439,7 @@ public class SymbolScopes
             DiagnosticBag.CLASS_MEMBER_WITH_THAT_NAME_ALREADY_DECLARED_CODE,
         };
         
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -450,21 +447,24 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program {
-                static function main(){
+            namespace Project
+            {
+                class Program {
+                    static function main(){
+                    }
+                    
+                    field : int;
+                    function FunctionName()
+                    { 
+                        var field : int;
+                    }
                 }
-                
-                field : int;
-                function FunctionName()
-                { 
-                    var field : int;
-                }
-            } 
+            }
             """ ;
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
@@ -472,39 +472,45 @@ public class SymbolScopes
     {
         var text =
             """
-            class Program { 
-                static function main(){
+            namespace Project
+            {
+                class Program { 
+                    static function main(){
+                    }
+                    function FunctionName()
+                    { 
+                        var FunctionName : int;
+                    }
                 }
-                function FunctionName()
-                { 
-                    var FunctionName : int;
-                }
-            } 
+            }
             """ ;
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
     
     [Fact]
     public void VariableCanShadowClass()
     {
         var text =
-            $$"""
-            class Program { 
-                static function main(){
-                }
-                function FunctionName()
-                { 
-                    var TypeName : int;
+            """
+            namespace Project
+            {
+                class Program { 
+                    static function main(){
+                    }
+                    function FunctionName()
+                    { 
+                        var TypeName : int;
+                    }
                 }
             } 
             """ ;
         
         var diagnostics = Array.Empty<string>();
 
-        TestTools.AssertDiagnostics(text, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(text, diagnostics, Output);
     }
 
 }

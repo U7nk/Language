@@ -8,21 +8,12 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding.Binders.Class;
 
-sealed class ClassBinder
+sealed class ClassBinder(BoundScope scope, TypeSymbol typeSymbol)
 {
-    readonly TypeSymbol _typeSymbol;
-    readonly BoundScope _scope;
-    readonly bool _isScript;
-    readonly DiagnosticBag _diagnostics;
+    readonly TypeSymbol _typeSymbol = typeSymbol;
+    readonly BoundScope _scope = scope;
+    readonly DiagnosticBag _diagnostics = new();
     public ImmutableArray<Diagnostic> Diagnostics => _diagnostics.ToImmutableArray();
-
-    public ClassBinder(BoundScope scope, bool isScript, TypeSymbol typeSymbol)
-    {
-        _scope = scope;
-        _isScript = isScript;
-        _typeSymbol = typeSymbol;
-        _diagnostics = new DiagnosticBag();
-    }
 
     public void BindClassBody(IEnumerable<FullMethodBinder> methodBinders, IEnumerable<FullFieldBinder> fullFieldBinders)
     {
@@ -31,7 +22,7 @@ sealed class ClassBinder
             var body = methodBinder.BindMethodBody(_diagnostics);
             var loweredBody = Lowerer.Lower(body);
 
-            if (!Equals(methodBinder.MethodSymbol.ReturnType, BuiltInTypeSymbols.Void) &&
+            if (!Equals(methodBinder.MethodSymbol.ReturnType, TypeSymbol.BuiltIn.Void()) &&
                 !ControlFlowGraph.AllPathsReturn(loweredBody))
             {
                 _diagnostics.ReportAllPathsMustReturn(methodBinder.MethodSymbol.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>()

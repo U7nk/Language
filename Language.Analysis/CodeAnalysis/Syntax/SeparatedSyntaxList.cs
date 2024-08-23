@@ -32,10 +32,10 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
     public int Count => (SeparatorsAndNodes.Length + 1) / 2;
     public T this[int index] => (T)SeparatorsAndNodes[index * 2];
 
-    public SyntaxToken? GetSeparator(int index)
+    public Option<SyntaxToken> GetSeparator(int index)
     {
         if (index == Count - 1)
-            return null;
+            return Option.None;
 
         return SeparatorsAndNodes[index * 2 + 1] as SyntaxToken
                ?? throw new InvalidOperationException();

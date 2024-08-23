@@ -25,7 +25,7 @@ class Evaluator
 
     public ObjectInstance? Evaluate()
     {
-        var function = _program.MainMethod.SomeOr(() => _program.ScriptMainMethod.Unwrap());
+        var function = _program.MainMethod.Unwrap();
 
         if (!function.IsStatic)
             throw new Exception("Main method must be static.");
@@ -281,7 +281,6 @@ class Evaluator
             var variableSymbol = new VariableSymbol(
                 declarationSyntax: Option.None,
                 name: "this",
-                containingType: null, 
                 objectInstance.Type,
                 isReadonly: true);
             Assign(variableSymbol, objectInstance);
@@ -342,24 +341,23 @@ class Evaluator
             node.Syntax,
             name: "this",
             type: node.Type,
-            isReadonly: true, 
-            containingType: null)];
+            isReadonly: true)];
     }
 
     ObjectInstance EvaluateConversionExpression(BoundConversionExpression node)
     {
         var value = EvaluateExpression(node.Expression).As<ObjectInstance>();
 
-        if (Equals(node.Type, BuiltInTypeSymbols.Bool)) 
-            return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, Convert.ToBoolean(value));
+        if (Equals(node.Type, TypeSymbol.BuiltIn.Bool())) 
+            return ObjectInstance.Literal(TypeSymbol.BuiltIn.Bool(), Convert.ToBoolean(value));
 
-        if (Equals(node.Type, BuiltInTypeSymbols.Int))
-            return ObjectInstance.Literal(BuiltInTypeSymbols.Int, Convert.ToInt32(value));
+        if (Equals(node.Type, TypeSymbol.BuiltIn.Int()))
+            return ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), Convert.ToInt32(value));
 
-        if (Equals(node.Type, BuiltInTypeSymbols.String))
-            return ObjectInstance.Literal(BuiltInTypeSymbols.String, Convert.ToString(value).NullGuard());
+        if (Equals(node.Type, TypeSymbol.BuiltIn.String()))
+            return ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), Convert.ToString(value).NullGuard());
         
-        if (Equals(node.Type, BuiltInTypeSymbols.Object))
+        if (Equals(node.Type, TypeSymbol.BuiltIn.Object()))
             return value;
 
         if (node.Expression.Type.IsSubClassOf(node.Type))
@@ -374,37 +372,37 @@ class Evaluator
         var left = EvaluateExpression(binary.Left).As<ObjectInstance>();
         var right = EvaluateExpression(binary.Right).As<ObjectInstance>();
         
-        if (Equals(binary.Left.Type, BuiltInTypeSymbols.Int))
+        if (Equals(binary.Left.Type, TypeSymbol.BuiltIn.Int()))
         {
-            if (Equals(binary.Right.Type, BuiltInTypeSymbols.Int))
+            if (Equals(binary.Right.Type, TypeSymbol.BuiltIn.Int()))
             {
                 var intRight = right.LiteralValue.As<int>();
                 var intLeft = left.LiteralValue.As<int>();
                 return binary.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft + intRight),
-                    BoundBinaryOperatorKind.Subtraction => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft - intRight),
-                    BoundBinaryOperatorKind.Multiplication => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft * intRight),
-                    BoundBinaryOperatorKind.Division => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft / intRight),
+                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft + intRight),
+                    BoundBinaryOperatorKind.Subtraction => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft - intRight),
+                    BoundBinaryOperatorKind.Multiplication => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft * intRight),
+                    BoundBinaryOperatorKind.Division => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft / intRight),
 
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft == intRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft != intRight),
-                    BoundBinaryOperatorKind.LessThan => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft < intRight),
-                    BoundBinaryOperatorKind.LessThanOrEquals => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft <= intRight),
-                    BoundBinaryOperatorKind.GreaterThan => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft > intRight),
-                    BoundBinaryOperatorKind.GreaterThanOrEquals => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft >= intRight),
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft == intRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft != intRight),
+                    BoundBinaryOperatorKind.LessThan => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft < intRight),
+                    BoundBinaryOperatorKind.LessThanOrEquals => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft <= intRight),
+                    BoundBinaryOperatorKind.GreaterThan => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft > intRight),
+                    BoundBinaryOperatorKind.GreaterThanOrEquals => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft >= intRight),
 
-                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft & intRight),
-                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft | intRight),
-                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(BuiltInTypeSymbols.Int, intLeft ^ intRight),
+                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft & intRight),
+                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft | intRight),
+                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(), intLeft ^ intRight),
                     _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
 
-        if (Equals(binary.Left.Type, BuiltInTypeSymbols.String))
+        if (Equals(binary.Left.Type, TypeSymbol.BuiltIn.String()))
         {
-            if (Equals(binary.Right.Type, BuiltInTypeSymbols.String))
+            if (Equals(binary.Right.Type, TypeSymbol.BuiltIn.String()))
             {
                 right.NullGuard();
                 left.NullGuard();
@@ -412,47 +410,47 @@ class Evaluator
                 var stringLeft = left.LiteralValue.As<string>();
                 return binary.Op.Kind switch
                 {
-                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft + stringRight),
+                    BoundBinaryOperatorKind.Addition => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), stringLeft + stringRight),
                     
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft == stringRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.String, stringLeft != stringRight),
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), stringLeft == stringRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), stringLeft != stringRight),
                     _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
 
-        if (Equals(binary.Left.Type, BuiltInTypeSymbols.Bool))
+        if (Equals(binary.Left.Type, TypeSymbol.BuiltIn.Bool()))
         {
-            if (Equals(binary.Right.Type, BuiltInTypeSymbols.Bool))
+            if (Equals(binary.Right.Type, TypeSymbol.BuiltIn.Bool()))
             {
                 var boolRight = right.LiteralValue.As<bool>();
                 var boolLeft = left.LiteralValue.As<bool>();
                 return binary.Op.Kind switch
                 {
                     // TODO: this should return bool literal, not string
-                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft == boolRight),
-                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft != boolRight),
+                    BoundBinaryOperatorKind.Equality => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft == boolRight),
+                    BoundBinaryOperatorKind.Inequality => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft != boolRight),
                     
-                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft & boolRight), //-V3093
-                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft | boolRight), //-V3093
-                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft ^ boolRight),
+                    BoundBinaryOperatorKind.BitwiseAnd => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft & boolRight), //-V3093
+                    BoundBinaryOperatorKind.BitwiseOr => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft | boolRight), //-V3093
+                    BoundBinaryOperatorKind.BitwiseXor => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft ^ boolRight),
                     
-                    BoundBinaryOperatorKind.LogicalAnd => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft && boolRight),
-                    BoundBinaryOperatorKind.LogicalOr => ObjectInstance.Literal(BuiltInTypeSymbols.String, boolLeft || boolRight),
+                    BoundBinaryOperatorKind.LogicalAnd => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft && boolRight),
+                    BoundBinaryOperatorKind.LogicalOr => ObjectInstance.Literal(TypeSymbol.BuiltIn.String(), boolLeft || boolRight),
                     _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
         }
         
         // not built in types
-        if (binary.Left.Type.IsOutside(BuiltInTypeSymbols.All).OrEquals(BuiltInTypeSymbols.Object) 
-            && binary.Right.Type.IsOutside(BuiltInTypeSymbols.All).OrEquals(BuiltInTypeSymbols.Object))
+        if (binary.Left.Type.IsOutside(TypeSymbol.BuiltIn.All).OrEquals(TypeSymbol.BuiltIn.Object()) 
+            && binary.Right.Type.IsOutside(TypeSymbol.BuiltIn.All).OrEquals(TypeSymbol.BuiltIn.Object()))
         {
             if (binary.Op.Kind is BoundBinaryOperatorKind.Equality)
-                return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, ReferenceEquals(left, right));
+                return ObjectInstance.Literal(TypeSymbol.BuiltIn.Bool(), ReferenceEquals(left, right));
 
             if (binary.Op.Kind is BoundBinaryOperatorKind.Inequality)
-                return ObjectInstance.Literal(BuiltInTypeSymbols.Bool, !ReferenceEquals(left, right));
+                return ObjectInstance.Literal(TypeSymbol.BuiltIn.Bool(), !ReferenceEquals(left, right));
         }
 
         throw new($"Unexpected binary operator {binary.Op.Kind}");
@@ -461,24 +459,24 @@ class Evaluator
     ObjectInstance EvaluateUnaryExpression(BoundUnaryExpression unary)
     {
         var operand = EvaluateExpression(unary.Operand).As<ObjectInstance>();
-        if (Equals(unary.Type, BuiltInTypeSymbols.Int))
+        if (Equals(unary.Type, TypeSymbol.BuiltIn.Int()))
         {
             var intOperand = operand.LiteralValue.As<int>();
             return unary.Op.Kind switch
             {
-                BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  -intOperand),
-                BoundUnaryOperatorKind.Identity => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  +intOperand),
-                BoundUnaryOperatorKind.BitwiseNegation => ObjectInstance.Literal(BuiltInTypeSymbols.Int,  ~intOperand),
+                BoundUnaryOperatorKind.Negation => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(),  -intOperand),
+                BoundUnaryOperatorKind.Identity => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(),  +intOperand),
+                BoundUnaryOperatorKind.BitwiseNegation => ObjectInstance.Literal(TypeSymbol.BuiltIn.Int(),  ~intOperand),
                 _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }
 
-        if (Equals(unary.Type, BuiltInTypeSymbols.Bool))
+        if (Equals(unary.Type, TypeSymbol.BuiltIn.Bool()))
         {
             var boolOperand = operand.LiteralValue.As<bool>();
             return unary.Op.Kind switch
             {
-                BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(BuiltInTypeSymbols.Bool, !boolOperand),
+                BoundUnaryOperatorKind.LogicalNegation => ObjectInstance.Literal(TypeSymbol.BuiltIn.Bool(), !boolOperand),
                 _ => throw new($"Unexpected unary operator {unary.Op}")
             };
         }

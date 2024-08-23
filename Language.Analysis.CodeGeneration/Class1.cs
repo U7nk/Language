@@ -1,4 +1,9 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Immutable;
+using System.Data;
+using System.Diagnostics;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Language.Analysis.CodeGeneration;
 
@@ -15,6 +20,21 @@ internal static class Extensions
         }
 
         return InheritsFrom(type.BaseType, fromSymbol);
+    }
+
+    public static string LowerFirstChar(this string text)
+    {
+        return text[0].ToString().ToLower() + text.Substring(1, text.Length - 1);
+    }
+
+    public static string EscapeKeyword(this string name)
+    {
+        if (SyntaxFacts.IsKeywordKind(SyntaxFacts.GetKeywordKind(name)))
+        {
+            return "@" + name;
+        }
+
+        return name;
     }
 }
 
@@ -56,19 +76,19 @@ public class HelloSourceGenerator : ISourceGenerator
             var parameters = ctor.Parameters
                 .Where(x=> !SymbolEqualityComparer.Default.Equals(x.Type, syntaxTreeType))
                 .ToList();
-            var parametersWithoutSyntaxTreeSource = string.Join(
+            var parametersSourceTextAsString = string.Join(
                 ",",
-                parameters.Select(x => $"{x.Type.ToDisplayString()} {x.Name}").ToList());
+                parameters.Select(x => $"{x.Type.ToDisplayString()} {x.Name.EscapeKeyword()}").ToList());
 
             var argumentsSource = string.Join(
                 ",",
                 ctor.Parameters
-                    .Select(x => SymbolEqualityComparer.Default.Equals(x.Type, syntaxTreeType) ? "this" : x.Name)
+                    .Select(x => SymbolEqualityComparer.Default.Equals(x.Type, syntaxTreeType) ? "this" : x.Name.EscapeKeyword())
                     .ToList());
 
             var methodName = child.Name.Substring(0, child.Name.LastIndexOf("Syntax", StringComparison.Ordinal));
             var method = $$$"""
-                    public {{{child.ToDisplayString()}}} New{{{methodName}}}({{{parametersWithoutSyntaxTreeSource}}})
+                    public {{{child.ToDisplayString()}}} New{{{methodName}}}({{{parametersSourceTextAsString}}})
                     {
                        return new {{{child.ToDisplayString()}}}({{{argumentsSource}}});
                     }
@@ -92,6 +112,180 @@ public class HelloSourceGenerator : ISourceGenerator
 
         // Add the source code to the compilation
         context.AddSource($"{typeName}.g.cs", source);
+        
+        
+        GenerateOneOf(context);
+    }
+
+   
+    public void GenerateOneOf(GeneratorExecutionContext context)
+    {
+        var classes = context.Compilation
+            .SyntaxTrees
+            .SelectMany(syntaxTree => syntaxTree.GetRoot().DescendantNodes())
+            .Where(x => x is ClassDeclarationSyntax)
+            .Cast<ClassDeclarationSyntax>();
+
+        var oneofs = classes
+            .Where(c => c.AttributeLists.SelectMany(x=> x.Attributes).Count(x => x.Name.ToString() == "OneOf" && x.ArgumentList?.Arguments.Count() is 4) is 1)
+            .ToImmutableList();
+        
+        foreach (var oneof in oneofs)
+        {
+            var attribute = oneof.AttributeLists.SelectMany(x => x.Attributes).Single(x=> x.Name.ToString() is "OneOf");
+            var propertyCount = attribute.ArgumentList?.Arguments.Count / 2;
+
+            var className = GetClassName(oneof).EscapeKeyword();
+
+            var propertiesText = "";
+            var constructors = "";
+            var oneOfType = "OneOf<";
+            var castOperators = "";
+            for (var argCount = 1; argCount - (argCount / 2) <= propertyCount; argCount += 2)
+            {
+                var propertyIndex = argCount - (argCount / 2) - 1;
+                var (propertyTypeFullName, propertyName) = GetFullTypeNameAndPropertyNamePair(oneof, context, argCount);
+
+                propertiesText += $"    public bool Is{propertyName} => _oneOf.IsT{propertyIndex};\n";
+                propertiesText += $"    public {propertyTypeFullName} {propertyName.EscapeKeyword()} => _oneOf.AsT{propertyIndex};\n";
+
+                constructors +=   $"    public {className}({propertyTypeFullName} {propertyName.LowerFirstChar().EscapeKeyword()})\n";
+                constructors +=    "    {\n";
+                constructors +=   $"        _oneOf = {propertyName.LowerFirstChar().EscapeKeyword()};\n";
+                constructors +=    "    }\n";
+
+                castOperators += $"""
+
+                        public static implicit operator {className}({propertyTypeFullName} {propertyName.LowerFirstChar().EscapeKeyword()}) => new {className}({propertyName.LowerFirstChar().EscapeKeyword()});
+                    """;
+                oneOfType += propertyTypeFullName;
+                
+                if (propertyIndex < propertyCount - 1)
+                {
+                    oneOfType += ", ";
+                }
+            }
+            oneOfType += ">";
+            
+            var operatorCastTo = $"public static implicit operator {oneOfType}({className} @this)";
+            operatorCastTo +=    "{";
+            operatorCastTo +=    "    return @this._oneOf;";
+            operatorCastTo +=    "}";
+            var operatorCastFrom = $"public static implicit operator {className}({oneOfType} other)";
+            operatorCastFrom +=     "{";
+            for (int i = 0; i < propertyCount; i++)
+            {
+                operatorCastFrom += $"if (other.IsT{i})";
+                operatorCastFrom += $"{{ return new {className}(other.AsT{i});}}";
+            }
+            operatorCastFrom +=     "throw new Exception();";
+            operatorCastFrom +=     "}";
+
+            var oneOfProperty = $"    {oneOfType} _oneOf;";
+            //Debugger.Launch();
+            var text = $$"""
+                        // <auto-generated/>
+                        using OneOf;
+                        using System;
+                        namespace {{GetNamespace(oneof)}};
+                        public partial class {{className}}
+                        {
+                        {{propertiesText}}
+                        {{oneOfProperty}}
+                        {{constructors}}
+                        {{operatorCastFrom}}
+                        {{operatorCastTo}}
+                        {{castOperators}}
+                        }
+                        """;
+
+            context.AddSource($"{className}.g.cs", text);
+        }
+       
+        
+    }
+
+   
+
+    static string GetNamespace(BaseTypeDeclarationSyntax syntax)
+    {
+        // If we don't have a namespace at all we'll return an empty string
+        // This accounts for the "default namespace" case
+        string nameSpace = string.Empty;
+
+        // Get the containing syntax node for the type declaration
+        // (could be a nested type, for example)
+        SyntaxNode? potentialNamespaceParent = syntax.Parent;
+
+        // Keep moving "out" of nested classes etc until we get to a namespace
+        // or until we run out of parents
+        while (potentialNamespaceParent != null &&
+                potentialNamespaceParent is not NamespaceDeclarationSyntax
+                && potentialNamespaceParent is not FileScopedNamespaceDeclarationSyntax)
+        {
+            potentialNamespaceParent = potentialNamespaceParent.Parent;
+        }
+
+        // Build up the final namespace by looping until we no longer have a namespace declaration
+        if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent)
+        {
+            // We have a namespace. Use that as the type
+            nameSpace = namespaceParent.Name.ToString();
+
+            // Keep moving "out" of the namespace declarations until we 
+            // run out of nested namespace declarations
+            while (true)
+            {
+                if (namespaceParent.Parent is not NamespaceDeclarationSyntax parent)
+                {
+                    break;
+                }
+
+                // Add the outer namespace as a prefix to the final namespace
+                nameSpace = $"{namespaceParent.Name}.{nameSpace}";
+                namespaceParent = parent;
+            }
+        }
+
+        // return the final namespace
+        return nameSpace;
+    }
+
+    private string GetClassName(TypeDeclarationSyntax typeDeclarationSyntax)
+    {
+        return typeDeclarationSyntax.Identifier.Text;
+    }
+
+    public (string, string) GetFullTypeNameAndPropertyNamePair(TypeDeclarationSyntax oneof, GeneratorExecutionContext context, int pairNumber)
+    {
+        var attribute = oneof.AttributeLists.SelectMany(x => x.Attributes).Single(x => x.Name.ToString() is "OneOf");
+
+        var firstTypeExpression = attribute.ArgumentList?.Arguments.Skip(pairNumber - 1).First() ?? throw new ArgumentNullException();
+        var firstNameExpression = attribute.ArgumentList?.Arguments.Skip(pairNumber).First() ?? throw new ArgumentNullException();
+
+        var firstName = "";
+        var firstTypeFullName = "";
+        if (firstTypeExpression.Expression is TypeOfExpressionSyntax typeofExpression)
+        {
+            TypeSyntax firstType = typeofExpression.Type;
+            var firstTypeSymbol = context.Compilation.GetSemanticModel(firstType.SyntaxTree).GetSymbolInfo(firstType).Symbol as INamedTypeSymbol;
+            firstTypeFullName = firstTypeSymbol.ToString();
+        }
+        else
+        {
+            throw new InvalidOperationException("first argument is not typeof expression");
+        }
+
+        if (firstNameExpression.Expression is LiteralExpressionSyntax literalExpression)
+        {
+            firstName = literalExpression.Token.ValueText;
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        return  (firstTypeFullName, firstName);
     }
 
     public void Initialize(GeneratorInitializationContext context)

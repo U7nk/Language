@@ -3,9 +3,9 @@
 using System;
 namespace Language.Analysis.CodeAnalysis.Syntax;
 public partial class SyntaxTree {
-    public Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax NewCompilationUnit(System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.ITopMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken endOfFileToken)
+    public Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax NewCompilationUnit(Language.Analysis.CodeAnalysis.Syntax.NamespacesOrGlobalStatements namespacesOrGlobalStatements,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken endOfFileToken)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax(this,members,endOfFileToken);
+       return new Language.Analysis.CodeAnalysis.Syntax.CompilationUnitSyntax(this,namespacesOrGlobalStatements,endOfFileToken);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax NewMethodDeclaration(Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> staticKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken functionKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> virtualKeyword,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> overrideKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericParametersSyntax,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax> parameters,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesisToken,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax? returnType,Language.Analysis.Option<System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.GenericConstraintsClauseSyntax>> genericConstraintsClause,Language.Analysis.CodeAnalysis.Syntax.BlockStatementSyntax body)
@@ -73,6 +73,11 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ForStatementSyntax(this,forKeyword,openParenthesis,variableDeclaration,expression,semicolon,condition,middleSemiColonToken,mutation,closeParenthesis,body);
     }
 
+    public Language.Analysis.CodeAnalysis.Syntax.GlobalStatementSyntax NewGlobalStatement(Language.Analysis.CodeAnalysis.Syntax.StatementSyntax statement)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.GlobalStatementSyntax(this,statement);
+    }
+
     public Language.Analysis.CodeAnalysis.Syntax.IfStatementSyntax NewIfStatement(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken ifKeyword,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax condition,Language.Analysis.CodeAnalysis.Syntax.StatementSyntax thenStatement,Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax? elseClause)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.IfStatementSyntax(this,ifKeyword,condition,thenStatement,elseClause);
@@ -83,9 +88,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ReturnStatementSyntax(this,returnKeyword,expression,semicolon);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.GlobalStatementDeclarationSyntax NewGlobalStatementDeclaration(Language.Analysis.CodeAnalysis.Syntax.StatementSyntax statement)
+    public Language.Analysis.CodeAnalysis.Syntax.GlobalFunctionDeclarationSyntax NewGlobalFunctionDeclaration(Language.Analysis.CodeAnalysis.Syntax.MethodDeclarationSyntax functionDeclaration)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.GlobalStatementDeclarationSyntax(this,statement);
+       return new Language.Analysis.CodeAnalysis.Syntax.GlobalFunctionDeclarationSyntax(this,functionDeclaration);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax NewParameter(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.CodeAnalysis.Syntax.TypeClauseSyntax type)
@@ -93,9 +98,14 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ParameterSyntax(this,identifier,type);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax NewNamedTypeExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericClause)
+    public Language.Analysis.CodeAnalysis.Syntax.NamespaceSyntax NewNamespace(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken namespaceKeyword,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> nameTokens,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBrace,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBrace)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax(this,identifier,genericClause);
+       return new Language.Analysis.CodeAnalysis.Syntax.NamespaceSyntax(this,namespaceKeyword,nameTokens,openBrace,members,closeBrace);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax NewNamedTypeExpression(Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.SyntaxNode>> namespaceParts,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.SyntaxToken> dot,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericClause)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax(this,namespaceParts,dot,identifier,genericClause);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax NewGenericClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken lessThanToken,Language.Analysis.CodeAnalysis.Syntax.SeparatedSyntaxList<Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax> arguments,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken greaterThanToken)
@@ -133,9 +143,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.ParenthesizedExpressionSyntax(this,openParenthesisToken,expression,closeParenthesisToken);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.NewExpressionSyntax NewNewExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken newKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken typeIdentifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesis,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesis)
+    public Language.Analysis.CodeAnalysis.Syntax.NewExpressionSyntax NewNewExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken newKeyword,Language.Analysis.CodeAnalysis.Syntax.NamedTypeExpressionSyntax namedTypeExpression,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openParenthesis,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeParenthesis)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.NewExpressionSyntax(this,newKeyword,typeIdentifier,genericClause,openParenthesis,closeParenthesis);
+       return new Language.Analysis.CodeAnalysis.Syntax.NewExpressionSyntax(this,newKeyword,namedTypeExpression,openParenthesis,closeParenthesis);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.NameExpressionSyntax NewNameExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier)
@@ -181,6 +191,11 @@ public partial class SyntaxTree {
     public Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax NewElseClause(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken elseKeyword,Language.Analysis.CodeAnalysis.Syntax.StatementSyntax elseStatement)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.ElseClauseSyntax(this,elseKeyword,elseStatement);
+    }
+
+    public Language.Analysis.CodeAnalysis.Syntax.CompilerGeneratedBlockOfGlobalStatementsSyntax NewCompilerGeneratedBlockOfGlobalStatements(System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.GlobalStatementSyntax> statements)
+    {
+       return new Language.Analysis.CodeAnalysis.Syntax.CompilerGeneratedBlockOfGlobalStatementsSyntax(this,statements);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.ClassDeclarationSyntax NewClassDeclaration(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken classKeyword,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifier,Language.Analysis.Option<Language.Analysis.CodeAnalysis.Syntax.GenericClauseSyntax> genericParametersSyntax,Language.Analysis.CodeAnalysis.Syntax.InheritanceClauseSyntax? inheritanceClause,Language.Analysis.Option<System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.GenericConstraintsClauseSyntax>> genericConstraintsClause,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken openBraceToken,System.Collections.Immutable.ImmutableArray<Language.Analysis.CodeAnalysis.Syntax.IClassMemberDeclarationSyntax> members,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken closeBraceToken)

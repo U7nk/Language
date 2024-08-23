@@ -16,10 +16,8 @@ internal static class BuiltInMethods
             isVirtual: false,
             isOverriding: false,
             name: "print",
-            parameters: ImmutableArray.Create(new ParameterSymbol(Option.None, "text", 
-                                                                  containingType: null,
-                                                                  BuiltInTypeSymbols.String)),
-            returnType: BuiltInTypeSymbols.Void,
+            parameters: ImmutableArray.Create(new ParameterSymbol(Option.None, "text", TypeSymbol.BuiltIn.String())),
+            returnType: TypeSymbol.BuiltIn.Void(),
             containingType: null,
             isGeneric: false,
             genericParameters: Option.None);
@@ -32,7 +30,7 @@ internal static class BuiltInMethods
             isOverriding: false,
             name: "input",
             parameters: ImmutableArray<ParameterSymbol>.Empty,
-            returnType: BuiltInTypeSymbols.String, 
+            returnType: TypeSymbol.BuiltIn.String(), 
             containingType: null,
             isGeneric: false,
             genericParameters: Option.None);

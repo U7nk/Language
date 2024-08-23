@@ -55,6 +55,7 @@ public enum SyntaxKind
     VirtualKeyword,
     OverrideKeyword,
     WhereKeyword,
+    NamespaceKeyword,
     
     // nodes
     CompilationUnit,
@@ -101,4 +102,6 @@ public enum SyntaxKind
     ReturnStatement,
     VariableDeclarationAssignmentStatement,
     GlobalStatementsDeclarationsBlockStatement,
+    GlobalFunctionStatement,
+    GlobalClassDeclarationSyntax
 }

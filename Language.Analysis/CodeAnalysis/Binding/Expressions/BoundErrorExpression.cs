@@ -6,13 +6,10 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal class BoundErrorExpression : BoundExpression
 {
-    /// <summary>
-    /// </summary>
-    /// <param name="syntax">should be null. needed because base class constructor</param>
-    public BoundErrorExpression(SyntaxNode? syntax) : base(syntax)
+    public BoundErrorExpression() : base(null)
     {
         
     }
-    internal override TypeSymbol Type => BuiltInTypeSymbols.Error;
+    internal override TypeSymbol Type => TypeSymbol.BuiltIn.Error();
     internal override BoundNodeKind Kind => BoundNodeKind.ErrorExpression;
 }

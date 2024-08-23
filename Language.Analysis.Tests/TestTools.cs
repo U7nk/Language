@@ -15,98 +15,9 @@ public static class TestTools
     static string GetEnumeratedTextWithDiagnostics(string sourceText,
                                                    IList<(TextSpan Span, string Code)> diagnostics)
     {
-        var charCount = 0;
-        var lines = sourceText.Split(Environment.NewLine)
-            .Select((lineText, i) =>
-            {
-                var charCountBefore = charCount;
-                charCount += lineText.Length + Environment.NewLine.Length;
-                
-                return new
-                {
-                    IsError = false,
-                    Text = lineText,
-                    CharacterRange = new Range(charCountBefore, charCount),
-                    LineIndex = i
-                };
-            })
-            .ToList();
-
-        var inserts = new List<(int Index, string Text)>();
-        foreach (var diagnostic in diagnostics)
-        {
-            var linesUsedForDiagnostic =
-                lines.Where(
-                        x => diagnostic.Span.Start.InRange(x.CharacterRange.Start.Value, x.CharacterRange.End.Value))
-                    .ToList();
-            var startLineIndex = linesUsedForDiagnostic.First().LineIndex;
-            var endLineIndex = linesUsedForDiagnostic.Last().LineIndex;
-            inserts.Add((startLineIndex + 1, $"Error: {diagnostic.Code}"));
-            var startLine = lines[startLineIndex];
-            var endLine = lines[endLineIndex];
-            if (startLine == endLine)
-            {
-                var line = lines[startLineIndex];
-                var start = diagnostic.Span.Start - startLine.CharacterRange.Start.Value;
-                var end = (diagnostic.Span.End - startLine.CharacterRange.Start.Value);
-                var newLine = line.Text.Insert(start, "[");
-                newLine = newLine.Insert(end + 1, "]");
-                lines[startLineIndex] = new
-                {
-                    IsError = false, Text = newLine,
-                    CharacterRange = new Range(line.CharacterRange.Start.Value, line.CharacterRange.End.Value + 2),
-                    LineIndex = line.LineIndex
-                };
-            }
-            else
-            {
-                var start = diagnostic.Span.Start - startLine.CharacterRange.Start.Value;
-                var end = (diagnostic.Span.End - startLine.CharacterRange.Start.Value);
-                startLine = new
-                {
-                    IsError = false,
-                    Text = startLine.Text[..start] + "[" +
-                           startLine.Text[start..],
-                    CharacterRange = 
-                        new Range(startLine.CharacterRange.Start.Value, startLine.CharacterRange.End.Value + 1),
-                    LineIndex = startLine.LineIndex
-                };
-                endLine = new
-                {
-                    IsError = false,
-                    Text = endLine.Text[..end] + "]" +
-                           endLine.Text[end..],
-                    CharacterRange =
-                        new Range(endLine.CharacterRange.Start.Value, endLine.CharacterRange.End.Value + 1),
-                    LineIndex = endLine.LineIndex
-                };
-
-                lines[startLineIndex] = startLine;
-                lines[endLineIndex] = endLine;
-            }
-        }
-        
-        var insertedLines = 0;
-        foreach (var insert in inserts)
-        {
-            lines.Insert(insert.Index + insertedLines, new {IsError = true, Text = insert.Text, CharacterRange = new Range(0, 0), LineIndex = 0});
-            insertedLines++;
-        }
-        
-        // enumerate lines
-        var lineCounter = 0;
-        var enumeratedLines = lines.Select(line =>
-        {
-            if (line.IsError)
-                return line.Text;
-            
-            var newText = $"{lineCounter}: {line.Text}";
-            lineCounter++;
-            return newText;
-        }).ToList();
-        
-        sourceText = string.Join(Environment.NewLine, enumeratedLines);
-        return sourceText;
+        var st = SourceText.From(sourceText);
+        ;
+        return GetEnumeratedTextWithDiagnostics(diagnostics.Select(x => new Diagnostic(new TextLocation(st, x.Span), x.Code, x.Code)).ToImmutableArray());
     }
 
     /// <summary>
@@ -117,46 +28,41 @@ public static class TestTools
     static string GetEnumeratedTextWithDiagnostics(ImmutableArray<Diagnostic> diagnostics)
     {
         var firstDiagnostic = diagnostics.FirstOrDefault().NullGuard();
-        var sourceText = firstDiagnostic.TextLocation.Text.ToString();
-        var lines = sourceText.Split(Environment.NewLine)
-            .Select(x=> new {IsError = false, Text = x})
+        var sourceText = firstDiagnostic.TextLocation.Text;
+        var lines = sourceText.Lines
+            .Select(x=> new {IsError = false, Text = x.ToString()})
             .ToList();
 
-        var inserts = new List<(int Index, string Text)>();
+        var lineInserts = new Dictionary<int, List<(int index, bool isOpen)>>();
+        for (var index = 0; index < lines.Count; index++) 
+            lineInserts.Add(index, new List<(int index, bool isOpen)>());
+
+        var inserts = new List<(int Index, string Text, Diagnostic diagnostic)>();
+        
         foreach (var diagnostic in diagnostics)
         {
-            inserts.Add((diagnostic.TextLocation.StartLine + 1, $"Error: {diagnostic.Message}"));
-            var startLine  = lines[diagnostic.TextLocation.StartLine];
-            var endLine = lines[diagnostic.TextLocation.EndLine];
-            if (startLine == endLine)
-            {
-                var line = lines[diagnostic.TextLocation.StartLine];
-                var start = diagnostic.TextLocation.StartCharacter;
-                var end = diagnostic.TextLocation.EndCharacter;
-                var newLine = line.Text.Insert(start, "[");
-                newLine = newLine.Insert(end + 1, "]");
-                lines[diagnostic.TextLocation.StartLine] = new {IsError = false, Text = newLine};
-            }
-            else
-            {
-                startLine = new
-                {
-                    IsError = false,
-                    Text = startLine.Text[..diagnostic.TextLocation.StartCharacter] + "[" +
-                           startLine.Text[diagnostic.TextLocation.StartCharacter..]
-                };
-                endLine = new 
-                {
-                    IsError = false,
-                    Text = endLine.Text[..diagnostic.TextLocation.EndCharacter] + "]" + endLine.Text[diagnostic.TextLocation.EndCharacter..]
-                };
-                lines[diagnostic.TextLocation.StartLine] = startLine;
-                lines[diagnostic.TextLocation.EndLine] = endLine;
-            }
+            inserts.Add((diagnostic.TextLocation.EndLine + 1, $"Error: {diagnostic.Message}", diagnostic));
+            lineInserts[diagnostic.TextLocation.StartLine].Add((diagnostic.TextLocation.StartCharacter, true));
+            lineInserts[diagnostic.TextLocation.EndLine].Add((diagnostic.TextLocation.EndCharacter, false));
         }
 
+        foreach (var lineInsert in lineInserts)
+        {
+            var line = lines[lineInsert.Key];
+            var list = lineInsert.Value.OrderBy(x => x.index).ToList();
+            var newLine = line.Text;
+            var shift = 0;
+            foreach (var insert in list)
+            {
+                newLine = newLine.Insert(insert.index + shift, insert.isOpen ? "[" : "]");
+                shift++;
+            }
+
+            lines[lineInsert.Key] = new { IsError = false, Text = newLine };
+        }
+        
         var insertedLines = 0;
-        foreach (var insert in inserts)
+        foreach (var insert in inserts.OrderBy(x=> x.Index).ThenBy(x=> x.diagnostic.TextLocation.EndCharacter))
         {
             lines.Insert(insert.Index + insertedLines, new {IsError = true, Text = insert.Text});
             insertedLines++;
@@ -173,8 +79,7 @@ public static class TestTools
             return newText;
         }).ToList();
         
-        sourceText = string.Join(Environment.NewLine, enumeratedLines);
-        return sourceText;
+        return string.Join("\n", enumeratedLines);
     }
     public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> AssertNoDiagnostics(this Result<ObjectInstance?, ImmutableArray<Diagnostic>> result, ITestOutputHelper output)
     {
@@ -190,6 +95,9 @@ public static class TestTools
     public static Result<ObjectInstance?, ImmutableArray<Diagnostic>> Evaluate(string text)
     {
         var syntaxTree = SyntaxTree.Parse(text);
+        if (syntaxTree.Diagnostics.Any())
+            return syntaxTree.Diagnostics.ToImmutableArray();
+        
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
@@ -236,15 +144,13 @@ public static class TestTools
         }
     }
 
-    public static void AssertDiagnostics(string text, bool isScript, string[] diagnosticsCodes, ITestOutputHelper output)
+    public static void AssertDiagnostics(string text, string[] diagnosticsCodes, ITestOutputHelper output)
     {
         var annotatedText = AnnotatedText.Parse(text);
         diagnosticsCodes.Length.Should().Be(annotatedText.Spans.Length, "Must mark as many spans as there expected diagnostics");
         
         var syntaxTree = SyntaxTree.Parse(annotatedText.RawText);
-        var compilation = isScript 
-            ? Compilation.CreateScript(null, syntaxTree)
-            : Compilation.Create(syntaxTree);
+        var compilation = Compilation.Create(syntaxTree);
         
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics;
@@ -284,44 +190,20 @@ public static class TestTools
             annotatedText.Spans.Length,
             "Must mark as many spans as there expected diagnostics");
 
-        output.WriteLine("Spans:");
-        output.WriteLine(AnnotatedText.Annotate(annotatedText.RawText, diagnostics.Select(x=> x.TextLocation.Span)));
-        foreach (var i in 0..diagnosticsCodes.Length)
+        var gs = diagnostics.ToList();
+        foreach (var expectedDiagnostic in expectedDiagnostics)
         {
-            var expectedCode = diagnosticsCodes[i];
-            var expectedSpan = annotatedText.Spans[i];
-            
-            var matchedDiagnostic = diagnostics.FirstOrDefault(x=> x.TextLocation.Span == expectedSpan && x.Code == expectedCode);
-            if (matchedDiagnostic != null)
-                continue;
-
-
-            var diagnosticsWithOnlySpanMatch = diagnostics.Where(x => x.TextLocation.Span == expectedSpan).ToArray();
-            if (diagnosticsWithOnlySpanMatch.Length != 0)
+            var sx = gs.FirstOrDefault(x => x.TextLocation == expectedDiagnostic.TextLocation && x.Code == expectedDiagnostic.Code);
+            if (sx is null)
             {
-                // diagnostics dont match code
-                
-                Assert.Fail(
-                    $"There diagnostics with same span Expected:{Environment.NewLine}" +
-                    $"{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}{Environment.NewLine}" +
-                    $"But got:\n" +
-                    $"{GetEnumeratedTextWithDiagnostics(ImmutableArray.Create(diagnosticsWithOnlySpanMatch))}");
+                var actualText = GetEnumeratedTextWithDiagnostics(diagnostics);
+                Assert.Fail($"Expected {diagnosticsCodes.Length} diagnostics, but got {diagnostics.Length}.\n" +
+                            $"Expected: \n{GetEnumeratedTextWithDiagnostics(expectedDiagnostics.ToImmutableArray())}\n\n" +
+                            $"{new string('=', 69)}" + $"{Environment.NewLine}{Environment.NewLine}" +
+                            $"Actual: {Environment.NewLine}" +
+                            $"{actualText}");
             }
-
-            var diagnosticsWithOnlyCodeMatch = diagnostics.Where(x => x.Code == expectedCode).ToArray();
-            if (diagnosticsWithOnlyCodeMatch.Length != 0)
-            {
-                // diagnostics dont match span
-                Assert.Fail(
-                    $"No matched diagnostics. There is diagnostics with same codes.{Environment.NewLine}Expected: {Environment.NewLine}" +
-                    $"{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}{Environment.NewLine}" +
-                    $"But got:{Environment.NewLine}" +
-                    $"{GetEnumeratedTextWithDiagnostics(ImmutableArray.Create(diagnosticsWithOnlyCodeMatch))}\n");
-            }
-
-            Assert.Fail($"Expected diagnostic with code {expectedCode} at {expectedSpan}, but got none.\n" +
-                        $"Expected that we have this diagnostic: \n{GetEnumeratedTextWithDiagnostics(annotatedText.RawText, new []{ (expectedSpan, expectedCode)})}\n" +
-                        $"Actual: \n{GetEnumeratedTextWithDiagnostics(diagnostics)}");
+            gs.Remove(sx);
         }
     }
 
@@ -338,37 +220,23 @@ public static class TestTools
 
     public static string StatementsInContext(string content, ContextType context)
     {
-        if (context is ContextType.TopLevelStatement)
-        {
-            return content;
-        }
-
         if (context is ContextType.Method)
         {
 
             var function = $$"""
-                class Program
+                namespace MyProgram
                 {
-                    InstanceField : int;
-                    static StaticField : int;
-                    
-                    static function main()
+                    class Program
                     {
-                        {{ content.ReplaceLineEndings("\n        ") }} 
+                        InstanceField : int;
+                        static StaticField : int;
+                        
+                        static function main()
+                        {
+                            {{ content.ReplaceLineEndings("\n        ") }} 
+                        }
                     }
                 }
-                """ ;
-            return function;
-        }
-
-        if (context is ContextType.TopLevelMethod)
-        {
-            var function = $$"""
-                function topLevelMethod()
-                {
-                    {{ content.ReplaceLineEndings("\n    ") }} 
-                }
-                topLevelMethod();
                 """ ;
             return function;
         }
@@ -378,26 +246,6 @@ public static class TestTools
 
     public enum ContextType
     {
-        /// <summary>
-        /// <example>
-        /// <code>
-        /// function topLevelMethod()
-        /// {
-        ///     <b>*input statements*</b>
-        /// }
-        /// </code>
-        /// </example>
-        /// </summary>
-        TopLevelMethod,
-        
-        /// <summary>
-        /// <example>
-        /// <code>
-        /// <b>*input statements*</b>
-        /// </code>
-        /// </example>
-        /// </summary>
-        TopLevelStatement,
         /// <summary>
         /// <example>
         /// <code>
@@ -445,19 +293,19 @@ public static class TestTools
         {
             if (symbolType == typeof(TypeSymbol))
             {
-                result.Add(BuiltInTypeSymbols.Int);
+                result.Add(TypeSymbol.BuiltIn.Int());
             }
             else if (symbolType == typeof(ParameterSymbol))
             {
-                result.Add(new ParameterSymbol(Option.None, "parameter", null, BuiltInTypeSymbols.Int));
+                result.Add(new ParameterSymbol(Option.None, "parameter", TypeSymbol.BuiltIn.Int()));
             }
             else if (symbolType == typeof(VariableSymbol))
             {
-                result.Add(new VariableSymbol(Option.None, "variable", null, BuiltInTypeSymbols.Int, false ));
+                result.Add(new VariableSymbol(Option.None, "variable", TypeSymbol.BuiltIn.Int(), false ));
             }
             else if (symbolType == typeof(FieldSymbol))
             {
-                result.Add(new FieldSymbol(Option.None, false, "field",  null!, BuiltInTypeSymbols.Int));
+                result.Add(new FieldSymbol(Option.None, false, "field",  null!, TypeSymbol.BuiltIn.Int()));
             }
         }
 
