@@ -20,7 +20,7 @@ public class GenericClauseSyntax : SyntaxNode
     public override SyntaxKind Kind => SyntaxKind.GenericArgumentsList;
 }
 
-public class MethodDeclarationSyntax : SyntaxNode, ITopMemberDeclarationSyntax, IClassMemberDeclarationSyntax
+public class MethodDeclarationSyntax : SyntaxNode, IClassMemberDeclarationSyntax
 {
     public MethodDeclarationSyntax(SyntaxTree syntaxTree,
                                    Option<SyntaxToken> staticKeyword, 

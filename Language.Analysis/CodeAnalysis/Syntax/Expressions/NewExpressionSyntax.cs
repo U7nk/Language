@@ -4,21 +4,18 @@ public class NewExpressionSyntax : ExpressionSyntax
 {
     public NewExpressionSyntax(SyntaxTree syntaxTree,
         SyntaxToken newKeyword, 
-        SyntaxToken typeIdentifier,
-        Option<GenericClauseSyntax> genericClause,
+        NamedTypeExpressionSyntax namedTypeExpression,
         SyntaxToken openParenthesis,
         SyntaxToken closeParenthesis) : base(syntaxTree)
     {
         NewKeyword = newKeyword;
-        TypeIdentifier = typeIdentifier;
+        NamedTypeExpression = namedTypeExpression;
         OpenParenthesis = openParenthesis;
         CloseParenthesis = closeParenthesis;
-        GenericClause = genericClause;
     }
 
     public SyntaxToken NewKeyword { get; }
-    public SyntaxToken TypeIdentifier { get; }
-    public Option<GenericClauseSyntax> GenericClause { get; }
+    public NamedTypeExpressionSyntax NamedTypeExpression { get; }
     public SyntaxToken OpenParenthesis { get; }
     public SyntaxToken CloseParenthesis { get; }
 

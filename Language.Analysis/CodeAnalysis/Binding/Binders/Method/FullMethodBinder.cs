@@ -6,42 +6,33 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders.Method;
 sealed class FullMethodBinder
 {
     readonly TypeSymbol _currentType;
+    private readonly BoundScope _globalScope;
     readonly DeclarationsBag _allDeclarations;
-    
-    bool _isScript;
     public MethodSymbol MethodSymbol { get; private set; }
     public Option<bool> SuccessfullyDeclaredInType => MethodDeclarationBinder.SuccessfullyDeclaredInType; 
     public BoundScope MethodScope { get; }
 
-    public FullMethodBinder(BoundScope methodScope, TypeSymbol currentType, DeclarationsBag allDeclarations, bool isScript, bool isTopMethod)
+    public FullMethodBinder(BoundScope methodScope, TypeSymbol currentType, DeclarationsBag allDeclarations, BoundScope globalScope)
     {
         _currentType = currentType;
         _allDeclarations = allDeclarations;
-        _isScript = isScript;
-        MethodDeclarationBinder = new MethodDeclarationBinder(methodScope, currentType, isTopMethod, allDeclarations);
+        _globalScope = globalScope;
+        MethodDeclarationBinder = new MethodDeclarationBinder(methodScope, currentType, allDeclarations);
         MethodScope = methodScope;
     }
 
     /// <summary>
     /// used for generated symbols
     /// </summary>
-    /// <param name="methodScope"></param>
-    /// <param name="currentType"></param>
-    /// <param name="lookup"></param>
-    /// <param name="isScript"></param>
-    /// <param name="methodSymbol"></param>
-    /// <param name="isTopMethod"></param>
-    /// <param name="allDeclarations"></param>
-    public FullMethodBinder(BoundScope methodScope, TypeSymbol currentType, bool isScript,
-                            MethodSymbol methodSymbol, bool isTopMethod, DeclarationsBag allDeclarations)
+    public FullMethodBinder(BoundScope methodScope, BoundScope globalScope, TypeSymbol currentType, MethodSymbol methodSymbol, DeclarationsBag allDeclarations)
     {
+        _globalScope = globalScope;
         _allDeclarations = allDeclarations;
         _currentType = currentType;
-        _isScript = isScript;
-        MethodDeclarationBinder = new MethodDeclarationBinder(methodScope, successfullyDeclaredInType:true, isTopMethod, currentType, allDeclarations);
+        MethodDeclarationBinder = new MethodDeclarationBinder(methodScope, successfullyDeclaredInType:true, currentType, allDeclarations);
         MethodScope = methodScope;
         MethodSymbol = methodSymbol;
-        MethodBinder = new MethodBinder(methodScope, isScript, _currentType, methodSymbol);
+        MethodBinder = new MethodBinder(methodScope, globalScope, _currentType, methodSymbol);
     }
     
     MethodBinder MethodBinder { get; set; }
@@ -50,7 +41,7 @@ sealed class FullMethodBinder
     public void BindMethodDeclaration(MethodDeclarationSyntax methodDeclarationSyntax, DiagnosticBag diagnostics)
     {
         MethodSymbol = MethodDeclarationBinder.BindMethodDeclaration(methodDeclarationSyntax, diagnostics);
-        MethodBinder = new MethodBinder(MethodScope, _isScript, _currentType, MethodSymbol);
+        MethodBinder = new MethodBinder(MethodScope, _globalScope, _currentType, MethodSymbol);
     }
 
     public BoundStatement BindMethodBody(DiagnosticBag diagnostics)

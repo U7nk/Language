@@ -19,76 +19,76 @@ public class EvaluatorTests
     }
 
     [Theory]
-    [InlineData("1;", 1)]
-    [InlineData("(9);", 9)]
-    [InlineData("5 * 2;", 10)]
-    [InlineData("2 + 5 * 2;", 12)]
-    [InlineData("(2 + 5) * 2;", 14)]
-    [InlineData("+1;", 1)]
-    [InlineData("-1;", -1)]
-    [InlineData("~1;", -2)]
-    [InlineData("~6;", -7)]
-    [InlineData("~-7;", 6)]
-    [InlineData("-~7;", 8)]
-    [InlineData("-1 + 2;", 1)]
-    [InlineData("-(1 + 2);", -3)]
-    [InlineData("1 - 2;", -1)]
-    [InlineData("9 / 3;", 3)]
-    [InlineData("true;", true)]
-    [InlineData("false;", false)]
-    [InlineData("!false;", true)]
-    [InlineData("!true;", false)]
-    [InlineData("!!true;", true)]
-    [InlineData("!!false;", false)]
-    [InlineData("false || true;", true)]
-    [InlineData("false && true;", false)]
-    [InlineData("false == true;", false)]
-    [InlineData("true == false;", false)]
-    [InlineData("true == true;", true)]
-    [InlineData("true != true;", false)]
-    [InlineData("true != false;", true)]
-    [InlineData("false != true;", true)]
-    [InlineData("false | false;", false)]
-    [InlineData("false | true;", true)]
-    [InlineData("true | true;", true)]
-    [InlineData("true | false;", true)]
-    [InlineData("false & false;", false)]
-    [InlineData("false & true;", false)]
-    [InlineData("true & true;", true)]
-    [InlineData("true & false;", false)]
-    [InlineData("false ^ false;", false)]
-    [InlineData("false ^ true;", true)]
-    [InlineData("true ^ true;", false)]
-    [InlineData("12 == 1;", false)]
-    [InlineData("12 == 12;", true)]
-    [InlineData("12 != 12;", false)]
-    [InlineData("12 != 1;", true)]
-    [InlineData("12 > 1;", true)]
-    [InlineData("12 < 1;", false)]
-    [InlineData("4 >=4;", true)]
-    [InlineData("!(4 >= 5);", true)]
-    [InlineData("!(4 > 5);", true)]
-    [InlineData("!(4 < 5);", false)]
-    [InlineData("!(4 <= 5);", false)]
-    [InlineData("4 <= 4;", true)]
-    [InlineData("4 < 4;", false)]
-    [InlineData("3 < 4;", true)]
-    [InlineData("3 > 4;", false)]
-    [InlineData("5 > 4;", true)]
-    [InlineData("1 | 2;", 3)]
-    [InlineData("1 & 2;", 0)]
-    [InlineData("1 & 3;", 1)]
-    [InlineData("1 ^ 2;", 3)]
-    [InlineData("1 ^ 3;", 2)]
-    [InlineData("\"te\"\"st\";", "te\"st")]
-    [InlineData("\"\" == \"\";", true)]
-    [InlineData("\" \" != \"\";", true)]
-    [InlineData("let a = 10; a * a;", 100)]
-    [InlineData("var a = 10; a * a;", 100)]
+    [InlineData("var p = 1;", 1)]
+    [InlineData("var p = (9);", 9)]
+    [InlineData("var p = 5 * 2;", 10)]
+    [InlineData("var p = 2 + 5 * 2;", 12)]
+    [InlineData("var p = (2 + 5) * 2;", 14)]
+    [InlineData("var p = +1;", 1)]
+    [InlineData("var p = -1;", -1)]
+    [InlineData("var p = ~1;", -2)]
+    [InlineData("var p = ~6;", -7)]
+    [InlineData("var p = ~-7;", 6)]
+    [InlineData("var p = -~7;", 8)]
+    [InlineData("var p = -1 + 2;", 1)]
+    [InlineData("var p = -(1 + 2);", -3)]
+    [InlineData("var p = 1 - 2;", -1)]
+    [InlineData("var p = 9 / 3;", 3)]
+    [InlineData("var p = true;", true)]
+    [InlineData("var p = false;", false)]
+    [InlineData("var p = !false;", true)]
+    [InlineData("var p = !true;", false)]
+    [InlineData("var p = !!true;", true)]
+    [InlineData("var p = !!false;", false)]
+    [InlineData("var p = false || true;", true)]
+    [InlineData("var p = false && true;", false)]
+    [InlineData("var p = false == true;", false)]
+    [InlineData("var p = true == false;", false)]
+    [InlineData("var p = true == true;", true)]
+    [InlineData("var p = true != true;", false)]
+    [InlineData("var p = true != false;", true)]
+    [InlineData("var p = false != true;", true)]
+    [InlineData("var p = false | false;", false)]
+    [InlineData("var p = false | true;", true)]
+    [InlineData("var p = true | true;", true)]
+    [InlineData("var p = true | false;", true)]
+    [InlineData("var p = false & false;", false)]
+    [InlineData("var p = false & true;", false)]
+    [InlineData("var p = true & true;", true)]
+    [InlineData("var p = true & false;", false)]
+    [InlineData("var p = false ^ false;", false)]
+    [InlineData("var p = false ^ true;", true)]
+    [InlineData("var p = true ^ true;", false)]
+    [InlineData("var p = 12 == 1;", false)]
+    [InlineData("var p = 12 == 12;", true)]
+    [InlineData("var p = 12 != 12;", false)]
+    [InlineData("var p = 12 != 1;", true)]
+    [InlineData("var p = 12 > 1;", true)]
+    [InlineData("var p = 12 < 1;", false)]
+    [InlineData("var p = 4 >=4;", true)]
+    [InlineData("var p = !(4 >= 5);", true)]
+    [InlineData("var p = !(4 > 5);", true)]
+    [InlineData("var p = !(4 < 5);", false)]
+    [InlineData("var p = !(4 <= 5);", false)]
+    [InlineData("var p = 4 <= 4;", true)]
+    [InlineData("var p = 4 < 4;", false)]
+    [InlineData("var p = 3 < 4;", true)]
+    [InlineData("var p = 3 > 4;", false)]
+    [InlineData("var p = 5 > 4;", true)]
+    [InlineData("var p = 1 | 2;", 3)]
+    [InlineData("var p = 1 & 2;", 0)]
+    [InlineData("var p = 1 & 3;", 1)]
+    [InlineData("var p = 1 ^ 2;", 3)]
+    [InlineData("var p = 1 ^ 3;", 2)]
+    [InlineData("var p = \"te\"\"st\";", "te\"st")]
+    [InlineData("var p = \"\" == \"\";", true)]
+    [InlineData("var p = \" \" != \"\";", true)]
+    [InlineData("let a = 10; var p = a * a;", 100)]
+    [InlineData("var a = 10; var p = a * a;", 100)]
     [InlineData("var a = 10; a = 5;", 5)]
-    [InlineData("var a = 10; if true == true a = 2; a; ", 2)]
-    [InlineData("var a = 0; while a < 5 a = a + 1; a;", 5)]
-    [InlineData("let hello = \"hello\"; hello;", "hello")]
+    [InlineData("var a = 10; if true == true a = 2; var p = a; ", 2)]
+    [InlineData("var a = 0; while a < 5 a = a + 1; var p = a;", 5)]
+    [InlineData("let hello = \"hello\"; var p = hello;", "hello")]
     [InlineData(
         $$"""
         var x = 10; 
@@ -96,7 +96,7 @@ public class EvaluatorTests
         {
             x = 5;
         }
-        x;
+        var p = x;
       """, 5)]
     [InlineData(
         $$"""
@@ -105,7 +105,7 @@ public class EvaluatorTests
         {
             x = 5;
         }
-        x;
+        var p = x;
       """, 10)]
     [InlineData(
         $$"""
@@ -116,7 +116,7 @@ public class EvaluatorTests
            a = a + 1;
            b = b + 1; 
          }
-         a + b;
+         var p = a + b;
       """, 11)]
     [InlineData(
         $$"""
@@ -126,7 +126,7 @@ public class EvaluatorTests
          {
             b = i;
          } 
-         b;
+         var p = b;
       """, 3)]
     [InlineData(
         $$"""
@@ -135,7 +135,7 @@ public class EvaluatorTests
          {
             b = i;
          } 
-         b;
+         var p = b;
       """, 3)]
     [InlineData(
         $$"""
@@ -144,12 +144,12 @@ public class EvaluatorTests
                 result = 1;
             else 
                 result = 2;
-            result;
+            var p = result;
         """, 2)]
     [InlineData(
         $$"""
         var result = 0;
-        result;
+        var p = result;
         """, 0)]
     [InlineData(
         $$"""
@@ -158,24 +158,24 @@ public class EvaluatorTests
         {
             result = result + i;
         }
-        result;
+        var p = result;
         """, 4950)]
-    [InlineData("let hi = \"hellow\" + \" world\" + \" \"; hi;", "hellow world ")]
-    [InlineData("let boo : string = \"hellow world \"; boo;", "hellow world ")]
-    [InlineData(
-        $$"""
-        function count() : int
-        {
-            var result = 0;
-            for (var i = 0; i < 100; i = i + 1)
-            {
-                var f = "hello";
-                result = result + i;
-            }
-            return result;
-        }
-        count();
-        """, 4950)]
+    [InlineData("let hi = \"hellow\" + \" world\" + \" \"; var p = hi;", "hellow world ")]
+    [InlineData("let boo : string = \"hellow world \"; var p = boo;", "hellow world ")]
+    //[InlineData(
+    //    $$"""
+    //    function count() : int
+    //    {
+    //        var result = 0;
+    //        for (var i = 0; i < 100; i = i + 1)
+    //        {
+    //            var f = "hello";
+    //            result = result + i;
+    //        }
+    //        return result;
+    //    }
+    //    count();
+    //    """, 4950)]
     [InlineData(
         $$"""
         var i = 0; 
@@ -185,7 +185,7 @@ public class EvaluatorTests
             if i == 5
                 continue;
         }
-        i;
+        var p = i;
         """, 5)]
     [InlineData(
         $$"""
@@ -194,112 +194,119 @@ public class EvaluatorTests
         { 
             i = i + 1; 
         } 
-        i;
+        var p = i;
         """, 0)]
-    [InlineData(
-        $$"""
-        ten();
-        function ten() : int
-        {
-            return 10;
-        }
-        """, 10)]
+    //[InlineData(
+    //    $$"""
+    //    ten();
+    //    function ten() : int
+    //    {
+    //        return 10;
+    //    }
+    //    """, 10)]
     public void Evaluator_Evaluates(string expression, object expectedValue)
     {
-        AssertValue(expression, expectedValue, isScript: true);
+        var fullCode =  $$"""
+                        namespace Foo
+                        {
+                            class Program
+                            {
+                                static function main()
+                                {
+                                    {{expression}}
+                                }
+                            }
+                        }
+                        """;
+        AssertValue(fullCode, expectedValue);
     }
 
     [Fact]
     public void EvaluatorEvaluatesWithProgramDeclaration()
     {
-        AssertValue($$"""
-            class Program
+        AssertValue("""
+            namespace Project
             {
-                static function main()
+                class Program
                 {
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod()
-                {
-                    this.ten();
-                }
-                
-                function ten() : int
-                {
-                    return 10;
+                    static function main()
+                    {
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod()
+                    {
+                        this.ten();
+                    }
+                    
+                    function ten() : int
+                    {
+                        return 10;
+                    }
                 }
             }
             """,
-                    expectedValue: 10, isScript: false);
-    }
-
-    [Fact]
-    public void EvaluatorTopLevelStatementMethodsCanBeCalledWithoutMembers()
-    {
-        AssertValue($$"""
-            function ten() : int
-            {
-                return 10;
-            }
-            ten();
-            """,
-                    expectedValue: 10,
-                    isScript: false);
+                    expectedValue: 10);
     }
 
     [Fact]
     public void EvaluatorEvaluatesWithFieldsDeclaration()
     {
-        AssertValue($$"""
-            class Program
+        AssertValue("""
+            namespace Project
             {
-                Fieldo : int;
-                
-                static function main() 
+                class Program
                 {
-                     var p = new Program();
-                     p.TestMethod();
-                }
-                
-                function TestMethod() {
-                    this.AssignTenToFieldo(); 
-                    var newApp = new Program();
-                    newApp.AssignTenToFieldo();
-                }
-                
-                function AssignTenToFieldo()
-                {
-                    this.Fieldo = 10;
+                    Fieldo : int;
+                    
+                    static function main() 
+                    {
+                         var p = new Program();
+                         p.TestMethod();
+                    }
+                    
+                    function TestMethod() {
+                        this.AssignTenToFieldo(); 
+                        var newApp = new Program();
+                        newApp.AssignTenToFieldo();
+                    }
+                    
+                    function AssignTenToFieldo()
+                    {
+                        this.Fieldo = 10;
+                    }
                 }
             }
             """,
-                    expectedValue: 10, isScript: false);
+                    expectedValue: 10);
     }
 
     [Fact]
     public void EvaluatorEvaluatesReturnThis()
     {
-        AssertValue($$"""
-                    class Program
+        AssertValue("""
+                    namespace Project
                     {
-                        Fieldo : int;
-                        
-                        static function main() 
+                        class Program
                         {
-                            var p = new Program();
-                            p.TestMethod();
-                        }
-                        
-                        function TestMethod() {
-                            this.GetProgram();
-                        }
-                        
-                        function GetProgram() : Program
-                        {
-                            this.Fieldo = 10;
-                            return this;
+                            Fieldo : int;
+                            
+                            static function main() 
+                            {
+                                var p = new Program();
+                                p.TestMethod();
+                            }
+                            
+                            function TestMethod() {
+                                this.GetProgram();
+                            }
+                            
+                            function GetProgram() : Program
+                            {
+                                this.Fieldo = 10;
+                                return this;
+                            }
                         }
                     }
                     """, 
@@ -309,130 +316,136 @@ public class EvaluatorTests
                         var field = Assert.Single(resultObject.Fields);
                         field.Key.Should().Be("Fieldo");
                         field.Value.NullGuard().LiteralValue.Should().Be(10);
-                    }, isScript: false);
+                    });
     }
 
     [Fact]
     public void EvaluatorEvaluatesMethodsAccessChain()
     {
-        AssertValue($$"""
-            class Program
+        AssertValue("""
+            namespace Project
             {
-                Fieldo : int;
-                
-                static function main() 
+                class Program
                 {
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod(){
-                    this.GetProgram().GetProgram().GetProgram().GetProgram().GetProgram().GetFieldo();
-                }
-                
-                function GetProgram() : Program
-                {
-                    this.Fieldo = 10;
-                    return this;
-                }
-                
-                function GetFieldo() : int
-                {
-                    return this.Fieldo;
+                    Fieldo : int;
+                    
+                    static function main() 
+                    {
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod(){
+                        this.GetProgram().GetProgram().GetProgram().GetProgram().GetProgram().GetFieldo();
+                    }
+                    
+                    function GetProgram() : Program
+                    {
+                        this.Fieldo = 10;
+                        return this;
+                    }
+                    
+                    function GetFieldo() : int
+                    {
+                        return this.Fieldo;
+                    }
                 }
             }
             """,
                     result =>
                     {
                         Assert.NotNull(result);
-                        result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                        result.Type.Should().Be(TypeSymbol.BuiltIn.Int());
                         result.LiteralValue.Should().Be(10);
-                    },
-                    isScript: false);
+                    });
     }
 
     [Fact]
     public void EvaluatorEvaluatesMethodsFieldsAccessChain()
     {
-        AssertValue($$"""
-            class Program
+        AssertValue("""
+            namespace Project
             {
-                Fieldo : int;
-                ProgramField : Program;
-                
-                static function main() 
+                class Program
                 {
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod(){
-                    this.ProgramField = this;
-                    this.Fieldo = 10;
-                    this.GetProgram()
-                            .ProgramField
-                            .GetProgram() 
-                            .ProgramField
-                            .ProgramField
-                            .GetProgram()
-                            .ProgramField
-                            .GetFieldo();
-                }
-                
-                function GetProgram() : Program
-                { 
-                    return this;
-                }
-                
-                function GetFieldo() : int
-                {
-                    return this.Fieldo;
+                    Fieldo : int;
+                    ProgramField : Program;
+                    
+                    static function main() 
+                    {
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod(){
+                        this.ProgramField = this;
+                        this.Fieldo = 10;
+                        this.GetProgram()
+                                .ProgramField
+                                .GetProgram() 
+                                .ProgramField
+                                .ProgramField
+                                .GetProgram()
+                                .ProgramField
+                                .GetFieldo();
+                    }
+                    
+                    function GetProgram() : Program
+                    { 
+                        return this;
+                    }
+                    
+                    function GetFieldo() : int
+                    {
+                        return this.Fieldo;
+                    }
                 }
             }
             """,
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NullGuard().Type.Should().Be(BuiltInTypeSymbols.Int);
+                        result.NullGuard().Type.Should().Be(TypeSymbol.BuiltIn.Int());
                         result.LiteralValue.Should().Be(10);
-                    },
-                    isScript: false);
+                    });
     }
 
     [Fact]
     public void EvaluatorEvaluatesFieldsAssignmentAccessChain()
     {
-        AssertValue($$"""
-            class Program
+        AssertValue("""
+            namespace Project
             {
-                Fieldo : Program;
-                IntField : int;
-                
-                static function main() 
-                { 
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod() {
-                    this.Fieldo = this;
-                    this.Fieldo.Fieldo.Fieldo.IntField = 15;
-                    var a = this.Fieldo.Fieldo.Fieldo.IntField;
-                }
-                
-                function GetIntField() : int
+                class Program
                 {
-                    return this.IntField;
+                    Fieldo : Program;
+                    IntField : int;
+                    
+                    static function main() 
+                    { 
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod() {
+                        this.Fieldo = this;
+                        this.Fieldo.Fieldo.Fieldo.IntField = 15;
+                        var a = this.Fieldo.Fieldo.Fieldo.IntField;
+                    }
+                    
+                    function GetIntField() : int
+                    {
+                        return this.IntField;
+                    }
                 }
             }
             """,
                     result =>
                     {
                         result.Should().NotBeNull();
-                        result.NullGuard().Type.Should().Be(BuiltInTypeSymbols.Int);
+                        result.NullGuard().Type.Should().Be(TypeSymbol.BuiltIn.Int());
                         result.NullGuard().LiteralValue.Should().Be(15);
-                    },
-                    isScript: false);
+                    });
     }
 
     [Theory]
@@ -446,8 +459,7 @@ public class EvaluatorTests
             """;
         AssertValue(
             TestTools.StatementsInContext(source, contextType),
-            _ => { },
-            isScript: false);
+            _ => { });
     }
 
     
@@ -456,40 +468,45 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
-            {                
-                static function main()
-                {  
-                    var variable : int;
-                    variable = {{val}};
+            namespace Project
+            {
+                class Program
+                {                
+                    static function main()
+                    {  
+                        var variable : int;
+                        variable = {{val}};
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+            result => { result.NullGuard().LiteralValue.Should().Be(val); });
     }
     
     [Fact]
     public void EvaluatorEvaluatesMethodCallInsideClassWithoutThis()
     {
-        var source = $$"""
-            class Program
+        var source = """
+            namespace Project
             {
-                static function main() 
+                class Program
                 {
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod() {
-                    ten();
-                }
-                
-                function ten() : int
-                {
-                    return 10;
+                    static function main() 
+                    {
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod() {
+                        ten();
+                    }
+                    
+                    function ten() : int
+                    {
+                        return 10;
+                    }
                 }
             }
             """;
@@ -498,33 +515,35 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.Int());
                 result.LiteralValue.Should().Be(10);
-            },
-            isScript: false);
+            });
     }
 
     [Fact]
     public void EvaluatorEvaluatesFieldAccessInsideClassWithoutThis()
     {
-        var source = $$"""
-            class Program
+        var source = """
+            namespace Project
             {
-                Field : int;
-                static function main()
+                class Program
                 {
-                    var p = new Program();
-                    p.TestMethod();
-                }
-                
-                function TestMethod() {
-                    Field = 10; 
-                    this.ten(Field);
-                }
-                
-                function ten(input : int) : int
-                {
-                    return 10;
+                    Field : int;
+                    static function main()
+                    {
+                        var p = new Program();
+                        p.TestMethod();
+                    }
+                    
+                    function TestMethod() {
+                        Field = 10; 
+                        this.ten(Field);
+                    }
+                    
+                    function ten(input : int) : int
+                    {
+                        return 10;
+                    }
                 }
             }
             """;
@@ -533,37 +552,38 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.Int());
                 result.LiteralValue.Should().Be(10);
-            },
-            isScript: false);
+            });
     }
 
     [Fact]
     public void EvaluatorEvaluatesStaticMethodCall()
     {
         var source = """
-            class Program
+            namespace Project
             {
-                Field : int;
-                
-                static function main()
-                { 
-                    var program = new Program();
-                    program.Field = 10;
-                    Program.ten(program.Field);
-                }
-                
-                static function ten(input : int) : int
+                class Program
                 {
-                    return 10;
+                    Field : int;
+                    
+                    static function main()
+                    { 
+                        var program = new Program();
+                        program.Field = 10;
+                        Program.ten(program.Field);
+                    }
+                    
+                    static function ten(input : int) : int
+                    {
+                        return 10;
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n" + result); },
-            isScript: false);
+            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n" + result); });
     }
 
     [Fact]
@@ -571,20 +591,23 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
+            namespace Project
             {
-                static Field : int;
-                
-                static function main()
-                {  
-                    Program.Field = {{val}};
+                class Program
+                {
+                    static Field : int;
+                    
+                    static function main()
+                    {  
+                        Program.Field = {{val}};
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+            result => { result.NullGuard().LiteralValue.Should().Be(val); })
+            ;
     }
 
     [Fact]
@@ -592,21 +615,23 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
+            namespace Project
             {
-                static Field : int;
-                
-                static function main()
-                {  
-                    Program.Field = {{val}};
-                    var x = Program.Field;
+                class Program
+                {
+                    static Field : int;
+                    
+                    static function main()
+                    {  
+                        Program.Field = {{val}};
+                        var x = Program.Field;
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+            result => { result.NullGuard().LiteralValue.Should().Be(val); });
     }
 
     [Fact]
@@ -614,20 +639,22 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
+            namespace Project
             {
-                static Field : int;
-                
-                static function main()
-                {  
-                    Field = {{val}};
+                class Program
+                {
+                    static Field : int;
+                    
+                    static function main()
+                    {  
+                        Field = {{val}};
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+            result => { result.NullGuard().LiteralValue.Should().Be(val); });
     }
 
     [Fact]
@@ -635,21 +662,23 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
+            namespace Project
             {
-                static Field : int;
-                
-                static function main()
-                {  
-                    Field = {{val}};
-                    var x = Field;
+                class Program
+                {
+                    static Field : int;
+                    
+                    static function main()
+                    {  
+                        Field = {{val}};
+                        var x = Field;
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+            result => { result.NullGuard().LiteralValue.Should().Be(val); });
     }
 
     [Fact]
@@ -657,71 +686,78 @@ public class EvaluatorTests
     {
         var val = Random.Shared.NextInt64(0, 115);
         var source = $$"""
-            class Program
+            namespace Project
             {
-                static Field : InstanceClass;
-                
-                static function main()
+                class Program
                 {
-                    Field.InstanceClass = new InstanceClass();
-                    Field.InstanceClass.Foo = {{val}};
-                    var x = Field.InstanceClass.Foo;
+                    static Field : InstanceClass;
+                    
+                    static function main()
+                    {
+                        Field.InstanceClass = new InstanceClass();
+                        Field.InstanceClass.Foo = {{val}};
+                        var x = Field.InstanceClass.Foo;
+                    }
+                }
+                class Field {
+                    static InstanceClass : InstanceClass;
+                }
+                
+                class InstanceClass {
+                    Foo : int;
                 }
             }
-            class Field {
-                static InstanceClass : InstanceClass;
-            }
-            
-            class InstanceClass {
-                Foo : int;
-            }
             """;
-        AssertValue(
-            source,
-            result => { result.NullGuard().LiteralValue.Should().Be(val); },
-            isScript: false);
+        var res = TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+        res.IsOk.Should().Be(true);
+        res.Ok.NullGuard().LiteralValue.Should().Be(val);
     }
     
     [Fact]
     public void EvaluatorEvaluatesStaticMethodCallInsideClassWithoutThis()
     {
-        var source = $$"""
-            class Program
+        var source = """
+            namespace Project
             {
-                static Field : int;
-                static function main()
+                class Program
                 {
-                    Field = 10; 
-                    ten(Field);
-                }
-                
-                static function ten(input : int) : int
-                {
-                    return 10;
+                    static Field : int;
+                    static function main()
+                    {
+                        Field = 10; 
+                        ten(Field);
+                    }
+                    
+                    static function ten(input : int) : int
+                    {
+                        return 10;
+                    }
                 }
             }
             """;
         AssertValue(
             source,
-            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n"+result); },
-            isScript: false);
+            result => { (result is { LiteralValue: 10 }).EnsureTrue("\n"+result); });
     }
 
     [Fact]
     public void EvaluatorEvaluatesFieldAssignmentWithoutThis()
     {
         var source = """
-            class Program
+            namespace Project
             {
-                Field : int;
-                static function main()
+                class Program
                 {
-                    var program = new Program();
-                    program.TestMethod();
-                }
-                
-                function TestMethod() {
-                    Field = 10;
+                    Field : int;
+                    static function main()
+                    {
+                        var program = new Program();
+                        program.TestMethod();
+                    }
+                    
+                    function TestMethod() {
+                        Field = 10;
+                    }
                 }
             }
             """;
@@ -730,37 +766,39 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.Int());
                 result.LiteralValue.Should().Be(10);
-            },
-            isScript: false);
+            });
     }
     
     [Fact]
     public void EvaluatorEvaluatesMethodCallOnField()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                Field : MyClass;
-                function TestMethod() : int
+                class MyClass
                 {
-                    return 10;
+                    Field : MyClass;
+                    function TestMethod() : int
+                    {
+                        return 10;
+                    }
+                    
+                    function TestMethodTwo()
+                    { 
+                        this.Field.TestMethod();
+                    }
                 }
-                
-                function TestMethodTwo()
-                { 
-                    this.Field.TestMethod();
-                }
-            }
-            class Program
-            {
-                Field : int;
-                static function main()
+                class Program
                 {
-                    var program = new MyClass();
-                    program.Field = new MyClass();
-                    program.TestMethodTwo();
+                    Field : int;
+                    static function main()
+                    {
+                        var program = new MyClass();
+                        program.Field = new MyClass();
+                        program.TestMethodTwo();
+                    }
                 }
             }
             """;
@@ -769,10 +807,10 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.Int);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.Int());
                 result.LiteralValue.Should().Be(10);
             },
-            isScript: false,
+            
             Option.Some(_testOutputHelper));
     }
     
@@ -780,21 +818,24 @@ public class EvaluatorTests
     public void EvaluatorEvaluatesMethodWithGenericParameterCall()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                
-                function TestMethod<T>(parameter : T) : T
+                class MyClass
                 {
-                    return parameter;
+                    
+                    function TestMethod<T>(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClass = new MyClass();
-                    myClass.TestMethod<int>(10);
-                    myClass.TestMethod<string>("foo");
+                    static function main()
+                    {
+                        var myClass = new MyClass();
+                        myClass.TestMethod<int>(10);
+                        myClass.TestMethod<string>("foo");
+                    }
                 }
             }
             """;
@@ -803,10 +844,10 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.String);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.String());
                 result.LiteralValue.Should().Be("foo");
             },
-            isScript: false,
+            
             Option.Some(_testOutputHelper));
     }
     
@@ -814,22 +855,25 @@ public class EvaluatorTests
     public void EvaluatorEvaluatesMethodWithClassGenericParameterCall()
     {
         var source = """
-            class MyClass<T>
+            namespace Project
             {
-            
-                function TestMethod(parameter : T) : T
+                class MyClass<T>
                 {
-                    return parameter;
+                
+                    function TestMethod(parameter : T) : T
+                    {
+                        return parameter;
+                    }
                 }
-            }
-            class Program
-            {
-                static function main()
+                class Program
                 {
-                    var myClassString = new MyClass<string>();
-                    var myClassInt = new MyClass<int>();
-                    myClassInt.TestMethod(10);
-                    myClassString.TestMethod("foo");
+                    static function main()
+                    {
+                        var myClassString = new MyClass<string>();
+                        var myClassInt = new MyClass<int>();
+                        myClassInt.TestMethod(10);
+                        myClassString.TestMethod("foo");
+                    }
                 }
             }
             """;
@@ -839,10 +883,10 @@ public class EvaluatorTests
             result =>
             {
                 Assert.NotNull(result);
-                result.Type.Should().Be(BuiltInTypeSymbols.String);
+                result.Type.Should().Be(TypeSymbol.BuiltIn.String());
                 result.LiteralValue.Should().Be("foo");
             },
-            isScript: false,
+            
             Option.Some(_testOutputHelper));
     }
     
@@ -850,24 +894,27 @@ public class EvaluatorTests
     public void MethodWithGenericTypeConstraintsCallReportsWhenTypeConstraintDontMatch()
     {
         var source = """
-            class MyClass
+            namespace Project
             {
-                function TestMethod<T>(parameter : T) : int
-                    where T : MyClass
+                class MyClass
                 {
-                    return parameter.TestMethodTwo();
+                    function TestMethod<T>(parameter : T) : int
+                        where T : MyClass
+                    {
+                        return parameter.TestMethodTwo();
+                    }
+                
+                    function TestMethodTwo() : int
+                    {
+                        return 10;
+                    }
                 }
-
-                function TestMethodTwo() : int
+                class Program
                 {
-                    return 10;
-                }
-            }
-            class Program
-            {
-                static function main()
-                {
-                    var result = new MyClass().TestMethod<MyClass>(new MyClass());
+                    static function main()
+                    {
+                        var result = new MyClass().TestMethod<MyClass>(new MyClass());
+                    }
                 }
             }
             """;
@@ -876,18 +923,181 @@ public class EvaluatorTests
             .Should().BeTrue();
     }
     
+    [Fact]
+    public void NamespaceIsCorrectlyParsed()
+    {
+        var source = """
+            namespace MyProgram
+            {
+                class Program
+                {
+                    static function main()
+                    {
+                        
+                    }
+                }
+            }
+            """;
 
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
     
-    
+    [Fact]
+    public void MultiPartNamespaceIsCorrectlyParsed()
+    {
+        var source = """
+            namespace MyNamespace.MyProgram
+            {
+                class Program
+                {
+                    static function main()
+                    {
+                        
+                    }
+                }
+            }
+            """;
 
-    static ObjectInstance? EvaluateValue(string expression, bool isScript, Option<ITestOutputHelper> output = default)
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
+    
+    [Fact]
+    public void LongNamespaceIsCorrectlyParsed()
+    {
+        var source = """
+                     namespace MyNamespace.MyProgram.My.Everything
+                     {
+                         class Program
+                         {
+                             static function main()
+                             {
+                                 
+                             }
+                         }
+                     }
+                     
+                     namespace Other
+                     {
+                        class Program
+                        {
+                            static function main()
+                            {
+                         
+                            }
+                        }
+                     }
+                     """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
+
+    [Fact]
+    public void FullNamespaceWithNewKeyword()
+    {
+        var source = """
+                     namespace MyNamespace.MyProgram.My.Everything
+                     {
+                         class Program
+                         {
+                             static function main()
+                             {
+                                var x = new MyNamespace.MyProgram.My.Everything.Program();
+                             }
+                         }
+                     }
+                     """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
+    
+    [Fact]
+    public void MultipleNamespacesEvaluateNoDiagnostic()
+    {
+        var source = """
+                     namespace Foo
+                     {
+                        
+                     }
+                     namespace MyNamespace.MyProgram
+                     {
+                         class Program
+                         {
+                             static function main()
+                             {
+                             }
+                         }
+                     }
+                     """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
+    
+    [Fact]
+    public void Full_Class_Name_With_Namespace_Can_Be_Used_In_Generic_Constraints_Of_Type_In_Other_Namespace()
+    {
+        var source = """
+                     namespace Foo
+                     {
+                        class ClassInOtherNamespace
+                        {
+                        }
+                     }
+                     namespace MyNamespace.MyProgram
+                     {
+                         class GenericConstrainedClass<T> where T : Foo.ClassInOtherNamespace
+                         {
+                         }
+                         class Program
+                         {
+                             static function main()
+                             {
+                             }
+                         }
+                     }
+                     """;
+
+        TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+    }
+    
+    [Fact]
+    public void MethodCallInvokedByNameWithNamespaceEvaluateCorrect()
+    {
+        var source = """
+                     namespace Foo
+                     {
+                        class Class
+                        {
+                            static function method() : int
+                            {
+                                return 13;
+                            }
+                        }
+                     }
+                     namespace MyNamespace.MyProgram
+                     {
+                         class Program
+                         {
+                             static function main()
+                             {
+                                Foo.Class.method();
+                             }
+                         }
+                     }
+                     """;
+
+        var res = TestTools.Evaluate(source).AssertNoDiagnostics(_testOutputHelper);
+        res.Ok.Type.Name.Should().Be("int");
+        res.Ok.LiteralValue.Should().Be(13);
+    }
+    
+    static ObjectInstance? EvaluateValue(string expression, Option<ITestOutputHelper> output = default)
     {
         var syntaxTree = SyntaxTree.Parse(expression);
         if (output.IsSome)
         {
-            if (syntaxTree.Diagnostics is { Length: >0 } diagnostics)
+            if (syntaxTree.Diagnostics is { Count: >0 } diagnostics)
             {
-                new Result<ObjectInstance?, ImmutableArray<Diagnostic>>(diagnostics)
+                new Result<ObjectInstance?, ImmutableArray<Diagnostic>>(diagnostics.ToImmutableArray())
                     .AssertNoDiagnostics(output.Unwrap());
             }
         }
@@ -896,7 +1106,7 @@ public class EvaluatorTests
             syntaxTree.Diagnostics.Should().BeEmpty();
         }
 
-        var compilation = isScript ? Compilation.CreateScript(null, syntaxTree) : Compilation.Create(syntaxTree);
+        var compilation =  Compilation.Create(syntaxTree);
         var variables = new Dictionary<VariableSymbol, ObjectInstance?>();
         var evaluation = compilation.Evaluate(variables);
 
@@ -912,13 +1122,13 @@ public class EvaluatorTests
         return evaluation.Result;
     }
 
-    static void AssertValue(string expression, object expectedValue, bool isScript)
+    static void AssertValue(string expression, object expectedValue)
     {
-        EvaluateValue(expression, isScript).NullGuard().LiteralValue.Should().Be(expectedValue);
+        EvaluateValue(expression).NullGuard().LiteralValue.Should().Be(expectedValue);
     }
 
-    static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, bool isScript, Option<ITestOutputHelper> output = default)
+    static void AssertValue(string expression, Action<ObjectInstance?> resultAssertion, Option<ITestOutputHelper> output = default)
     {
-        resultAssertion(EvaluateValue(expression, isScript, output));
+        resultAssertion(EvaluateValue(expression, output));
     }
 }

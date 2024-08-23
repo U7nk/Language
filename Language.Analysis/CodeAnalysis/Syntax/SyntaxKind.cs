@@ -55,9 +55,11 @@ public enum SyntaxKind
     VirtualKeyword,
     OverrideKeyword,
     WhereKeyword,
+    NamespaceKeyword,
     
     // nodes
     CompilationUnit,
+    NamespaceSyntax,
     VariableDeclarationSyntax,
     VariableDeclarationAssignmentSyntax,
     TypeClause,
@@ -100,4 +102,6 @@ public enum SyntaxKind
     ReturnStatement,
     VariableDeclarationAssignmentStatement,
     GlobalStatementsDeclarationsBlockStatement,
+    GlobalFunctionStatement,
+    GlobalClassDeclarationSyntax
 }

@@ -13,7 +13,8 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 public interface ISyntaxNode
 {
     public SyntaxTree SyntaxTree { get; }
-    public abstract SyntaxKind Kind { get; }
+    public SyntaxKind Kind { get; }
+    public TextLocation Location { get; }
 }
 
 [DebuggerDisplay("{ToSourceCodeString()}")]
@@ -80,7 +81,7 @@ public abstract class SyntaxNode : ISyntaxNode
             }
             else if (propertyType.CanBeConvertedTo<SeparatedSyntaxList>())
             {
-                var value = (SeparatedSyntaxList)property.GetValue(this).NullGuard();
+                var value = (SeparatedSyntaxList)GetValue(property).NullGuard();
 
                 foreach (var child in value.GetWithSeparators())
                     yield return child;

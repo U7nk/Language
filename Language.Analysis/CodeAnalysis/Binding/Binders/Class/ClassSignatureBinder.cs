@@ -13,17 +13,19 @@ sealed class ClassSignatureBinder
     readonly BoundScope _typeScope;
     readonly BoundScope _parentScope;
     readonly DeclarationsBag _allDeclarations;
+    private readonly NamespaceSymbol _containingNamespace;
 
-    public ClassSignatureBinder(BoundScope typeScope, BoundScope parentScope, DeclarationsBag allDeclarations)
+    public ClassSignatureBinder(BoundScope typeScope, BoundScope parentScope, DeclarationsBag allDeclarations, NamespaceSymbol containingNamespace)
     {
         _typeScope = typeScope;
         _parentScope = parentScope;
         _allDeclarations = allDeclarations;
+        _containingNamespace = containingNamespace;
     }
 
     public Result<TypeSymbol, Unit> BindClassDeclaration(ClassDeclarationSyntax classDeclaration, DiagnosticBag diagnostics)
     {
-        var searchScope = new BoundScope(_typeScope);
+        var searchScope = _typeScope.CreateChild();
         _= BindClassDeclarationWithoutConstraints(classDeclaration, diagnostics, searchScope);
         var typeWithConstraints = BindClassDeclarationInternal(classDeclaration, diagnostics, _typeScope, searchScope);
         
@@ -34,7 +36,7 @@ sealed class ClassSignatureBinder
             {
                 foreach (var typeConstraint in constraintsClauseSyntax.TypeConstraints)
                 {
-                    _ = TypeSymbol.FromNamedTypeExpression(typeConstraint, _typeScope, diagnostics);
+                    _ = TypeSymbol.FromNamedTypeExpression(typeConstraint, _typeScope, diagnostics, _containingNamespace);
                 }
             }
         }
@@ -43,12 +45,14 @@ sealed class ClassSignatureBinder
     }
 
     Result<TypeSymbol, Unit> BindClassDeclarationInternal(ClassDeclarationSyntax classDeclaration,
-                                                  DiagnosticBag diagnostics, BoundScope declaringScope, BoundScope searchingScope)
+                                                  DiagnosticBag diagnostics, 
+                                                  BoundScope declaringScope, 
+                                                  BoundScope searchingScope)
     {
         var genericParameters = new List<TypeSymbol>();
         if (classDeclaration.GenericParametersSyntax.IsSome)
         {
-            var searchWhileBindingScope = new BoundScope(searchingScope);
+            var searchWhileBindingScope = searchingScope.CreateChild();
 
             var typeConstraintsByGenericName = new Dictionary<string, IEnumerable<TypeSymbol>>();
             foreach (var x in classDeclaration.GenericConstraintsClause.SomeOr(ImmutableArray<GenericConstraintsClauseSyntax>.Empty))
@@ -59,8 +63,8 @@ sealed class ClassSignatureBinder
                     var typeConstraints = new List<TypeSymbol>();
                     foreach (var genericTypeConstraintIdentifier in typeConstraintsSyntax)
                     {
-                        var genericTypeConstraintType = TypeSymbol.FromNamedTypeExpression(genericTypeConstraintIdentifier, searchWhileBindingScope, diagnostics);
-                        if (Equals(genericTypeConstraintType, BuiltInTypeSymbols.Error))
+                        var genericTypeConstraintType = TypeSymbol.FromNamedTypeExpression(genericTypeConstraintIdentifier, searchWhileBindingScope, diagnostics, _containingNamespace);
+                        if (Equals(genericTypeConstraintType, TypeSymbol.BuiltIn.Error()))
                             continue;
 
                         typeConstraints.Add(genericTypeConstraintType);
@@ -73,16 +77,16 @@ sealed class ClassSignatureBinder
             var genericArgumentsSyntax = classDeclaration.GenericParametersSyntax.Unwrap();
             foreach (var genericArgumentSyntax in genericArgumentsSyntax.Arguments)
             {
-                var genericArgumentName = genericArgumentSyntax.Identifier.Text;
+                var genericArgumentName = genericArgumentSyntax.GetName();
                 var typeConstraints = typeConstraintsByGenericName.TryGetValue(genericArgumentName, out var value) 
                     ? Option.Some(value.ToImmutableArray()) 
                     : Option.None;
 
-                var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
+                var baseTypes = new SingleOccurenceList<TypeSymbol> { TypeSymbol.BuiltIn.Object() };
                 if (typeConstraints.IsSome) 
                     typeConstraints.Unwrap().AddRangeTo(baseTypes); 
                 
-                var genericType = TypeSymbol.New(genericArgumentName, 
+                var genericArgumentType = TypeSymbol.New(genericArgumentName, 
                                                  Option.None,
                                                  null,
                                                  new MethodTable(),
@@ -90,10 +94,11 @@ sealed class ClassSignatureBinder
                                                  baseTypes,
                                                  isGenericMethodParameter: false,
                                                  isGenericClassParameter: true, 
-                                                 genericParameters: Option.None, genericParameterTypeConstraints: typeConstraints, isGenericTypeDefinition: true);
+                                                 genericParameters: Option.None, genericParameterTypeConstraints: typeConstraints, isGenericTypeDefinition: true,
+                                                 _containingNamespace);
 
                 
-                if (!declaringScope.TryDeclareType(genericType))
+                if (!declaringScope.TryDeclareType(genericArgumentType, _containingNamespace, isScopeTied: true))
                 {
                     diagnostics.ReportAmbiguousType(genericArgumentSyntax.Location,
                                                     genericArgumentName,
@@ -101,7 +106,7 @@ sealed class ClassSignatureBinder
                 }
                 else
                 {
-                    genericParameters.Add(genericType);
+                    genericParameters.Add(genericArgumentType);
                 }
             }
         }
@@ -116,9 +121,10 @@ sealed class ClassSignatureBinder
                                         isGenericMethodParameter: false, 
                                         isGenericClassParameter: false,
                                         genericParameters: genericParameters.ToImmutableArray(),
-                                        genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: true);
+                                        genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: true,
+                                        _containingNamespace);
 
-        if (!_parentScope.TryDeclareType(typeSymbol))
+        if (!_parentScope.TryDeclareType(typeSymbol, _containingNamespace))
         {
             var existingClassDeclarationsIdentifiers = _allDeclarations.LookupDeclarations<ClassDeclarationSyntax>(typeSymbol)
                 .Select(x => x.Identifier);
@@ -143,12 +149,12 @@ sealed class ClassSignatureBinder
             var genericArgumentsSyntax = classDeclaration.GenericParametersSyntax.Unwrap();
             foreach (var genericArgumentSyntax in genericArgumentsSyntax.Arguments)
             {
-                var genericArgumentName = genericArgumentSyntax.Identifier.Text;
+                var genericArgumentName = genericArgumentSyntax.GetName();
                 var typeConstraints = Option.None;
     
-                var baseTypes = new SingleOccurenceList<TypeSymbol> { BuiltInTypeSymbols.Object };
+                var baseTypes = new SingleOccurenceList<TypeSymbol> { TypeSymbol.BuiltIn.Object() };
                 
-                var genericType = TypeSymbol.New(genericArgumentName, 
+                var genericArgumentType = TypeSymbol.New(genericArgumentName, 
                                                  Option.None,
                                                  null,
                                                  new MethodTable(),
@@ -156,10 +162,11 @@ sealed class ClassSignatureBinder
                                                  baseTypes,
                                                  isGenericMethodParameter: false,
                                                  isGenericClassParameter: true, 
-                                                 genericParameters: Option.None, genericParameterTypeConstraints: typeConstraints, isGenericTypeDefinition: true);
+                                                 genericParameters: Option.None, genericParameterTypeConstraints: typeConstraints, isGenericTypeDefinition: true,
+                                                 _containingNamespace);
     
                 
-                if (!bindingScope.TryDeclareType(genericType))
+                if (!bindingScope.TryDeclareType(genericArgumentType, _containingNamespace, isScopeTied: true))
                 {
                     diagnostics.ReportAmbiguousType(genericArgumentSyntax.Location,
                                                     genericArgumentName,
@@ -167,7 +174,7 @@ sealed class ClassSignatureBinder
                 }
                 else
                 {
-                    genericParameters.Add(genericType);
+                    genericParameters.Add(genericArgumentType);
                 }
             }
         }
@@ -182,9 +189,10 @@ sealed class ClassSignatureBinder
                                         isGenericMethodParameter: false, 
                                         isGenericClassParameter: false,
                                         genericParameters: genericParameters.ToImmutableArray(),
-                                        genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: true);
+                                        genericParameterTypeConstraints: Option.None, isGenericTypeDefinition: true,
+                                        _containingNamespace);
         
-        if (!bindingScope.TryDeclareType(typeSymbol))
+        if (!bindingScope.TryDeclareType(typeSymbol, _containingNamespace, isScopeTied: true))
         {
             var existingClassDeclarationsIdentifiers = _allDeclarations.LookupDeclarations<ClassDeclarationSyntax>(typeSymbol)
                 .Select(x => x.Identifier);
@@ -240,7 +248,7 @@ sealed class ClassSignatureBinder
         if (visitedTypes.IsNone)
             visitedTypes = new HashSet<TypeSymbol>();
 
-        if (Equals(currentType, BuiltInTypeSymbols.Object))
+        if (Equals(currentType, TypeSymbol.BuiltIn.Object()))
             return;
 
         if (currentType.DeclarationEquals(checkingType))
@@ -271,23 +279,24 @@ sealed class ClassSignatureBinder
     ImmutableArray<TypeSymbol> BindInheritanceClause(Option<InheritanceClauseSyntax> syntax, DiagnosticBag diagnostics)
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        builder.Add(BuiltInTypeSymbols.Object);
+        builder.Add(TypeSymbol.BuiltIn.Object());
         
         if (syntax.IsSome)
         {
             foreach (var baseTypeIdentifier in syntax.Unwrap().BaseTypes)
             {
                 var baseTypeName = baseTypeIdentifier.Text;
-                if (!_typeScope.TryLookupType(baseTypeName, out var baseTypeSymbol))
+                var baseTypeSymbol = _typeScope.TryLookupType(baseTypeName, _containingNamespace);
+                if (baseTypeSymbol.IsNone)
                 {
                     diagnostics.ReportUndefinedType(baseTypeIdentifier.Location, baseTypeName);
                     continue;
                 }
 
-                if (Equals(baseTypeSymbol, BuiltInTypeSymbols.Object))
+                if (Equals(baseTypeSymbol.Unwrap(), TypeSymbol.BuiltIn.Object()))
                     continue;
                 
-                builder.Add(baseTypeSymbol);
+                builder.Add(baseTypeSymbol.Unwrap());
             }
         }
         

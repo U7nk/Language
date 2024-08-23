@@ -4,21 +4,31 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Symbols;
 
-interface ITypedSymbol
+internal interface ISymbol
+{
+    
+}
+
+internal interface ITypedSymbol : ISymbol
 { 
     TypeSymbol Type { get; }
 }
-public abstract class Symbol
+
+internal interface ITypeMemberSymbol
 {
-    private protected Symbol(Option<SyntaxNode> declarationSyntax, string name, Option<TypeSymbol> containingType)
+    public Option<TypeSymbol> ContainingType { get; }
+}
+
+public abstract class Symbol : ISymbol
+{
+    private protected Symbol(Option<SyntaxNode> declarationSyntax, string name)
     {
         DeclarationSyntax = declarationSyntax;
         Name = name;
-        ContainingType = containingType;
     }
 
     public Option<SyntaxNode> DeclarationSyntax { get; private set; }
-    public Option<TypeSymbol> ContainingType { get; private set; }
+    
     public string Name { get; }
     public abstract SymbolKind Kind { get; }
     public override string ToString() => Name;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -58,5 +59,60 @@ public class DeclarationsBag : Dictionary<Symbol, List<SyntaxNode>>
         }
         
         declarations.Add(declaration);
+    }
+    
+    public void AddDeclaration(FieldSymbol fieldSymbol, FieldDeclarationSyntax fieldDeclaration, DiagnosticBag diagnostics)
+    {
+        if (!this.TryGetValue(fieldSymbol, out var declarations))
+        {
+            declarations = new List<SyntaxNode>();
+            this.Add(fieldSymbol, declarations);
+        }
+        
+        declarations.Add(fieldDeclaration);
+        
+        var declareFieldRes = fieldSymbol.ContainingType.Unwrap().TryDeclareField(fieldSymbol);
+
+        foreach (var res in declareFieldRes)
+        {
+            switch (res)
+            {
+                case TypeSymbol.TryDeclareFieldResult.TypeNameSameAsFieldName:
+                    diagnostics.ReportClassMemberCannotHaveNameOfClass(fieldDeclaration.Identifier);
+                    break;
+                case TypeSymbol.TryDeclareFieldResult.FieldWithSameNameExists:
+                {
+                    var existingFieldDeclarations = this.LookupDeclarations<FieldDeclarationSyntax>(fieldSymbol);
+                    if (existingFieldDeclarations.Any())
+                    {
+                        foreach (var existingFieldDeclaration in existingFieldDeclarations)
+                        {
+                            diagnostics.ReportFieldAlreadyDeclared(existingFieldDeclaration.Identifier);
+                        }
+                    }
+
+                    break;
+                }
+                case TypeSymbol.TryDeclareFieldResult.MethodWithSameNameExists:
+                {
+                    var sameNameMethods = fieldSymbol.ContainingType.Unwrap().MethodTable.Where(x => x.MethodSymbol.Name == fieldSymbol.Name).ToList();
+                    if (sameNameMethods.Any())
+                    {
+                        diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(fieldDeclaration.Identifier);
+                        foreach (var declaration in sameNameMethods)
+                        {
+                            var sameNameMethodDeclarations = this.LookupDeclarations<MethodDeclarationSyntax>(declaration.MethodSymbol);
+                            foreach (var sameNameMethodDeclaration in sameNameMethodDeclarations)
+                            {
+                                diagnostics.ReportClassMemberWithThatNameAlreadyDeclared(sameNameMethodDeclaration.Identifier);    
+                            }
+                        }
+                    }
+                    break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }   
+        }
     }
 }

@@ -35,7 +35,6 @@ internal enum BoundNodeKind
     FieldExpression,
     NamedTypeExpression,
     CastExpression,
-    
+    NamespaceExpression,
     #endregion
-    
 }

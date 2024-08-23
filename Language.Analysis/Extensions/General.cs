@@ -166,6 +166,16 @@ internal static class General
     }
     
     [DebuggerStepThrough]
+    internal static Option<T> LastOrNone<T>(this IEnumerable<T> collection)
+    {
+        var enumerable = collection.ToList();
+        if (!enumerable.Any())
+            return Option.None;
+        
+        return enumerable.Last();
+    }
+    
+    [DebuggerStepThrough]
     internal static IEnumerable<T> AddRangeTo<T>(this IEnumerable<T> enumerable, ICollection<T> collection)
     {
         var list = enumerable.ToList();
@@ -181,8 +191,19 @@ internal static class General
     internal static IEnumerable<T> Only<T>(this IEnumerable<SyntaxTree> syntaxTrees)
     {
         return syntaxTrees
-            .SelectMany(st => st.Root.Members)
-            .OfType<T>();
+            .SelectMany(st =>
+            {
+                if (st.Root.NamespacesOrGlobalStatements.IsGlobalStatements)
+                {
+                    return st.Root.NamespacesOrGlobalStatements.GlobalStatements.OfType<T>();
+                }
+                if (st.Root.NamespacesOrGlobalStatements.IsNamespaces)
+                {
+                    return st.Root.NamespacesOrGlobalStatements.Namespaces.SelectMany(x => x.Members.OfType<T>()).Concat(st.Root.NamespacesOrGlobalStatements.Namespaces.OfType<T>());
+                }
+                else throw new NotImplementedException();
+                
+            });
     }
     
     

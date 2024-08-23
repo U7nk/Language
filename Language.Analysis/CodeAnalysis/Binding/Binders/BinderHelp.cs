@@ -6,14 +6,14 @@ namespace Language.Analysis.CodeAnalysis.Binding.Binders;
 
 static class BinderHelp
 {
-    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BoundScope scope)
+    public static TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax, DiagnosticBag diagnostics, BoundScope scope, NamespaceSymbol containingNamespace)
     {
         if (syntax is null)
             return null;
 
-        var type = TypeSymbol.FromNamedTypeExpression(syntax.NamedTypeExpression, scope, diagnostics);
+        var type = TypeSymbol.FromNamedTypeExpression(syntax.NamedTypeExpression, scope, diagnostics, containingNamespace);
         
-        if (Equals(type, BuiltInTypeSymbols.Error))
+        if (Equals(type, TypeSymbol.BuiltIn.Error()))
             return null;
         
         return type;

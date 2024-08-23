@@ -29,7 +29,7 @@ public class MethodSymbol : MemberSymbol
     }
     
     public bool IsGeneratedFromGlobalStatements => DeclarationSyntax.IsSome &&
-                                                   DeclarationSyntax.Unwrap() is CompilerGeneratedGlobalStatementsDeclarationsBlockStatementSyntax;
+                                                   DeclarationSyntax.Unwrap() is CompilerGeneratedBlockOfGlobalStatementsSyntax;
 
     public bool IsStatic { get; }
     public bool IsVirtual { get; }
@@ -47,9 +47,6 @@ public class MethodSymbol : MemberSymbol
             return false;
 
         if (Name != other.Name)
-            return false;
-
-        if (!ContainingType.Equals(other.ContainingType))
             return false;
 
         return true;

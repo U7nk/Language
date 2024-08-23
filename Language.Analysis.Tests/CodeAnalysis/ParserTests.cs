@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Language.Analysis.CodeAnalysis;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
 
 namespace Language.Analysis.Tests.CodeAnalysis;
@@ -117,11 +119,9 @@ public class ParserTests
 
     static ExpressionSyntax ParseExpression(string text)
     {
-        var expression = SyntaxTree.Parse(text);
-        var root = expression.Root;
-        var statement = root.Members.Single();
-        root.Members.Single().Should().BeOfType<GlobalStatementDeclarationSyntax>();
-        return ((ExpressionStatementSyntax)((GlobalStatementDeclarationSyntax)statement).Statement).Expression;
+        var parser = new Parser(SourceText.From(text));
+        var syntaxTree = parser.ParseExpression();
+        return syntaxTree;
     }
 
     public static IEnumerable<object[]> GetUnaryBinaryOperatorPairsData()

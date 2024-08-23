@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Профиль 1": {
+      "commandName": "Project",
+      "hotReloadEnabled": false
+    }
+  }
+}

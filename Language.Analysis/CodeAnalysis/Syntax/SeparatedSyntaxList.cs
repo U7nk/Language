@@ -14,11 +14,6 @@ public abstract class SeparatedSyntaxList
 public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
     where T : SyntaxNode
 {
-    public ImmutableArray<SyntaxNode> SeparatorsAndNodes { get; }
-    public TextSpan Span => TextSpan.FromBounds(
-        SeparatorsAndNodes.MinBy(x=> x.Span.Start)?.Span.Start ?? throw new InvalidOperationException(),
-        SeparatorsAndNodes.MaxBy(x=> x.Span.End)?.Span.End ?? throw new InvalidOperationException());
-
     public SeparatedSyntaxList(ImmutableArray<T> separatorsAndNodes)
     {
         SeparatorsAndNodes = separatorsAndNodes.CastArray<SyntaxNode>();
@@ -29,13 +24,18 @@ public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
         SeparatorsAndNodes = separatorsAndNodes;
     }
 
+    public ImmutableArray<SyntaxNode> SeparatorsAndNodes { get; }
+    public TextSpan Span => TextSpan.FromBounds(
+        SeparatorsAndNodes.MinBy(x=> x.Span.Start)?.Span.Start ?? throw new InvalidOperationException(),
+        SeparatorsAndNodes.MaxBy(x=> x.Span.End)?.Span.End ?? throw new InvalidOperationException());
+    
     public int Count => (SeparatorsAndNodes.Length + 1) / 2;
     public T this[int index] => (T)SeparatorsAndNodes[index * 2];
 
-    public SyntaxToken? GetSeparator(int index)
+    public Option<SyntaxToken> GetSeparator(int index)
     {
         if (index == Count - 1)
-            return null;
+            return Option.None;
 
         return SeparatorsAndNodes[index * 2 + 1] as SyntaxToken
                ?? throw new InvalidOperationException();

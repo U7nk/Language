@@ -13,24 +13,15 @@ public partial class SyntaxTree
     out CompilationUnitSyntax root, 
     out ImmutableArray<Diagnostic> diagnostics);
 
-    SyntaxTree(SourceText sourceText, ParseHandler parseHandler)
+    public SyntaxTree(SourceText sourceText, DiagnosticBag diagnostics)
     {
         SourceText = sourceText;
-        
-        parseHandler(this, out var root, out var diagnostics);
-        
         Diagnostics = diagnostics;
-        Root = root;
     }
     public SourceText SourceText { get; }
-    public CompilationUnitSyntax Root { get; }
-    public ImmutableArray<Diagnostic> Diagnostics { get; }
-    static void Parse(SyntaxTree syntaxTree, out CompilationUnitSyntax root, out ImmutableArray<Diagnostic> diagnostics)
-    {
-        var parser = new Parser(syntaxTree);
-        root = parser.ParseCompilationUnit();
-        diagnostics = parser.Diagnostics.ToImmutableArray();
-    }
+    public CompilationUnitSyntax CompilationUnitSyntax { get; set; }
+    public CompilationUnitSyntax Root { get; set; }
+    public DiagnosticBag Diagnostics { get; }
     
     public static SyntaxTree Load(string fileName)
     {
@@ -45,7 +36,12 @@ public partial class SyntaxTree
         return Parse(sourceText);
     }
     
-    public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source, Parse);
+    public static SyntaxTree Parse(SourceText source)
+    {
+        var parser = new Parser(source);
+        var syntaxTree = parser.Parse();
+        return syntaxTree;
+    }
 
     public static ICollection<SyntaxToken> ParseTokens(string source) 
         => ParseTokens(SourceText.From(source));
@@ -59,21 +55,25 @@ public partial class SyntaxTree
     public static ICollection<SyntaxToken> ParseTokens(SourceText source, out ImmutableArray<Diagnostic> diagnostics)
     {
         ICollection<SyntaxToken>? tokens = null;
-        void ParseTokensLocal(SyntaxTree syntaxTree,
-            out CompilationUnitSyntax root,
-            out ImmutableArray<Diagnostic> diags)
-        {
-            var lexer = new Lexer(syntaxTree);
-            tokens = lexer.Lex();
-            root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<ITopMemberDeclarationSyntax>.Empty, lexer.NextToken());
-            diags = lexer.Diagnostics.ToImmutableArray();
-        }
+        var diagnosticBag = new DiagnosticBag();
+        var syntaxTree = new SyntaxTree(source, diagnosticBag);
+        var lexer = new Lexer(syntaxTree);
+        tokens = lexer.Lex();
+        var root = new CompilationUnitSyntax(syntaxTree, new List<NamespaceSyntax>{ new (syntaxTree,
+                                                                                     new SyntaxToken(syntaxTree, SyntaxKind.NamespaceKeyword, 0, "namespace", null), 
+                                                                                     new SeparatedSyntaxList<SyntaxToken>(ImmutableArray<SyntaxNode>.Empty), 
+                                                                                     new SyntaxToken(syntaxTree, SyntaxKind.OpenBraceToken, 0,"", null), 
+                                                                                     ImmutableArray<ClassDeclarationSyntax>.Empty, 
+                                                                                     new SyntaxToken(syntaxTree, SyntaxKind.OpenBraceToken, 0,"", null)) }, 
+                                         new SyntaxToken(syntaxTree, SyntaxKind.EndOfFileToken,0, "\0", null));
+        var diags = lexer.Diagnostics.ToImmutableArray();
+        syntaxTree.CompilationUnitSyntax = root;
+        syntaxTree.Diagnostics.AddRange(diags);
         
         
         
-        var tree = new SyntaxTree(source, ParseTokensLocal);
         Debug.Assert(tokens != null, nameof(tokens) + " != null");
-        diagnostics = tree.Diagnostics;
+        diagnostics = syntaxTree.Diagnostics.ToImmutableArray();
         return tokens.ToImmutableArray();
     }
 }

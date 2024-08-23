@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Language.Analysis.Extensions;
 
 namespace Language.Analysis;
@@ -13,6 +14,15 @@ public struct Unit
 }
 public static class Option
 {
+    public static Option<TY> Fold<TY>(this Option<Option<TY>> opt)
+    {
+        return opt.Unwrap();
+    }
+    public static Option<TY> Fold<TY>(this Option<Option<Option<TY>>> opt)
+    {
+        return opt.Unwrap().Unwrap();
+    }
+    
     public static Option<T> Some<T>(T value) => new(value, hasValue: true);
 
     public static Option<Unit> None { get; } = new(default, hasValue: false);
@@ -51,6 +61,11 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     [StackTraceHidden]
     public T Unwrap()
     {
+        if (HasValue is false && typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Option<>))
+        {
+            return default;
+        }
+        
         if (HasValue is false || Value is null)
             throw new InvalidOperationException("Option is empty");
         
@@ -70,13 +85,36 @@ public readonly struct Option<T> : IEquatable<Option<T>>
             : throw new InvalidOperationException("Option is empty");
     }
     
-    public bool IsNone => !HasValue;
-    public bool IsSome => HasValue;
+    public bool IsNone => !IsSome;
+    public bool IsSome
+    {
+        get
+        {
+            if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Option<>))
+            {
+                var unwrap = this.Unwrap();
+                if (unwrap is null)
+                    throw new Exception();
+                var prop = unwrap.GetType().GetProperty(nameof(IsSome));
+                if (prop is null)
+                    throw new Exception();
+                var method = prop.GetMethod;
+                if (method is null)
+                    throw new Exception();
+                
+                return method.Invoke(this.Unwrap(), []).As<bool>();
+            }
+            
+            return HasValue;
+        }
+    }
 
     T? Value { get; }
     
     public static implicit operator Option<T>(T? value)
     {
+        
+        
         if (value is null)
             return None;
         
@@ -84,7 +122,8 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     }
     
     public static implicit operator Option<T>(Option<Unit> value) => None;
-
+    public static implicit operator Option<T>(Option<Option<T>> value) => value.IsNone ? Option.None : value.Unwrap();
+    
     public bool Equals(Option<T> other) 
         => HasValue == other.HasValue 
            && EqualityComparer<T?>.Default.Equals(Value, other.Value);
@@ -103,7 +142,16 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     {
         if (HasValue)
             action(Value!);
-        
+    }
+    
+    public Option<TY> OnSome<TY>(Func<T, TY> action)
+    {
+        if (HasValue)
+        {
+            var val = action(Value!);
+            return val;
+        }
+        return Option.None;
     }
     
     public IEnumerable<Y> SomeOrEmpty<Y>()

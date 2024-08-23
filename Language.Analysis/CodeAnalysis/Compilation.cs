@@ -16,25 +16,18 @@ namespace Language.Analysis.CodeAnalysis;
 
 public sealed class Compilation
 {
-    Compilation(bool isScript, Compilation? previous, SyntaxTree[] syntaxTree)
+    Compilation(Compilation? previous, SyntaxTree[] syntaxTree)
     {
         SyntaxTrees = syntaxTree.ToImmutableArray();
-        IsScript = isScript;
         Previous = previous;
     }
     public static Compilation Create(params SyntaxTree[] syntaxTrees)
     {
-        return new Compilation(isScript: false, null, syntaxTrees);
-    }
-
-    public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees)
-    {
-        return new Compilation(isScript: true, previous, syntaxTrees);
+        return new Compilation(null, syntaxTrees);
     }
 
 
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
-    public bool IsScript { get; }
     public Compilation? Previous { get; }
 
 
@@ -52,10 +45,10 @@ public sealed class Compilation
         var previous = Previous?.GetFullBoundProgram();
 
         var declarations = new DeclarationsBag();
-        var programBinder = new ProgramBinder(IsScript, previous?.GlobalScope, SyntaxTrees, declarations);
+        var programBinder = new ProgramBinder(previous?.GlobalScope, SyntaxTrees, declarations);
         var boundGlobalScope = programBinder.BindGlobalScope();
 
-        var program = programBinder.BindProgram(IsScript, previous?.Program, boundGlobalScope);
+        var program = programBinder.BindProgram(previous?.Program, boundGlobalScope);
         var fullBoundProgram = Option.Some(new FullBoundProgram(boundGlobalScope, program));
         lock (Lock)
         {
@@ -93,8 +86,6 @@ public sealed class Compilation
     {
         if (GetFullBoundProgram().GlobalScope.MainMethod.IsSome)
             EmitTree(GetFullBoundProgram().GlobalScope.MainMethod.Unwrap(), writer);
-        else if (GetFullBoundProgram().GlobalScope.ScriptMainMethod is not null)
-            EmitTree(GetFullBoundProgram().GlobalScope.ScriptMainMethod, writer);
 
         foreach (var type in GetFullBoundProgram().GlobalScope.Types)
         {

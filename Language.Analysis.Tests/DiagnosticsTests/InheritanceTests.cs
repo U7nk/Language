@@ -15,197 +15,225 @@ public class InheritanceTests
     [Fact]
     public void DerivedMethodCannotBeCalledAfterConversionToBase()
     {
-        var code = @"
-            class Base
+        var code = """
+            namespace Project
             {
-            }
-
-            class Derived : Base
-            {
-                function DerivedMethod() { }
-            }
-
-            class Program
-            {
-                static function main()
+                class Base
                 {
-                    var derived = new Derived();
-                    var base : Base = derived;
-                    base.[DerivedMethod]();   
                 }
-            }";
+                
+                class Derived : Base
+                {
+                    function DerivedMethod() { }
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                        var derived = new Derived();
+                        var base : Base = derived;
+                        base.[DerivedMethod]();   
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.UNDEFINED_METHOD_CODE,
         };
 
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code, diagnostics, Output);
     }
     
     [Fact]
     public void DerivedMethodCannotBeCalledAfterDeclarationAsBase()
     {
-        var code = @"
-            class Base
+        var code = """
+            namespace Project
             {
-            }
-
-            class Derived : Base
-            {
-                function DerivedMethod() { }
-            }
-
-            class Program
-            {
-                static function main()
+                class Base
                 {
-                    var base : Base = new Derived();
-                    base.[DerivedMethod]();   
                 }
-            }";
+                
+                class Derived : Base
+                {
+                    function DerivedMethod() { }
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                        var base : Base = new Derived();
+                        base.[DerivedMethod]();   
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.UNDEFINED_METHOD_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     
     [Fact]
     public void DeriveFieldCannotBeAccessedAfterConversionToBase()
     {
-        var code = @"
-            class Base
+        var code = """
+            namespace Project
             {
-            }
-
-            class Derived : Base
-            {
-                DerivedField : int;
-            }
-
-            class Program
-            {
-                static function main()
+                class Base
                 {
-                    var derived = new Derived();
-                    var casted : Base = derived;
-                    let x = casted.[DerivedField];   
                 }
-            }";
+                
+                class Derived : Base
+                {
+                    DerivedField : int;
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                        var derived = new Derived();
+                        var casted : Base = derived;
+                        let x = casted.[DerivedField];   
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.UNDEFINED_FIELD_ACCESS_CODE,
         };
 
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     
     [Fact]
     public void DerivedFieldCannotBeAccessedAfterDeclarationAsBase()
     {
-        var code = @"
-            class Base
+        var code = """
+            namespace Project
             {
-            }
-
-            class Derived : Base
-            {
-                DerivedField : int;
-            }
-
-            class Program
-            {
-                static function main()
+                class Base
                 {
-                    var casted : Base = new Derived();
-                    let x = casted.[DerivedField];   
                 }
-            }";
+                
+                class Derived : Base
+                {
+                    DerivedField : int;
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                        var casted : Base = new Derived();
+                        let x = casted.[DerivedField];   
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.UNDEFINED_FIELD_ACCESS_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     
     [Fact]
     public void ClassCannotInheritFromSelf()
     {
-        var code = @"
-            class [Base] : Base
+        var code = """
+            namespace Project
             {
-            }
-
-            class Program
-            {
-                static function main()
+                class [Base] : Base
                 {
                 }
-            }";
+                
+                class Program
+                {
+                    static function main()
+                    {
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     [Fact]
     public void ClassCannotInheritFromSelfThroughBaseClass()
     {
-        var code = @"
-            class [Inheritor] : Base 
+        var code = """
+            namespace Project
             {
-                function Method() : int
+                class [Inheritor] : Base 
                 {
-                    return 1;
+                    function Method() : int
+                    {
+                        return 1;
+                    }
+                }
+                class [Base] : Inheritor
+                {
+                    function BlabLa() { this.Method(); }
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                    }
                 }
             }
-            class [Base] : Inheritor
-            {
-                function BlabLa() { this.Method(); }
-            }
-
-            class Program
-            {
-                static function main()
-                {
-                }
-            }";
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     [Fact]
     public void ClassCannotInheritFromSelfThroughMultipleBaseClass()
     {
-        var code = @"
-            class [Inheritor] : Base 
+        var code = """
+            namespace Project
             {
-                function Method() : int
+                class [Inheritor] : Base 
                 {
-                    return 1;
+                    function Method() : int
+                    {
+                        return 1;
+                    }
                 }
-            }
-            class [SecondInheritor] : Inheritor 
-            {
-            }
-            class [Base] : SecondInheritor
-            {
-                function BlabLa() { this.Method(); }
-            }
-
-            class Program
-            {
-                static function main()
+                class [SecondInheritor] : Inheritor 
                 {
                 }
-            }";
+                class [Base] : SecondInheritor
+                {
+                    function BlabLa() { this.Method(); }
+                }
+                
+                class Program
+                {
+                    static function main()
+                    {
+                    }
+                }
+            }
+            """;
         var diagnostics = new[]
         {
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
@@ -213,38 +241,41 @@ public class InheritanceTests
             DiagnosticBag.CLASS_CANNOT_INHERIT_FROM_SELF_CODE,
         };
         
-        TestTools.AssertDiagnostics(code, false, diagnostics, Output);
+        TestTools.AssertDiagnostics(code,  diagnostics, Output);
     }
     
     [Fact]
     public void ClassDiamondProblemWithMethodsReported()
     {
-        var code = $$""""
-                    class BaseOne
+        var code = """"
+                    namespace Project
                     {
-                        function MethodOne() : string
+                        class BaseOne
                         {
-                            return "Base1";
+                            function MethodOne() : string
+                            {
+                                return "Base1";
+                            }
                         }
-                    }
-                    class BaseTwo
-                    {
-                        function MethodOne() : string
+                        class BaseTwo
                         {
-                            return "Base2";
+                            function MethodOne() : string
+                            {
+                                return "Base2";
+                            }
                         }
-                    }
-                    class [Inheritor] : BaseOne, BaseTwo
-                    {
-                    }
-                    class Program
-                    {
-                        static function main()
+                        class [Inheritor] : BaseOne, BaseTwo
                         {
+                        }
+                        class Program
+                        {
+                            static function main()
+                            {
+                            }
                         }
                     }
                     """";
-        TestTools.AssertDiagnostics(code, false, new []
+        TestTools.AssertDiagnostics(code,  new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
         }, Output);
@@ -254,30 +285,33 @@ public class InheritanceTests
     [Fact]
     public void ClassDiamondProblemWithMethodAndFieldReportsAmbiguity()
     {
-        var code = $$""""
-                    class BaseOne
-                    {
-                        function MethodOne() : string
+        var code = """"
+                    namespace Project
+                    {   
+                        class BaseOne
                         {
-                            return "Base1";
+                            function MethodOne() : string
+                            {
+                                return "Base1";
+                            }
                         }
-                    }
-                    class BaseTwo
-                    {
-                        MethodOne : string;
-                    }
-                    class [Inheritor] : BaseOne, BaseTwo
-                    {
-                    }
-                    class Program
-                    {
-                        static function main()
+                        class BaseTwo
                         {
+                            MethodOne : string;
+                        }
+                        class [Inheritor] : BaseOne, BaseTwo
+                        {
+                        }
+                        class Program
+                        {
+                            static function main()
+                            {
+                            }
                         }
                     }
                     """";
         
-        TestTools.AssertDiagnostics(code, false, new []
+        TestTools.AssertDiagnostics(code,  new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE
         }, Output);
@@ -286,26 +320,29 @@ public class InheritanceTests
     [Fact]
     public void ClassDiamondProblemWithFieldsReportsAmbiguity()
     {
-        var code = $$""""
-                    class BaseOne
+        var code = """"
+                    namespace Project
                     {
-                        FieldOne : string;
-                    }
-                    class BaseTwo
-                    {
-                        FieldOne : string;
-                    }
-                    class [Inheritor] : BaseOne, BaseTwo
-                    {
-                    }
-                    class Program
-                    {
-                        static function main()
+                        class BaseOne
                         {
+                            FieldOne : string;
+                        }
+                        class BaseTwo
+                        {
+                            FieldOne : string;
+                        }
+                        class [Inheritor] : BaseOne, BaseTwo
+                        {
+                        }
+                        class Program
+                        {
+                            static function main()
+                            {
+                            }
                         }
                     }
                     """";
-        TestTools.AssertDiagnostics(code, false, new []
+        TestTools.AssertDiagnostics(code,  new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
         }, Output);
@@ -314,29 +351,32 @@ public class InheritanceTests
     [Fact]
     public void ClassDiamondProblemWithFieldsReportsAmbiguityEvenThroughOneInheritanceLevel()
     {
-        var code = $$""""
-                    class BaseOne
+        var code = """"
+                    namespace Project
                     {
-                        FieldOne : string;
-                    }
-                    class BaseTwo : BaseOne
-                    {
-                    }
-                    class BaseThree
-                    {
-                        FieldOne : string;
-                    }
-                    class [Inheritor] : BaseTwo, BaseThree
-                    {
-                    }
-                    class Program
-                    {
-                        static function main()
+                        class BaseOne
                         {
+                            FieldOne : string;
+                        }
+                        class BaseTwo : BaseOne
+                        {
+                        }
+                        class BaseThree
+                        {
+                            FieldOne : string;
+                        }
+                        class [Inheritor] : BaseTwo, BaseThree
+                        {
+                        }
+                        class Program
+                        {
+                            static function main()
+                            {
+                            }
                         }
                     }
                     """";
-        TestTools.AssertDiagnostics(code, false, new []
+        TestTools.AssertDiagnostics(code,  new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
         }, Output);
@@ -344,31 +384,34 @@ public class InheritanceTests
     [Fact]
     public void ClassDiamondProblemWithFieldsReportsAmbiguityEvenThroughTwoInheritanceLevel()
     {
-        var code = $$""""
-                    class BaseOne
+        var code = """"
+                    namespace Project
                     {
-                        FieldOne : string;
-                    }
-                    class BaseTwo : BaseOne
-                    {
-                    }
-                    class BaseThree : BaseTwo { }
-                    class BaseFour 
-                    {
-                        FieldOne : string;
-                    }
-                    class BaseFive : BaseFour { }
-                    class [Inheritor] : BaseFive, BaseThree
-                    {
-                    }
-                    class Program
-                    {
-                        static function main()
+                        class BaseOne
                         {
+                            FieldOne : string;
+                        }
+                        class BaseTwo : BaseOne
+                        {
+                        }
+                        class BaseThree : BaseTwo { }
+                        class BaseFour 
+                        {
+                            FieldOne : string;
+                        }
+                        class BaseFive : BaseFour { }
+                        class [Inheritor] : BaseFive, BaseThree
+                        {
+                        }
+                        class Program
+                        {
+                            static function main()
+                            {
+                            }
                         }
                     }
                     """";
-        TestTools.AssertDiagnostics(code, false, new []
+        TestTools.AssertDiagnostics(code,  new []
         {
             DiagnosticBag.INHERITANCE_DIAMOND_PROBLEM_CODE,
         }, Output);

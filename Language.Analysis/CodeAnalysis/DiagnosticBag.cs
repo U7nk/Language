@@ -58,6 +58,19 @@ public class DiagnosticBag : List<Diagnostic>
         var message = $"Unexpected token <{token}> expected <{expected}>.";
         Report(textLocation, message, UNEXPECTED_TOKEN_CODE);
     }
+    
+    public const string EXPECTED_ONE_OF_TOKENS_CODE = "[0057:Error]";
+
+    public void ReportUnexpectedToken(TextLocation textLocation, SyntaxKind token, SyntaxKind[] expected)
+    {
+        if (expected.Length == 1)
+        {
+            ReportUnexpectedToken(textLocation, token, expected.Single());
+            return;
+        }
+        var message = $"Unexpected token <{token}> expected one of: {string.Join(",", expected.Select(x => $"<{x.ToString()}>"))}.";
+        Report(textLocation, message, EXPECTED_ONE_OF_TOKENS_CODE);
+    }
 
     public const string UNDEFINED_UNARY_OPERATOR_CODE = "[0004:Error]";
 
@@ -194,7 +207,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportReturnStatementIsInvalidForVoidMethod(TextLocation location)
     {
-        var message = $"Return statement is invalid for {BuiltInTypeSymbols.Void} method.";
+        var message = $"Return statement is invalid for {TypeSymbol.BuiltIn.Void} method.";
         Report(location, message, RETURN_STATEMENT_IS_INVALID_FOR_VOID_METHOD_CODE);
     }
 
@@ -258,7 +271,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
     {
-        var message = $"main method must have correct signature(main must be static, have return type {BuiltInTypeSymbols.Void} and 0 parameters).";
+        var message = $"main method must have correct signature(main must be static, have return type {TypeSymbol.BuiltIn.Void} and 0 parameters).";
         Report(identifierLocation, message, MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE);
     }
 
@@ -467,34 +480,26 @@ public class DiagnosticBag : List<Diagnostic>
         Report(genericArgument.Location, message, GENERIC_METHOD_CALL_WITH_WRONG_TYPE_ARGUMENT_CODE);
     }
     
-    public const string GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE = "[0053:Error]";
-    public void ReportGenericMethodCallWithWrongTypeArgumentsCount(MethodCallExpressionSyntax methodCallExpressionSyntax, IEnumerable<TypeSymbol> expectedTypeArguments)
+    public const string GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE = "[0053:Error]";
+    public void ReportGenericMethodCallWithWrongTypeArgumentsCount(SyntaxToken identifier, GenericClauseSyntax genericClause, IEnumerable<TypeSymbol> expectedTypeArguments)
     {
-        var identifier = methodCallExpressionSyntax.Identifier;
-        var providedGenericArguments = methodCallExpressionSyntax.GenericClause.Unwrap().Arguments;
-        var message = $"Generic method call with wrong generic arguments count. Method '{identifier.Text}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
-        Report(methodCallExpressionSyntax.GenericClause.Unwrap().Location, message, GENERIC_METHOD_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE);
+        var providedGenericArguments = genericClause.Arguments;
+        var message = $"Generic call with wrong generic arguments count. '{identifier.Text}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
+        Report(genericClause.Location, message, GENERIC_CALL_WITH_WRONG_GENERIC_ARGUMENTS_COUNT_CODE);
     }
 
-    public const string GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE = "[0054:Error]";
-    public void ReportGenericMethodGenericArgumentsNotSpecified(SyntaxToken methodIdentifier)
+    public const string GENERIC_CALL_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE = "[0054:Error]";
+    public void ReportGenericMethodGenericArgumentsNotSpecified(SyntaxToken identifier)
     {
-        var message = $"Generic method parameters not specified.";
-        Report(methodIdentifier.Location, message, GENERIC_METHOD_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE);
-    }
-    
-    public const string GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE = "[0055:Error]";
-    public void NewExpressionGenericArgumentsNotSpecified(SyntaxToken newExpressionClassIdentifier, TypeSymbol typeBeingCreated)
-    {
-        var message = $"Constructor invocation for generic class should contain {typeBeingCreated.GenericParameters.Unwrap().Length} arguments but no generic arguments is provided.";
-        Report(newExpressionClassIdentifier.Location, message, GENERIC_CLASS_CONSTRUCTOR_ARGUMENTS_NOT_SPECIFIED_CODE);
+        var message = $"Generic parameters not specified.";
+        Report(identifier.Location, message, GENERIC_CALL_GENERIC_ARGUMENTS_NOT_SPECIFIED_CODE);
     }
     
     public const string GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT = "[0056:Error]";
     public void NewExpressionGenericArgumentsWrongCount(NewExpressionSyntax newExpressionSyntax, IEnumerable<TypeSymbol> expectedTypeArguments)
     {
-        var providedGenericArguments = newExpressionSyntax.GenericClause.Unwrap().Arguments;
-        var message = $"Generic class constructor call with wrong generic arguments count. Constructor for '{newExpressionSyntax.TypeIdentifier}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
-        Report(newExpressionSyntax.GenericClause.Unwrap().Location, message, GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT);
+        var providedGenericArguments = newExpressionSyntax.NamedTypeExpression.GenericClause.Unwrap().Arguments;
+        var message = $"Generic class constructor call with wrong generic arguments count. Constructor for '{newExpressionSyntax.NamedTypeExpression}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
+        Report(newExpressionSyntax.NamedTypeExpression.GenericClause.Unwrap().Location, message, GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT);
     }
 }

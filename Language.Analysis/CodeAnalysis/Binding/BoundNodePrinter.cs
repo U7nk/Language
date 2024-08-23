@@ -141,7 +141,7 @@ static class BoundNodePrinter
     static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
     {
         var value = node.Value?.ToString();
-        if (node.Type == BuiltInTypeSymbols.String) 
+        if (node.Type == TypeSymbol.BuiltIn.String()) 
             value = "\"" + value?.Replace("\"", "\\\"") + "\"";
         
         writer.Write(value ?? "null");
