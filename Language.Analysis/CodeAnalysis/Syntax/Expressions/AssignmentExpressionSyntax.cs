@@ -13,6 +13,4 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
     public SyntaxToken IdentifierToken { get; }
     public SyntaxToken EqualsToken { get; }
     public ExpressionSyntax Expression { get; }
-
-   
 }

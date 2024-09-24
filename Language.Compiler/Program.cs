@@ -44,7 +44,7 @@ static class Program
             { "o=", "the output {path} of the assembly  to create", v => outputPath = v },
             { "m=", "the {name} of the module", v => moduleName = v },
             { "?|h|help", _ => helpRequested = true  },
-            { "<>", v => sourcePaths.Add(v) },
+            { "f=", v => sourcePaths.Add(v) },
         };
 
         options.Parse(args);

@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "inherits": [ "vs", "ninja", "lld" ],
+      "binaryDir": "${sourceDir}/build-${presetName}/build",
+      "installDir": "${sourceDir}/build-${presetName}/install",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "D:/codes/llvm-project/llvm/build/bootstrap/install/bin/clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "D:/codes/llvm-project/llvm/build/bootstrap/install/bin/clang-cl.exe",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      }
+    },
+    {
+      "name": "project-debug",
+      "inherits": [ "default", "debug_msvcrt" ],
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "D:/codes/llvm-project/llvm/build/llvm-debug/install"
+      }
+    },
+    {
+      "name": "project-release",
+      "inherits": [ "default", "release" ],
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "D:/codes/llvm-project/llvm/build/llvm-release/install"
+      }
+    }
+
+  ]
+}

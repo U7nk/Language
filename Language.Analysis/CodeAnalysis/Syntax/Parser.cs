@@ -661,7 +661,7 @@ public class Parser
         return _syntaxTree.NewMethodCallExpression(identifier, optionalGenericArguments, openParenthesis, arguments, closeParenthesis);
     }
     
-    ExpressionSyntax ParseMemberAccessExpression()
+    ExpressionSyntax ParseMemberAccessOrNameExpression()
     {
         var left = Current.Kind switch
         {
@@ -765,15 +765,16 @@ public class Parser
     
     ExpressionSyntax ParseMemberAccessOrAssignment()
     {
-        var memberAccess = ParseMemberAccessExpression();
+        var memberAccessOrNameExpression = ParseMemberAccessOrNameExpression();
         if (Current.Kind is SyntaxKind.EqualsToken)
         {
             var equals = Match(SyntaxKind.EqualsToken);
             var right = ParseExpression();
-            return _syntaxTree.NewMemberAssignmentExpression(memberAccess, equals, right);
+            
+            return _syntaxTree.NewMemberAssignmentExpression(memberAccessOrNameExpression, equals, right);
         }
 
-        return memberAccess;
+        return memberAccessOrNameExpression;
     }
 
     SeparatedSyntaxList<ExpressionSyntax> ParseArguments()

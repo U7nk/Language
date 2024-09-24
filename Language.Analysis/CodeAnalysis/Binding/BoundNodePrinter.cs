@@ -107,9 +107,36 @@ static class BoundNodePrinter
             case BoundNodeKind.ConversionExpression:
                 WriteConversionExpression((BoundConversionExpression)node, writer);
                 break;
+            case BoundNodeKind.MemberAccessExpression:
+                WriteMemberAccessExpression((BoundMemberAccessExpression)node, writer);
+                break;
+            case BoundNodeKind.NamedTypeExpression:
+                WriteNamedTypeExpression((BoundNamedTypeExpression)node, writer);
+                break;
+            case BoundNodeKind.MemberAssignmentExpression:
+                WriteMemberAssignmentExpression((BoundMemberAssignmentExpression)node, writer);
+                break;
             default:
-                throw new Exception("Unexpected node " + node.Kind);
+                throw new Exception("unknown node");
         }
+    }
+
+    private static void WriteMemberAssignmentExpression(BoundMemberAssignmentExpression node, IndentedTextWriter writer)
+    {
+        writer.Write(node.MemberAccess.ToString() + " = " + node.RightValue.ToString());
+        writer.WriteLine();
+    }
+
+    private static void WriteNamedTypeExpression(BoundNamedTypeExpression node, IndentedTextWriter writer)
+    {
+        writer.Write(node.Syntax.Unwrap().ToSourceCodeString());
+    }
+
+    private static void WriteMemberAccessExpression(BoundMemberAccessExpression node, IndentedTextWriter writer)
+    {
+        writer.Write(node.Left.ToString());
+        writer.Write(".");
+        writer.Write(node.Member.ToString());
     }
 
     static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)

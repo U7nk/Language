@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
@@ -250,12 +251,32 @@ class ControlFlowGraph
         Branches = branches;
     }
 
+    public bool IsInSSAForm { get; }
     public BasicBlock Start { get; }
     public BasicBlock End { get; }
     public List<BasicBlock> Blocks { get; }
     public List<BasicBlockBranch> Branches { get; }
 
 
+    public void TransformToSSA()
+    {
+        foreach (var outgoingBranch in Start.Outgoing)
+        {
+            var block = outgoingBranch.To;
+            
+            REPEAT:
+            foreach (var statement in block.Statements)
+            {
+                if (statement.Kind is BoundNodeKind.AssignmentExpression)
+                {
+                    block.Statements.ReplaceFirst(statement, new BoundBlockStatement(Option.None, [ ]));
+                    goto REPEAT;
+                }
+            }
+        }
+    }
+    
+    
     public void WriteTo(TextWriter writer)
     {
         writer.WriteLine("digraph G {");

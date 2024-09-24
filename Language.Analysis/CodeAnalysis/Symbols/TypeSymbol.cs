@@ -13,6 +13,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
 {
     public static class BuiltIn
 {
+    /* TODO looks like big wtf with BuiltIn types initialization, need to rework in one method that will create namespace and then types */
     public static readonly NamespaceSymbol BuiltInTypeSymbolNamespace =
         new NamespaceSymbol(Option.None,
                             "SystemGlobal",
@@ -22,6 +23,52 @@ public class TypeSymbol : Symbol, ITypedSymbol
                             new List<NamespaceSymbol>());
 
     
+    private static MethodTable CreateConsoleMethodTable()
+    {
+        var mt = new MethodTable();
+
+        MethodSymbol printMethodSymbol = new(
+            Option.None,
+            isStatic: true,
+            isVirtual: false,
+            isOverriding: false,
+            name: "Print",
+            parameters: [ new ParameterSymbol(Option.None, "text", TypeSymbol.BuiltIn.String()) ],
+            returnType: TypeSymbol.BuiltIn.Void(),
+            containingType: null,
+            isGeneric: false,
+            genericParameters: Option.None);
+        mt.AddMethodDeclaration(printMethodSymbol, [ ]);
+        
+        return mt;
+    }
+
+    public static Option<TypeSymbol> _console;
+
+    public static TypeSymbol Console()
+    {
+        if (_console.IsNone)
+        {
+            _console = TypeSymbol.New(name: "Console",
+                           declaration: Option.None,
+                           inheritanceClauseSyntax: null,
+                           methodTable: CreateConsoleMethodTable(),
+                           fieldTable: [ ],
+                           baseTypes: [ TypeSymbol.BuiltIn.Object() ],
+                           isGenericMethodParameter: false,
+                           isGenericClassParameter: false,
+                           genericParameters: Option.None,
+                           genericParameterTypeConstraints: Option.None,
+                           isGenericTypeDefinition: false,
+                           containingNamespace: TypeSymbol.BuiltIn.BuiltInTypeSymbolNamespace
+            );
+            BuiltInTypeSymbolNamespace.Types.Add(_console.Unwrap());
+            return _console.Unwrap();
+        }
+
+        return _console.Unwrap();
+    }
+
     private static Option<TypeSymbol> _error;
     public static TypeSymbol Error()
     {
@@ -178,9 +225,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
 
         return BuiltIn.Error();
     }
-
     
-
     public static TypeSymbol FromNamedTypeExpression(NamedTypeExpressionSyntax namedTypeES, 
                                                      BoundScope lookupScope, DiagnosticBag diagnostics, NamespaceSymbol containingNamespace)
     {
@@ -321,6 +366,8 @@ public class TypeSymbol : Symbol, ITypedSymbol
     TypeSymbol ITypedSymbol.Type => this;
 
     public override SymbolKind Kind => SymbolKind.Type;
+    
+    
 
     public bool TryDeclareMethod(
         MethodSymbol method,

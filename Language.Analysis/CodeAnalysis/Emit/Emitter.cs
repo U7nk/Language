@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Binding;
 using Language.Analysis.CodeAnalysis.Symbols;
+using Language.Analysis.CodeAnalysis.Syntax;
 using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Emit;
@@ -196,91 +197,6 @@ class Linker
     {
         _mainMethod = mainMethod;
         _methodBodies = methodBodies;
-    }
-
-    public List<Instruction> Link()
-    {
-        var instructions = new List<Instruction>();
-        instructions.AddRange(_mainMethod);
-        
-        REPEAT_FIRST_LOOP:
-        foreach (var instruction in instructions)
-        {
-            if (instruction.Kind == InstructionKind.MethodCallPlaceholder)
-            {
-                var functionCallPlaceholder = (MethodCallPlaceholder)instruction;
-                var function = functionCallPlaceholder.Method;
-                var functionBody = _methodBodies[function];
-                
-                var functionAddress = instructions.Count;
-                if (!_methodAddresses.ContainsKey(function))
-                {
-                    _methodAddresses.Add(function, functionAddress);
-                    instructions.AddRange(functionBody);
-                }
-                
-                var placeholderIndex = instructions.IndexOf(functionCallPlaceholder);
-                UpdateAddresses(placeholderIndex, InstructionKind.MethodCallPlaceholder);
-                instructions.Remove(functionCallPlaceholder);
-                var functionCallAddress = new Instruction(_methodAddresses[function]); 
-                _methodCallAdresses.Add(functionCallAddress);
-                var callInstructions = new List<Instruction>
-                {
-                    new(Bytecode.CALL),
-                    functionCallAddress,
-                    new(function.Parameters.Length),
-                };
-                instructions.InsertRange(placeholderIndex, callInstructions);
-                goto REPEAT_FIRST_LOOP;
-            }
-
-            if (instruction.Kind == InstructionKind.LabelPlaceholder)
-            {
-                var labelPlaceholder = (LabelPlaceholder)instruction;
-                var label = labelPlaceholder.Label;
-                var placeholderIndex = instructions.IndexOf(labelPlaceholder);
-                UpdateAddresses(placeholderIndex, InstructionKind.LabelPlaceholder);
-                instructions.Remove(labelPlaceholder);
-                _labelAddresses.Add(label, placeholderIndex);
-                goto REPEAT_FIRST_LOOP;
-            }
-        }
-        
-        REPEAT_SECOND_LOOP:
-        foreach (var instruction in instructions)
-        {
-        
-            if (instruction.Kind == InstructionKind.ConditionalGotoPlaceholder)
-            {
-                var gotoPlaceholder = (ConditionalGotoPlaceholder)instruction;
-                var label = gotoPlaceholder.Label;
-                var placeholderAddress = instructions.IndexOf(gotoPlaceholder);
-                var gotoAddress = new Instruction(_labelAddresses[label]);
-                _gotoAddresses.Add(gotoAddress);
-                UpdateAddresses(placeholderAddress, InstructionKind.ConditionalGotoPlaceholder);
-                instructions.Remove(gotoPlaceholder);
-                var opCode = gotoPlaceholder.JumpIfTrue ? Bytecode.BRT : Bytecode.BRF;
-                instructions.Insert(placeholderAddress, new Instruction(opCode));
-                instructions.Insert(placeholderAddress + 1, gotoAddress);
-                goto REPEAT_SECOND_LOOP;
-            }
-
-            if (instruction.Kind == InstructionKind.GotoPlaceholder)
-            {
-                var gotoPlaceholder = (GotoPlaceholder)instruction;
-                var label = gotoPlaceholder.Label;
-                var placeholderAddress = instructions.IndexOf(gotoPlaceholder);
-                var gotoAddress = new Instruction(_labelAddresses[label]);
-                _gotoAddresses.Add(gotoAddress);
-                UpdateAddresses(placeholderAddress, InstructionKind.GotoPlaceholder);
-                instructions.Remove(gotoPlaceholder);
-                instructions.Insert(placeholderAddress, new Instruction(Bytecode.BR));
-                instructions.Insert(placeholderAddress + 1, gotoAddress);
-                goto REPEAT_SECOND_LOOP;
-            }
-        }
-
-        return instructions;
     }
 
     void UpdateAddresses(int position, int offset)
@@ -541,66 +457,103 @@ class Emitter
         string outputPath)
     {
         _program = program;
-        var mainFunction = _program.MainMethod.Unwrap();
-
-        _methodOffsets.Add(mainFunction, 0);
-        _methodParameters.Add(mainFunction, 0);
-
-        _mainMethod = EmitMainMethod(mainFunction);
-        
-        EmitOtherMethodBodies(exceptMainMethod: mainFunction);
-
-        var linker = new Linker(_mainMethod, _methodBodies);
-        var programInstructions = linker.Link();
+        var types = _program.Types;
 
         var stringWriter = new StringWriter();
-        var bytecodePrettyPrinter = new BytecodePrettyPrinter(programInstructions);
-        bytecodePrettyPrinter.Print(stringWriter, programInstructions);
-        File.WriteAllText(@"C:\Users\PC-123\Desktop\C#\Bindings-master\samples\Bytecode.txt", stringWriter.ToString());
+        EmitTypes(types, stringWriter);
+
+        EmitMethods(types, stringWriter);
+        Console.WriteLine(stringWriter.ToString());
         
-        _writer = new FileStream("test.bin", FileMode.Create);
-        _writer.WriteByte(0);
-        _writer.WriteByte(0);
-        _writer.WriteByte(0);
-        _writer.WriteByte(0);
-        foreach (var instruction in programInstructions)
-        {
-            var @byte = (byte)instruction.Opcode;
-            _writer.WriteByte(@byte);
-        }
-        _writer.Flush();
         return ImmutableArray<Diagnostic>.Empty;
+    }
+
+    private string GetIRForType(TypeSymbol typeSymbol)
+    {
+        if (Equals(typeSymbol, TypeSymbol.BuiltIn.Bool())) 
+            return ("i1");
+                
+        else if (Equals(typeSymbol, TypeSymbol.BuiltIn.Int())) 
+            return ("i32");
+                
+        else if (Equals(typeSymbol, TypeSymbol.BuiltIn.String())) 
+            return ("ptr");
+                
+        else if (Equals(typeSymbol, TypeSymbol.BuiltIn.Object())) 
+            return ("ptr");
+        else
+            return ("ptr");
+    }
+
+    private string GetMethodName(MethodSymbol methodSymbol)
+    {
+        return $"{methodSymbol.ContainingType.Unwrap().GetFullName()}.{methodSymbol.Name}";
+    }
+    private void EmitMethods(ICollection<TypeSymbol> types, StringWriter writer)
+    {
+        foreach (var type in types)
+        {
+            foreach (var methodDeclaration in type.MethodTable.Select(x => x))
+            {
+                var methodSymbol = methodDeclaration.MethodSymbol;
+                List<string> paramList = [ ];
+                
+                // add parameter for "this" keyword 
+                if (!methodSymbol.IsStatic)
+                    paramList.Add("ptr");
+
+                methodSymbol.Parameters.Select(x => GetIRForType(x.Type)).AddRangeTo(paramList);
+                writer.Write($"define {GetIRForType(methodSymbol.ReturnType)} @\"{GetMethodName(methodSymbol)}\" ( {string.Join(", ", paramList)} )\n");
+                writer.Write("{\n");
+                
+                var cfg = ControlFlowGraph.Create(methodDeclaration.Body.Unwrap());
+                
+                var f = new StringWriter();
+                cfg.WriteTo(f);
+                Console.WriteLine(f.ToString());
+                cfg.TransformToSSA();
+                
+            }
+        }
+    }
+    
+    private void EmitTypes(ICollection<TypeSymbol> types, StringWriter writer)
+    {
+        foreach (var type in types)
+        {
+            var typeFields = type.FieldTable.Symbols.ToList();
+            List<string> str = [ ];
+            foreach (var fieldSymbol in typeFields)
+            {
+                GetIRForType(fieldSymbol.Type).AddTo(str);
+            }
+
+            if (typeFields.Empty())
+                str.Add("i1");
+            
+            writer.Write($"%\"{type.GetFullName()}\" = type {{ {string.Join(", ", str)} }}\n");
+        }
     }
 
     void EmitOtherMethodBodies(MethodSymbol exceptMainMethod)
     {
-        //BUG
-        // foreach (var (functionSymbol, functionBody) in _program.Types.Exclude(x => Equals(x.Key, exceptMainFunction)))
-        // {
-            // _stack.Push(new Dictionary<VariableSymbol, int>());
-            // for (var index = 0; index < functionSymbol.Parameters.Length; index++)
-            // {
-                // var parameter = functionSymbol.Parameters[index];
-                // _stack.Peek().Add(parameter, index);
-            // }
+        
+         foreach (var function in _program.Types
+                      .SelectMany(x => x.MethodTable)
+                      .Exclude(x => Equals(x.MethodSymbol, exceptMainMethod)))
+         {
+             
+             _stack.Push(new Dictionary<VariableSymbol, int>());
+             for (var index = 0; index < function.MethodSymbol.Parameters.Length; index++)
+             {
+                 var parameter = function.MethodSymbol.Parameters[index];
+                 _stack.Peek().Add(parameter, index);
+             }
 
-            // var instructions = EmitBoundBlockStatement(functionBody);
-            // _functionBodies.Add(functionSymbol, instructions);
-            // _stack.Pop();
-        // }
-        throw new NotImplementedException();
-    }
-
-    List<Instruction> EmitMainMethod(MethodSymbol programMainMethod)
-    {
-        var instructions = new List<Instruction>();
-        throw new NotImplementedException();
-        // var body = _program.Types[programMainFunction];
-        // _stack.Push(new Dictionary<VariableSymbol, int>());
-        // instructions.AddRange(EmitBoundBlockStatement(body));
-        // _stack.Pop();
-        // instructions.Add(new Instruction(Bytecode.HALT));
-        // return instructions;
+             var instructions = EmitBoundBlockStatement(function.Body.Unwrap());
+             _methodBodies.Add(function.MethodSymbol, instructions);
+             _stack.Pop();
+         }
     }
 
     List<Instruction> EmitBoundBlockStatement(BoundBlockStatement blockStatement)

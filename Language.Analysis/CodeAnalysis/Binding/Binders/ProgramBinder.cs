@@ -49,6 +49,7 @@ internal sealed class ProgramBinder
         _scope.TryDeclareType(TypeSymbol.BuiltIn.Int(), Option.None);
         _scope.TryDeclareType(TypeSymbol.BuiltIn.String(), Option.None);
         _scope.TryDeclareType(TypeSymbol.BuiltIn.Void(), Option.None);
+        _scope.TryDeclareType(TypeSymbol.BuiltIn.Console(), Option.None);
     }
 
     public BoundGlobalScope BindGlobalScope()
@@ -159,7 +160,7 @@ internal sealed class ProgramBinder
 
         var boundProgram = new BoundProgram(
             previous,
-            diagnostics.ToImmutableArray(),
+            [ ..diagnostics ],
             globalScope.MainMethod,
             typesToBind);
         return boundProgram;

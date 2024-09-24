@@ -1,23 +1,37 @@
-function main(){
-    for (var i = 0; i < 101; i = i + 1){
-        if ((i / 2) * 2 == i){
-            print("i: is even");
-        }
-        else {
-            print("i: is odd");
-            print("here is factorial of i: " + string(factorial(i)));
-        }
 
-    }
-}
-
-function factorial(n : int) : int{
-    if (n == 0){
-        return 1;
-    }
-    return add(n, factorial(n - 1));
-}
-
-function add(x : int, y : int) : int {
-    return x + y;
+namespace HelloWorldSample
+{
+	class Program
+	{
+		static function main(){
+			for (var i = 0; i < 101; i = i + 1){
+				if ((i / 2) * 2 == i){
+					Console.Print("i: is even");
+				}
+				else {
+					Console.Print("i: is odd");
+					Console.Print("here is factorial of i: " + (string)factorial(i));
+				}
+		
+			}
+		}
+		
+		function factorial(n : int) : int{
+			if (n == 0){
+				return 1;
+			}
+			return add(n, factorial(n - 1));
+		}
+		
+		function add(x : int, y : int) : int {
+			return x + y;
+		}
+	}
+	
+	class Barabas
+	{
+		Boolobas : bool;
+		Papados : int;
+		Mamados : object;
+	}
 }

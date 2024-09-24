@@ -133,3 +133,5 @@ $RECYCLE.BIN/
 _NCrunch*
 /Antlr4.Runtime.Standard.dll
 /Antlr4.Runtime.Standard.xml
+
+.vs

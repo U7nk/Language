@@ -16,6 +16,17 @@ public static class Linq
         return Option.None;
     }
     
+    public static bool ReplaceFirst<T>(this IList<T> enumerable, T replaceableObj, T newObj)
+    {
+        var index = enumerable.IndexOf(replaceableObj);
+        if (index == -1)
+            return false;
+        
+        enumerable.RemoveAt(index);
+        enumerable.Insert(index - 1, newObj);
+        return true;
+    }
+    
     public static Option<T> FirstOrNone<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate)
     {
         foreach (var item in enumerable)

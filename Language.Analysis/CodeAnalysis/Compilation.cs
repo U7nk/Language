@@ -125,7 +125,11 @@ public sealed class Compilation
 
     public ImmutableArray<Diagnostic> Emit(string moduleName, string[] refernces, string outputPaths)
     {
-        var program = GetFullBoundProgram();
-        return new Emitter().Emit(program.Program, moduleName, refernces, outputPaths);
+        var fullBoundProgram = GetFullBoundProgram();
+        if (fullBoundProgram.Program.Diagnostics.Any() || fullBoundProgram.GlobalScope.Diagnostics.Any())
+        {
+            return fullBoundProgram.Program.Diagnostics.Union(fullBoundProgram.GlobalScope.Diagnostics).ToImmutableArray();
+        }
+        return new Emitter().Emit(fullBoundProgram.Program, moduleName, refernces, outputPaths);
     }
 }

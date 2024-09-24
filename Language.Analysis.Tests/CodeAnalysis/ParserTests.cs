@@ -117,6 +117,16 @@ public class ParserTests
         }
     }
 
+    [Fact]
+    public void Parser_AccessExpression_Is_Not_ConvertedTo_MemberAccessExpression()
+    {
+        var source = "i = 1;";
+        var parser = new Parser(SourceText.From(source));
+        var expr = parser.ParseExpression();
+        expr.Kind.Should().Be(SyntaxKind.AssignmentExpression);
+    }
+
+    
     static ExpressionSyntax ParseExpression(string text)
     {
         var parser = new Parser(SourceText.From(text));
