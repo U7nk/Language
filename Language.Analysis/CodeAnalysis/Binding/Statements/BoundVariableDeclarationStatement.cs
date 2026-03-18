@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 public class BoundVariableDeclarationStatement : BoundStatement
 {
-    public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable) : base(syntax)
+    public BoundVariableDeclarationStatement(Option<SyntaxNode> syntax, VariableSymbol variable) : base(syntax)
     {
         Variable = variable;
     }

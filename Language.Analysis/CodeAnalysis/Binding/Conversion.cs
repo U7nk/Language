@@ -32,12 +32,6 @@ internal sealed class Conversion
                 return Explicit;
         }
 
-        if (Equals(from, TypeSymbol.BuiltIn.String()))
-        {
-            if (Equals(to, TypeSymbol.BuiltIn.Bool()) || Equals(to, TypeSymbol.BuiltIn.Int()))
-                return Explicit;
-        }
-
         if (from.IsSubClassOf(to))
             return Implicit;
 

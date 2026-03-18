@@ -48,7 +48,8 @@ int main(int argc, char** argv)
     auto mod = llvm::parseIRFile(fileName, err, context);
     mod->setDataLayout(machine->createDataLayout());
 
-    if (!mod) {
+    if (!mod)
+    {
         err.print(argv[0], errs());
         return 1;
     }

@@ -12,6 +12,7 @@ namespace Language.Analysis.Tests;
 
 public static class TestTools
 {
+    
     static string GetEnumeratedTextWithDiagnostics(string sourceText,
                                                    IList<(TextSpan Span, string Code)> diagnostics)
     {
@@ -116,7 +117,7 @@ public static class TestTools
         var compilation = Compilation.Create(syntaxTree);
         var result = compilation.Evaluate(new Dictionary<VariableSymbol, ObjectInstance?>());
         var diagnostics = result.Diagnostics.ToImmutableArray();
-
+        
         var actualDiagnosticTexts = diagnostics
             .Select(d => AnnotatedTextFromDiagnostic(d) + "\n" + d.Code + d.Message)
             .ToArray();
@@ -231,9 +232,10 @@ public static class TestTools
                         InstanceField : int;
                         static StaticField : int;
                         
-                        static function main()
+                        static function main() : int
                         {
-                            {{ content.ReplaceLineEndings("\n        ") }} 
+                            {{ content.ReplaceLineEndings("\n        ") }}
+                            return 0;
                         }
                     }
                 }

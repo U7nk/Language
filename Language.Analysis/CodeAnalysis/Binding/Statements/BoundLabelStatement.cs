@@ -5,7 +5,7 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundLabelStatement : BoundStatement
 {
-    public BoundLabelStatement(SyntaxNode? syntax, LabelSymbol label) : base(syntax)
+    public BoundLabelStatement(Option<SyntaxNode> syntax, LabelSymbol label) : base(syntax)
     {
         Label = label;
     }

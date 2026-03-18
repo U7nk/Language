@@ -10,18 +10,6 @@ namespace Language.Analysis.CodeAnalysis;
 
 internal static class BuiltInMethods
 {
-    public static readonly MethodSymbol 
-        Print = new(
-            Option.None,
-            isStatic: true,
-            isVirtual: false,
-            isOverriding: false,
-            name: "print",
-            parameters: ImmutableArray.Create(new ParameterSymbol(Option.None, "text", TypeSymbol.BuiltIn.String())),
-            returnType: TypeSymbol.BuiltIn.Void(),
-            containingType: null,
-            isGeneric: false,
-            genericParameters: Option.None);
 
     public static readonly MethodSymbol
         Input = new(

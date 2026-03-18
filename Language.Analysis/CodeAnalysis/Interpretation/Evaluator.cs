@@ -13,6 +13,7 @@ class Evaluator
     readonly Stack<Dictionary<VariableSymbol, ObjectInstance?>> _stacks;
     readonly Dictionary<TypeSymbol, TypeStaticInstance> _types;
     ObjectInstance? _lastValue;
+    private ObjectInstance? _mainValue;
 
     public Evaluator(BoundProgram program, Dictionary<VariableSymbol, ObjectInstance?> globalVariables)
     {
@@ -23,7 +24,12 @@ class Evaluator
         _types = new Dictionary<TypeSymbol, TypeStaticInstance>();
     } 
 
-    public ObjectInstance? Evaluate()
+    /// <summary>
+    /// returns last value that is not main return, and main return value
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public (ObjectInstance?, ObjectInstance?) Evaluate()
     {
         var function = _program.MainMethod.Unwrap();
 
@@ -36,7 +42,7 @@ class Evaluator
         _types.Add(programType, programTypeStatic);
         
         var body = programType.MethodTable.Single(x=> x.MethodSymbol.Equals(function)).Body.Unwrap();
-        return EvaluateStatement(body);
+        return (EvaluateStatement(body, true), _mainValue);
     }
 
     Dictionary<string, ObjectInstance?> CreateFieldsFromTable(FieldTable table)
@@ -49,7 +55,7 @@ class Evaluator
         return result;
     }
 
-    ObjectInstance? EvaluateStatement(BoundBlockStatement body)
+    ObjectInstance? EvaluateStatement(BoundBlockStatement body, bool isMain = false)
     {
         var labelToIndex = new Dictionary<LabelSymbol, int>();
 
@@ -88,10 +94,10 @@ class Evaluator
                     var cgs = (BoundConditionalGotoStatement)statement;
                     var condition = (bool)(EvaluateExpression(cgs.Condition).As<ObjectInstance>().LiteralValue 
                                            ?? throw new InvalidOperationException());
-                    if (condition == cgs.JumpIfTrue)
-                        i = labelToIndex[cgs.Label];
+                    if (condition)
+                        i = labelToIndex[cgs.OnTrueLabel];
                     else
-                        i++;
+                        i = labelToIndex[cgs.OnFalseLabel];
                     break;
                 case BoundNodeKind.GotoStatement:
                     i = labelToIndex[((BoundGotoStatement)statement).Label];
@@ -101,10 +107,13 @@ class Evaluator
                     break;
                 case BoundNodeKind.ReturnStatement:
                     var rs = (BoundReturnStatement)statement;
-                    var value = rs.Expression == null 
+                    var value = rs.Expression.IsNone 
                         ? null 
-                        : EvaluateExpression(rs.Expression);
-                    _lastValue = value.As<ObjectInstance?>();
+                        : EvaluateExpression(rs.Expression.Unwrap());
+                    if (!isMain)
+                        _lastValue = value.As<ObjectInstance?>();
+                    else
+                        _mainValue = value.As<ObjectInstance?>();
                     return _lastValue;
                 default:
                     throw new Exception($"Unexpected node  {statement.Kind}");
@@ -138,8 +147,6 @@ class Evaluator
         {
             BoundNodeKind.LiteralExpression =>
                 EvaluateLiteralExpression((BoundLiteralExpression)node),
-            BoundNodeKind.AssignmentExpression =>
-                EvaluateAssignmentExpression((BoundAssignmentExpression)node),
             BoundNodeKind.VariableExpression =>
                 EvaluateVariableExpression((BoundVariableExpression)node),
             BoundNodeKind.UnaryExpression =>
@@ -154,8 +161,8 @@ class Evaluator
                 EvaluateObjectCreationExpression((BoundObjectCreationExpression)node),
             BoundNodeKind.MemberAccessExpression =>
                 EvaluateMemberAccessExpression((BoundMemberAccessExpression)node),
-            BoundNodeKind.MemberAssignmentExpression =>
-                EvaluateMemberAssignmentExpression((BoundMemberAssignmentExpression)node),
+            BoundNodeKind.AssignmentExpression =>
+                EvaluateAssignmentExpression((BoundAssignmentExpression)node),
             BoundNodeKind.MethodCallExpression =>
                 EvaluateMethodCallExpression((BoundMethodCallExpression)node, _stacks.Peek().SingleOrDefault(x => x.Key.Name == "this").Value),
             BoundNodeKind.FieldExpression =>
@@ -198,14 +205,14 @@ class Evaluator
         
         return instance.Fields[node.FieldSymbol.Name];
     }
-    RuntimeObject? EvaluateMemberAssignmentExpression(BoundMemberAssignmentExpression node)
+    RuntimeObject? EvaluateAssignmentExpression(BoundAssignmentExpression node)
     {
         // should return object.
         // objects is represented as Dictionary<string, object>
         
-        if (node.MemberAccess.Kind is BoundNodeKind.FieldExpression)
+        if (node.Left.Kind is BoundNodeKind.FieldExpression)
         {
-            var fieldExpression = (BoundFieldExpression)node.MemberAccess;
+            var fieldExpression = (BoundFieldExpression)node.Left;
             RuntimeObject instance;
             if (fieldExpression.FieldSymbol.IsStatic)
             {
@@ -217,22 +224,22 @@ class Evaluator
             }
             
             
-            var value = EvaluateExpression(node.RightValue).As<ObjectInstance>();
+            var value = EvaluateExpression(node.Initializer).As<ObjectInstance>();
         
-            var member = node.MemberAccess.As<BoundFieldExpression>();
+            var member = node.Left.As<BoundFieldExpression>();
             return _lastValue = instance.Fields[member.FieldSymbol.Name] = value;
         }
-        else if (node.MemberAccess.Kind is BoundNodeKind.VariableExpression)
+        else if (node.Left.Kind is BoundNodeKind.VariableExpression)
         {
-            var variable = node.MemberAccess.As<BoundVariableExpression>().Variable;
-            var rightValue = EvaluateExpression(node.RightValue).As<ObjectInstance>();
+            var variable = node.Left.As<BoundVariableExpression>().Variable;
+            var rightValue = EvaluateExpression(node.Initializer).As<ObjectInstance>();
             return _lastValue = Assign(variable, rightValue);
         }
         else
         {
-            var memberAccess = (BoundMemberAccessExpression)node.MemberAccess;
+            var memberAccess = (BoundMemberAccessExpression)node.Left;
             var instance = EvaluateExpression(memberAccess.Left).NullGuard();
-            var value = EvaluateExpression(node.RightValue).As<ObjectInstance>();
+            var value = EvaluateExpression(node.Initializer).As<ObjectInstance>();
 
             var member = memberAccess.Member.As<BoundFieldExpression>();
 
@@ -398,6 +405,7 @@ class Evaluator
                     _ => throw new($"Unexpected binary operator {binary.Op.Kind}")
                 };
             }
+            throw new Exception("Unexpected type");
         }
 
         if (Equals(binary.Left.Type, TypeSymbol.BuiltIn.String()))
@@ -482,12 +490,6 @@ class Evaluator
         }
 
         throw new Exception($"Unexpected unary operator {unary.Op}");
-    }
-
-    ObjectInstance? EvaluateAssignmentExpression(BoundAssignmentExpression a)
-    {
-        var value = EvaluateExpression(a.Expression).As<ObjectInstance>();
-        return _lastValue = Assign(a.Variable, value);
     }
     
     ObjectInstance? EvaluateVariableExpression(BoundVariableExpression v)

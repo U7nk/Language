@@ -32,10 +32,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var d = new Derived();
                         d.BaseMethod();
+                        return 0;
                     }
                 }
             }
@@ -63,10 +64,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var d = new Derived();
                         d.BaseField = 1;
+                        return 0;
                     }
                 }
             }
@@ -101,10 +103,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var d = new DerivedSecond();
                         d.BaseMethod();
+                        return 0;
                     }
                 }
             }
@@ -136,10 +139,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var d = new DerivedSecond();
                         d.BaseField = 1;
+                        return 0;
                     }
                 }
             }
@@ -168,10 +172,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var d : Base = new Derived();
                         d.BaseField = 1;
+                        return 0;
                     }
                 }
             }
@@ -200,11 +205,12 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var baseInstance : Base;
                         baseInstance = new Derived();
                         baseInstance.BaseField = 1;
+                        return 0;
                     }
                 }
             }
@@ -239,7 +245,7 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let baseInstance = new Base();
                                 let inheritor = new Inheritor();
@@ -249,6 +255,7 @@ public class InheritanceTests
                                     featureIsWorking = true;
                                 }
                                 featureIsWorking = featureIsWorking;
+                                return 0;
                             }
                         }
                     }
@@ -282,7 +289,7 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let baseInstance = new Base();
                                 let inheritor = (Base)new Inheritor();
@@ -292,6 +299,7 @@ public class InheritanceTests
                                     featureIsWorking = true;
                                 }
                                 featureIsWorking = featureIsWorking;
+                                return 0;
                             }
                         }
                     }
@@ -331,7 +339,7 @@ public class InheritanceTests
                         
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let inheritor = new Inheritor();
                                 var featureIsWorking = false;
@@ -339,6 +347,7 @@ public class InheritanceTests
                                 {
                                     featureIsWorking = true;
                                 }
+                                return 0;
                             }
                         }
                     }
@@ -388,7 +397,7 @@ public class InheritanceTests
                         
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let inheritor = new Inheritor();
                                 var featureIsWorking = false;
@@ -396,6 +405,7 @@ public class InheritanceTests
                                 {
                                     featureIsWorking = true;
                                 }
+                                return 0;
                             }
                         }
                     }
@@ -436,7 +446,7 @@ public class InheritanceTests
                         
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let inheritor = new Inheritor();
                                 let inheritorAsBaseOne = (BaseOne)inheritor;
@@ -447,6 +457,7 @@ public class InheritanceTests
                                 {
                                     featureIsWorking = true;
                                 }
+                                return 0;
                             }
                         }
                     }
@@ -496,7 +507,7 @@ public class InheritanceTests
                         
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
                                 let inheritor = new Inheritor();
                                 let inheritorAsBaseOne = (BaseOne)inheritor;
@@ -507,6 +518,7 @@ public class InheritanceTests
                                 {
                                     featureIsWorking = true;
                                 }
+                                return 0;
                             }
                         }
                     }

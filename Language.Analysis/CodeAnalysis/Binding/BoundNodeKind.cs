@@ -31,10 +31,15 @@ internal enum BoundNodeKind
     ThisExpression,
     ObjectCreationExpression,
     MemberAccessExpression,
-    MemberAssignmentExpression,
     FieldExpression,
     NamedTypeExpression,
     CastExpression,
     NamespaceExpression,
+    #endregion
+
+    #region SSA form specific expressions
+    
+    PhiFunctionExpression
+
     #endregion
 }

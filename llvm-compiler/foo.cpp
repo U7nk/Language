@@ -11,6 +11,12 @@ struct Bar
 	bool f3;
 	
 	public:
+	Bar()
+	{
+		this->f3 = true;
+	}
+
+	public:
 	void add_two_number()
 	{
 		this->f1 = true;
@@ -50,10 +56,10 @@ struct Babayka
 
 int main()
 {
-    auto b = Foo::Bar();
-	auto c = Foo::Babayka();
-	b.f1 = true;
-	b.add_two_number();
-	c.add_three_number(false);
-    return 0;
+    auto b = new Foo::Bar();
+	//auto c = Foo::Babayka();
+	b->f1 = true;
+	b->add_two_number();
+	//c.add_three_number(false);
+    return (int)&b->f3;
 }

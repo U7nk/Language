@@ -82,7 +82,6 @@ public enum SyntaxKind
     MethodCallExpression,
     ObjectCreationExpression,
     MemberAccessExpression,
-    MemberAssignmentExpression,
     ThisExpression,
     CastExpression,
     NamedTypeExpression,

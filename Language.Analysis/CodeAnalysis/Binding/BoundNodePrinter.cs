@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Symbols;
 using Language.Analysis.CodeAnalysis.Syntax;
+using Language.Analysis.Extensions;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
@@ -95,9 +96,6 @@ static class BoundNodePrinter
             case BoundNodeKind.VariableExpression:
                 WriteVariableExpression((BoundVariableExpression)node, writer);
                 break;
-            case BoundNodeKind.AssignmentExpression:
-                WriteAssignmentExpression((BoundAssignmentExpression)node, writer);
-                break;
             case BoundNodeKind.ErrorExpression:
                 WriteErrorExpression((BoundErrorExpression)node, writer);
                 break;
@@ -113,17 +111,44 @@ static class BoundNodePrinter
             case BoundNodeKind.NamedTypeExpression:
                 WriteNamedTypeExpression((BoundNamedTypeExpression)node, writer);
                 break;
-            case BoundNodeKind.MemberAssignmentExpression:
-                WriteMemberAssignmentExpression((BoundMemberAssignmentExpression)node, writer);
+            case BoundNodeKind.AssignmentExpression:
+                WriteMemberAssignmentExpression((BoundAssignmentExpression)node, writer);
+                break;
+
+            case BoundNodeKind.PhiFunctionExpression:
+                WritePhiFunctionExpression((BoundPhiFunctionExpression)node, writer);
+                break;
+
+            case BoundNodeKind.ObjectCreationExpression:
+                WriteObjectCreationExpression(node.As<BoundObjectCreationExpression>(), writer);
+                break;
+            
+            case BoundNodeKind.FieldExpression:
+                WriteFieldExpression(node.As<BoundFieldExpression>(), writer);
                 break;
             default:
                 throw new Exception("unknown node");
         }
     }
 
-    private static void WriteMemberAssignmentExpression(BoundMemberAssignmentExpression node, IndentedTextWriter writer)
+    private static void WriteFieldExpression(BoundFieldExpression node, IndentedTextWriter writer)
     {
-        writer.Write(node.MemberAccess.ToString() + " = " + node.RightValue.ToString());
+        writer.Write($"{node.FieldSymbol.Name}");
+    }
+
+    private static void WriteObjectCreationExpression(BoundObjectCreationExpression node, IndentedTextWriter writer)
+    {
+        writer.Write("new " + node.Type.Name + "()");
+    }
+
+    private static void WritePhiFunctionExpression(BoundPhiFunctionExpression node, IndentedTextWriter writer)
+    {
+        writer.Write("phi(" + string.Join(", ", node.VariableSymbols.Select(x=> x.Name)) + ")");
+    }
+
+    private static void WriteMemberAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
+    {
+        writer.Write(node.Left.ToString() + " = " + node.Initializer.ToString());
         writer.WriteLine();
     }
 
@@ -142,7 +167,7 @@ static class BoundNodePrinter
     static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)
     {
         writer.Write("return ");
-        node.Expression?.WriteTo(writer);
+        node.Expression.OnSome(x => x.WriteTo(writer));
         writer.WriteLine();
     }
 
@@ -159,9 +184,11 @@ static class BoundNodePrinter
     static void WriteConditionalGotoStatement(BoundConditionalGotoStatement node, IndentedTextWriter writer)
     {
         writer.Write("goto ");
-        writer.Write(node.Label.Name);
-        writer.Write(node.JumpIfTrue ? " if " : " unless ");
         node.Condition.WriteTo(writer);
+        writer.Write("true: ");
+        writer.Write(node.OnTrueLabel.Name);
+        writer.Write("false: ");
+        writer.Write(node.OnFalseLabel.Name);
         writer.WriteLine();
     }
 
@@ -235,13 +262,7 @@ static class BoundNodePrinter
     {
         writer.Write(node.Variable.Name);
     }
-
-    static void WriteAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
-    {
-        writer.Write(node.Variable.Name);
-        writer.Write(" = "); 
-        node.Expression.WriteTo(writer);
-    }
+    
 
     static void WriteErrorExpression(BoundErrorExpression node, IndentedTextWriter writer)
     {

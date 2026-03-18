@@ -23,25 +23,6 @@ public class TypeSymbol : Symbol, ITypedSymbol
                             new List<NamespaceSymbol>());
 
     
-    private static MethodTable CreateConsoleMethodTable()
-    {
-        var mt = new MethodTable();
-
-        MethodSymbol printMethodSymbol = new(
-            Option.None,
-            isStatic: true,
-            isVirtual: false,
-            isOverriding: false,
-            name: "Print",
-            parameters: [ new ParameterSymbol(Option.None, "text", TypeSymbol.BuiltIn.String()) ],
-            returnType: TypeSymbol.BuiltIn.Void(),
-            containingType: null,
-            isGeneric: false,
-            genericParameters: Option.None);
-        mt.AddMethodDeclaration(printMethodSymbol, [ ]);
-        
-        return mt;
-    }
 
     public static Option<TypeSymbol> _console;
 
@@ -52,7 +33,7 @@ public class TypeSymbol : Symbol, ITypedSymbol
             _console = TypeSymbol.New(name: "Console",
                            declaration: Option.None,
                            inheritanceClauseSyntax: null,
-                           methodTable: CreateConsoleMethodTable(),
+                           methodTable: new MethodTable(),
                            fieldTable: [ ],
                            baseTypes: [ TypeSymbol.BuiltIn.Object() ],
                            isGenericMethodParameter: false,
@@ -62,6 +43,18 @@ public class TypeSymbol : Symbol, ITypedSymbol
                            isGenericTypeDefinition: false,
                            containingNamespace: TypeSymbol.BuiltIn.BuiltInTypeSymbolNamespace
             );
+            MethodSymbol printMethodSymbol = new(
+                Option.None,
+                isStatic: true,
+                isVirtual: false,
+                isOverriding: false,
+                name: "Print",
+                parameters: [ new ParameterSymbol(Option.None, "text", TypeSymbol.BuiltIn.String()) ],
+                returnType: TypeSymbol.BuiltIn.Void(),
+                containingType: _console.Unwrap(),
+                isGeneric: false,
+                genericParameters: Option.None);
+            _console.Unwrap().MethodTable.AddMethodDeclaration(printMethodSymbol, new List<TypeSymbol>());
             BuiltInTypeSymbolNamespace.Types.Add(_console.Unwrap());
             return _console.Unwrap();
         }

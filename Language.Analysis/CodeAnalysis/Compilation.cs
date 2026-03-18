@@ -68,7 +68,7 @@ public sealed class Compilation
             .ToImmutableArray();
         
         if (diagnostics.Any())
-            return new EvaluationResult(diagnostics, null);
+            return new EvaluationResult(diagnostics, null, null);
 
         // var cfgPath = "control_flow.dot";
         // var cfg = ControlFlowGraph.Create(
@@ -79,7 +79,7 @@ public sealed class Compilation
 
         var evaluator = new Evaluator(program.Program, variables);
         var result = evaluator.Evaluate();
-        return new(ImmutableArray<Diagnostic>.Empty, result);
+        return new(ImmutableArray<Diagnostic>.Empty, result.Item1, result.Item2);
     }
 
     public void EmitTree(IndentedTextWriter writer)

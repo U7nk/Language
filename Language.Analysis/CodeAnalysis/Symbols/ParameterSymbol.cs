@@ -8,7 +8,7 @@ public sealed class ParameterSymbol : VariableSymbol
     public override SymbolKind Kind => SymbolKind.Parameter;
 
     internal ParameterSymbol(Option<SyntaxNode> declarationSyntax, string name, TypeSymbol parameterType)
-        : base(declarationSyntax, name, parameterType, isReadonly: true)
+        : base(declarationSyntax, name, parameterType, isReadonly: false)
     {
     }
 }

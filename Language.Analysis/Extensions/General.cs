@@ -156,6 +156,7 @@ internal static class General
         toCast.NullGuard();
         return ((T)toCast!);
     }
+ 
     
 
     [DebuggerStepThrough]

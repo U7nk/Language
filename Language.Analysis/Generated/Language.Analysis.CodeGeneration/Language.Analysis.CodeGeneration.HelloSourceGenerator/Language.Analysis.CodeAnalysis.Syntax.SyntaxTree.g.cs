@@ -158,11 +158,6 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.MethodCallExpressionSyntax(this,identifier,genericClause,openParenthesis,arguments,closeParenthesis);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax NewMemberAssignmentExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax memberAccess,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken equalsToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax initializer)
-    {
-       return new Language.Analysis.CodeAnalysis.Syntax.MemberAssignmentExpressionSyntax(this,memberAccess,equalsToken,initializer);
-    }
-
     public Language.Analysis.CodeAnalysis.Syntax.MemberAccessExpressionSyntax NewMemberAccessExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax left,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken dot,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax right)
     {
        return new Language.Analysis.CodeAnalysis.Syntax.MemberAccessExpressionSyntax(this,left,dot,right);
@@ -173,9 +168,9 @@ public partial class SyntaxTree {
        return new Language.Analysis.CodeAnalysis.Syntax.LiteralExpressionSyntax(this,literalToken);
     }
 
-    public Language.Analysis.CodeAnalysis.Syntax.AssignmentExpressionSyntax NewAssignmentExpression(Language.Analysis.CodeAnalysis.Syntax.SyntaxToken identifierToken,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken equalsToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax expression)
+    public Language.Analysis.CodeAnalysis.Syntax.AssignmentExpressionSyntax NewAssignmentExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax left,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken equalsToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax initializer)
     {
-       return new Language.Analysis.CodeAnalysis.Syntax.AssignmentExpressionSyntax(this,identifierToken,equalsToken,expression);
+       return new Language.Analysis.CodeAnalysis.Syntax.AssignmentExpressionSyntax(this,left,equalsToken,initializer);
     }
 
     public Language.Analysis.CodeAnalysis.Syntax.BinaryExpressionSyntax NewBinaryExpression(Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax left,Language.Analysis.CodeAnalysis.Syntax.SyntaxToken operatorToken,Language.Analysis.CodeAnalysis.Syntax.ExpressionSyntax right)

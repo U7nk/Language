@@ -3,14 +3,14 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
-internal class BoundVariableDeclarationAssignmentStatement : BoundStatement
+internal class BoundVariableDeclarationAssignmentStatement : BoundVariableDeclarationStatement
 {
-    public VariableSymbol Variable { get; }
+    
     public BoundExpression Initializer { get; }
 
-    public BoundVariableDeclarationAssignmentStatement(Option<SyntaxNode> syntaxNode, VariableSymbol variable, BoundExpression initializer) : base(syntaxNode)
+    public BoundVariableDeclarationAssignmentStatement(Option<SyntaxNode> syntaxNode, VariableSymbol variable, BoundExpression initializer) 
+        : base(syntaxNode, variable)
     {
-        Variable = variable;
         Initializer = initializer;
     }
 

@@ -271,7 +271,7 @@ public class DiagnosticBag : List<Diagnostic>
 
     public void ReportMainMustHaveCorrectSignature(TextLocation identifierLocation)
     {
-        var message = $"main method must have correct signature(main must be static, have return type {TypeSymbol.BuiltIn.Void} and 0 parameters).";
+        var message = $"main method must have correct signature(main must be static, have return type {TypeSymbol.BuiltIn.Int()} and 0 parameters).";
         Report(identifierLocation, message, MAIN_MUST_HAVE_CORRECT_SIGNATURE_CODE);
     }
 
@@ -501,5 +501,11 @@ public class DiagnosticBag : List<Diagnostic>
         var providedGenericArguments = newExpressionSyntax.NamedTypeExpression.GenericClause.Unwrap().Arguments;
         var message = $"Generic class constructor call with wrong generic arguments count. Constructor for '{newExpressionSyntax.NamedTypeExpression}' expects {expectedTypeArguments.Count()} generic arguments, but {providedGenericArguments.Count} were provided.";
         Report(newExpressionSyntax.NamedTypeExpression.GenericClause.Unwrap().Location, message, GENERIC_CLASS_CONSTRUCTOR_GENERIC_ARGUMENTS_WRONG_COUNT);
+    }
+    public const string REPORT_CANNOT_CALL_NON_STATIC_METHOD_IN_STATIC_CONTEXT = "[0057:Error]";
+    public void ReportCannotCallNonStaticMethodInStaticContext(MethodCallExpressionSyntax syntax)
+    {
+        var message = $"Cannot use non-static method '{syntax.Identifier.Text}' in static context.";
+        Report(syntax.Location, message, REPORT_CANNOT_CALL_NON_STATIC_METHOD_IN_STATIC_CONTEXT);
     }
 }

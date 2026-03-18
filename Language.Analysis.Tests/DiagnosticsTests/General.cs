@@ -173,9 +173,10 @@ public class General
                 class Program
                 {
                 
-                    static function main()
+                    static function main() : int
                     {
-                        {[[)]]
+                        {[)]
+                        return 0;
                     }
                 }
             }[]
@@ -183,7 +184,6 @@ public class General
         var diagnostics = new[]
         {
             "Unexpected token <CloseParenthesisToken> expected <IdentifierToken>.",
-            "Unexpected token <CloseParenthesisToken> expected <SemicolonToken>.",
             "Unexpected token <EndOfFileToken> expected <CloseBraceToken>.",
         };
         TestTools.AssertDiagnosticsWithMessages(text,diagnostics);
@@ -327,7 +327,7 @@ public class General
     {
         var text =
             """
-            var a : int; 
+            var a : int;
             if (false){
                var b = a;
             }
@@ -367,8 +367,9 @@ public class General
                 class Program 
                 {
                     static StaticField : int;
-                    static function main(){
-                        
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     static function StaticMethod(){
@@ -398,7 +399,9 @@ public class General
                 class Program{
                     static StaticField : int;
                     
-                    static function main(){    
+                    static function main() : int
+                    {
+                        return 0;    
                     }
                     
                     function StaticMethod(){
@@ -426,9 +429,9 @@ public class General
             {
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
-                        
+                        return 0;
                     }
                     
                     function nonStaticMethod()
@@ -459,8 +462,9 @@ public class General
                 class Program
                 {
                     static staticField : int;
-                    static function main() {  
-                        
+                    static function main() : int
+                    {  
+                        return 0;    
                     }
                     
                     function method() {
@@ -486,8 +490,10 @@ public class General
             {
                 class Program
                 {
-                    static function main() {  
+                    static function main() : int
+                    {  
                         var [x];
+                        return 0;
                     }
                     
                     
@@ -511,9 +517,11 @@ public class General
                 class Program
                 {
                     nonStaticField : int;
-                    static function main() {  
+                    static function main() : int
+                    {  
                         var x = [this].nonStaticField;
                         var y = [this].nonStaticMethod();
+                        return 0;
                     }
                     
                     function nonStaticMethod() : int {
@@ -540,8 +548,10 @@ public class General
                 class Program
                 {
                     static Field : InstanceField;
-                    static function main() {   
-                        Field.[Foo]();   
+                    static function main() : int 
+                    {   
+                        Field.[Foo]();
+                        return 0;   
                     }
                 }
                 class Field{
@@ -628,10 +638,11 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass();
                         myClass.[TestMethod](10);
+                        return 0;
                     }
                 }
             }
@@ -660,10 +671,11 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass();
                         myClass.TestMethod<[int]>(10);
+                        return 0;
                     }
                 }
             }
@@ -691,10 +703,11 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass();
                         myClass.TestMethod[<int, string>](10);
+                        return 0;
                     }
                 }
             }
@@ -722,10 +735,11 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass();
                         myClass.TestMethod[<int, string>](10);
+                        return 0;
                     }
                 }
             }
@@ -755,10 +769,11 @@ public class General
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new [MyClass]();
                         myClass.TestMethod(10);
+                        return 0;
                     }
                 }
             }
@@ -786,8 +801,9 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
+                        return 0;
                     }
                 }
             }
@@ -817,9 +833,10 @@ public class General
                 class SecondClass<T> { }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var f = new SecondClass<MyClass<[int]>>();
+                        return 0;
                     }
                 }
             }
@@ -849,8 +866,9 @@ public class General
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
+                        return 0;
                     }
                 }
             }
@@ -878,9 +896,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass<[int]>();
+                        return 0;
                     }
                 }
             }
@@ -909,10 +928,11 @@ public class General
                 class SecondClass<T> where T : MyClass<string> { }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass<[int]>();
                         var secondClass = new SecondClass<[MyClass<[int]>]>();
+                        return 0;
                     }
                 }
             }
@@ -942,9 +962,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass[<int, string>]();
+                        return 0;
                     }
                 }
             }
@@ -972,9 +993,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass[<int, string>]();
+                        return 0;
                     }
                 }
             }
@@ -999,9 +1021,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass : MyClass<[int]>;
+                        return 0;
                     }
                 }
             }
@@ -1028,9 +1051,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass : MyClass<[OtherClass<[int]>]>; 
+                        return 0;
                     }
                 }
             }
@@ -1059,10 +1083,11 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var x = new MyClass<OtherClass<string>>();
                         x.GenericMethod<[OtherClass<[int]>]>();
+                        return 0;
                     }
                 }
             }
@@ -1091,9 +1116,10 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var x = new MyClass<[OtherClass<[int]>]>();
+                        return 0;
                     }
                 }
             }
@@ -1123,11 +1149,12 @@ public class General
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass : MyClass<OtherClass<string>>;
                         var x = new MyClass<OtherClass<string>>();
                         x.GenericMethod<OtherClass<string>>();
+                        return 0;
                     }
                 }
             }
@@ -1135,5 +1162,36 @@ public class General
 
         TestTools.Evaluate(source).AssertNoDiagnostics(Output);
     }
+    
+    [Fact]
+    public void CannotCallNonStaticMethodInStaticContext()
+    {
+        var source = @"
+            namespace HelloWorldSample
+            {
+                class Program
+                {
+                    static function main() : int {
+                        [factorial(3)];
+                        return 0;
+                    }
+                    
+                    function factorial(n : int) : int{
+                        return 1;
+                    }
+                    
+                }
+            }
+            ";
+        
+        var diagnostics = new[]
+        {
+            DiagnosticBag.REPORT_CANNOT_CALL_NON_STATIC_METHOD_IN_STATIC_CONTEXT,
+        };
+        TestTools.AssertDiagnostics(source, diagnostics, Output);
+    }
+     
+    
+    
 
 }

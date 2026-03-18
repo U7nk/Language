@@ -8,7 +8,7 @@ namespace Language.Analysis.CodeAnalysis.Symbols;
 public class MethodSymbol : MemberSymbol
 {
     public MethodSymbol(Option<SyntaxNode> declaration, 
-                        TypeSymbol? containingType, 
+                        TypeSymbol containingType, 
                         bool isStatic, 
                         bool isVirtual,
                         bool isOverriding,

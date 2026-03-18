@@ -23,7 +23,7 @@ public static class Linq
             return false;
         
         enumerable.RemoveAt(index);
-        enumerable.Insert(index - 1, newObj);
+        enumerable.Insert(int.Max(index, 0), newObj);
         return true;
     }
     

@@ -6,14 +6,14 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 abstract class BoundLoopStatement : BoundStatement
 {
-    protected BoundLoopStatement(Option<SyntaxNode> syntax, LabelSymbol breakLabel, LabelSymbol continueLabel) : base(syntax)
+    protected BoundLoopStatement(Option<SyntaxNode> syntax, LabelSymbol loopBreakLabel, LabelSymbol loopStartLabel) : base(syntax)
     {
-        BreakLabel = breakLabel;
-        ContinueLabel = continueLabel;
+        LoopBreakLabel = loopBreakLabel;
+        LoopStartLabel = loopStartLabel;
     }
     
-    public LabelSymbol BreakLabel { get; set; }
-    public LabelSymbol ContinueLabel { get; set; }
+    public LabelSymbol LoopBreakLabel { get; set; }
+    public LabelSymbol LoopStartLabel { get; set; }
     
 }
 
@@ -21,8 +21,8 @@ internal sealed class BoundWhileStatement : BoundLoopStatement
 {
   internal override BoundNodeKind Kind => BoundNodeKind.WhileStatement;
   
-  public BoundWhileStatement(Option<SyntaxNode> syntax,BoundExpression condition, BoundStatement body, LabelSymbol breakLabel, LabelSymbol continueLabel) 
-      : base(syntax, breakLabel, continueLabel)
+  public BoundWhileStatement(Option<SyntaxNode> syntax,BoundExpression condition, BoundStatement body, LabelSymbol loopBreakLabel, LabelSymbol loopStartLabel) 
+      : base(syntax, loopBreakLabel, loopStartLabel)
   {
     Condition = condition;
     Body = body;

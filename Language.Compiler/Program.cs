@@ -58,6 +58,7 @@ static class Program
         var syntaxTrees = new List<SyntaxTree>();
         var hasErrors = false;
         var paths = GetFilePaths(sourcePaths);
+        IEnumerable<Diagnostic> diagnostics = new List<Diagnostic>();
         foreach (var path in paths)
         {
             if (!File.Exists(path))
@@ -68,39 +69,48 @@ static class Program
             }
 
             var syntaxTree = SyntaxTree.Load(path);
+            if (syntaxTree.Diagnostics.Any())
+            {
+                diagnostics = diagnostics.Concat(syntaxTree.Diagnostics);
+            }
             syntaxTrees.Add(syntaxTree);
         }
-
+        
         if (hasErrors)
             return -1;
 
-        var compilation = Compilation.Create(syntaxTrees.ToArray());
-        if (outputPath is null) 
-            outputPath = sourcePaths[0].ChangeExtension(".exe");
-
-        ConsoleEx.WriteLine(outputPath);
-        var emitDiagnostics = compilation.Emit(moduleName ?? throw new Exception(), references.ToArray(), outputPath);
-
-        if (emitDiagnostics.Any())
+        if (!diagnostics.Any())
         {
-            foreach (var diagnostic in emitDiagnostics)
+            var compilation = Compilation.Create(syntaxTrees.ToArray());
+
+            if (outputPath is null)
+                outputPath = sourcePaths[0].ChangeExtension(".exe");
+
+            ConsoleEx.WriteLine(outputPath);
+            var emitDiagnostics = compilation.Emit(moduleName ?? throw new Exception(), references.ToArray(), outputPath);
+            diagnostics = diagnostics.Concat(emitDiagnostics);
+        }
+
+        if (diagnostics.Any())
+        {
+            foreach (var diagnostic in diagnostics)
             {
                 var sourceText = diagnostic.TextLocation.Text;
                 var text = sourceText.ToString();
-                var prefix = sourceText.ToString().Substring(0, diagnostic.TextLocation.Span.Start);
+                var prefix = sourceText.ToString().Substring(0, diagnostic.TextLocation.Span.Start).Split("\n").Last();
                 var error = text.Substring(diagnostic.TextLocation.Span.Start, diagnostic.TextLocation.Span.Length);
-                var suffix = text.Substring(diagnostic.TextLocation.Span.End);
+                var suffix = text.Substring(diagnostic.TextLocation.Span.End).Split("\n").First();
         
                 var line = $"{diagnostic.TextLocation.Text.FileName}" +
                            $"({diagnostic.TextLocation.StartLine + 1},{diagnostic.TextLocation.StartCharacter + 1}," +
-                           $"{diagnostic.TextLocation.EndLine + 1},{diagnostic.TextLocation.EndCharacter + 1}):{diagnostic.Message}\n \"{prefix}";
+                           $"{diagnostic.TextLocation.EndLine + 1},{diagnostic.TextLocation.EndCharacter + 1}):{diagnostic.Message}\n {prefix}";
                 ConsoleEx.Write(line);
                 ConsoleEx.Write($"|>", ConsoleColor.Red);
                 ConsoleEx.Write($"{error}");
                 ConsoleEx.Write($"<|", ConsoleColor.Red);
-                ConsoleEx.Write($"{suffix}\"");
+                ConsoleEx.Write($"{suffix}");
                 ConsoleEx.WriteLine();
-                ConsoleEx.Write(diagnostic.Message, ConsoleColor.DarkCyan);
+                ConsoleEx.Write(diagnostic.Message, ConsoleColor.Red);
                 ConsoleEx.WriteLine();
             }
         }

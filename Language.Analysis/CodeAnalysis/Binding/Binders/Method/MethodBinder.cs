@@ -61,7 +61,7 @@ sealed class MethodBinder
         _scope = _scope.CreateChild();
         BoundBlockStatement result;
         if (methodSymbol.Name is SyntaxFacts.MAIN_METHOD_NAME or SyntaxFacts.SCRIPT_MAIN_METHOD_NAME
-            && _containingType.Name == SyntaxFacts.START_TYPE_NAME)
+            && _containingType.Name == SyntaxFacts.PROGRAM_TYPE_NAME)
         {
             // method may be generated from global statements
             // so it needs special handling
@@ -102,7 +102,6 @@ sealed class MethodBinder
         var isAllowedExpression = es.Expression.Kind
             is BoundNodeKind.AssignmentExpression
             or BoundNodeKind.MethodCallExpression
-            or BoundNodeKind.MemberAssignmentExpression
             or BoundNodeKind.ErrorExpression;
         if (!isAllowedExpression && es.Expression.Kind is BoundNodeKind.MemberAccessExpression)
         {
@@ -228,8 +227,8 @@ sealed class MethodBinder
 
     BoundStatement BindLoopBody(StatementSyntax body, out LabelSymbol breakLabel, out LabelSymbol continueLabel)
     {
-        breakLabel = new LabelSymbol("break");
-        continueLabel = new LabelSymbol("continue");
+        breakLabel = LabelSymbol.GenerateLabel("loop_break", LabelSymbol.KindEnum.LoopBreak);
+        continueLabel = LabelSymbol.GenerateLabel("loop_start", LabelSymbol.KindEnum.LoopStart);
         _loopStack.Push((breakLabel, continueLabel));
 
         var boundBody = BindStatement(body);
@@ -389,8 +388,8 @@ sealed class MethodBinder
                 return BindNewExpression((NewExpressionSyntax)syntax);
             case SyntaxKind.MemberAccessExpression:
                 return BindMemberAccessExpression((MemberAccessExpressionSyntax)syntax);
-            case SyntaxKind.MemberAssignmentExpression:
-                return BindMemberAssignmentExpression((MemberAssignmentExpressionSyntax)syntax);
+            case SyntaxKind.AssignmentExpression:
+                return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
             case SyntaxKind.MethodCallExpression:
                 return BindMethodCallExpression((MethodCallExpressionSyntax)syntax, 
                                                 _containingType,
@@ -423,13 +422,13 @@ sealed class MethodBinder
         return new BoundThisExpression(syntax, _containingType);
     }
 
-    BoundExpression BindMemberAssignmentExpression(MemberAssignmentExpressionSyntax syntax)
+    BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
     {
         
         BoundExpression member;
-        if (syntax.MemberAccess.Kind is SyntaxKind.NameExpression)
+        if (syntax.Left.Kind is SyntaxKind.NameExpression)
         {
-            var nameExpression = (NameExpressionSyntax)syntax.MemberAccess;
+            var nameExpression = (NameExpressionSyntax)syntax.Left;
             member = BindNameExpression(nameExpression,
                                         _containingType,
                                         isCalledOnStatic: _currentMethod.IsStatic);
@@ -444,14 +443,14 @@ sealed class MethodBinder
         }
         else
         {
-            member = BindMemberAccessExpression(syntax.MemberAccess);   
+            member = BindMemberAccessExpression(syntax.Left);   
         }
         
         if (member is BoundErrorExpression)
             return new BoundErrorExpression();
 
         var rightValue = BindExpression(syntax.Initializer, member.Type);
-        return new BoundMemberAssignmentExpression(syntax, member, rightValue);
+        return new BoundAssignmentExpression(syntax, member, rightValue);
     }
 
     /// <summary>
@@ -472,8 +471,11 @@ sealed class MethodBinder
         }
         var arguments = methodCallExpressionSyntax.Arguments.Select(x => BindExpression(x)).ToImmutableArray();
         var boundMethodCall = new BoundMethodCallExpression(methodCallExpressionSyntax, methodSymbol, arguments);
-        
-        
+
+        if (methodSymbol.IsStatic is false && isCalledOnStatic)
+        {
+            _diagnostics.ReportCannotCallNonStaticMethodInStaticContext(methodCallExpressionSyntax);
+        }
         if (isCalledOnStatic is false && methodSymbol.IsStatic)
         {
             _diagnostics.ReportCannotAccessStaticFieldOnNonStaticMember(methodCallExpressionSyntax.Identifier);
@@ -849,9 +851,9 @@ sealed class MethodBinder
 
         if ((!conversion.IsImplicit && !allowExplicit) || !conversion.Exists)
         {
-            if (expression.Type != TypeSymbol.BuiltIn.Error() && type != TypeSymbol.BuiltIn.Error())
+            if (!Equals(expression.Type, TypeSymbol.BuiltIn.Error()) && !Equals(type, TypeSymbol.BuiltIn.Error()))
             {
-                if (!allowExplicit && !conversion.IsImplicit && conversion.Exists)
+                if (!allowExplicit && conversion is { IsImplicit: false, Exists: true })
                     _diagnostics.ReportNoImplicitConversion(diagnosticLocation, expression.Type, type);
                 else
                     _diagnostics.ReportCannotConvert(diagnosticLocation, expression.Type, type);

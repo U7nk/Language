@@ -7,7 +7,7 @@ internal sealed class BoundVariableExpression : BoundExpression
 {
     public VariableSymbol Variable { get; }
 
-    public BoundVariableExpression(SyntaxNode syntax, VariableSymbol variable) : base(syntax)
+    public BoundVariableExpression(Option<SyntaxNode> syntax, VariableSymbol variable) : base(syntax)
     {
         Variable = variable;
     }

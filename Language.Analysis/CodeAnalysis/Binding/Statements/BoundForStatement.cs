@@ -15,8 +15,8 @@ internal sealed class BoundForStatement : BoundLoopStatement
     public BoundForStatement(Option<SyntaxNode> syntax, BoundVariableDeclarationAssignmentStatement? variableDeclarationAssignment,
                              BoundExpression? expression,
                              BoundExpression condition, BoundExpression mutation, BoundStatement body,
-                             LabelSymbol breakLabel, LabelSymbol continueLabel)
-        : base(syntax, breakLabel, continueLabel)
+                             LabelSymbol loopBreakLabel, LabelSymbol loopStartLabel)
+        : base(syntax, loopBreakLabel, loopStartLabel)
     {
         Condition = condition;
         Mutation = mutation;

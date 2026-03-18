@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Language.Analysis.CodeAnalysis.Text;
 using Language.Analysis.Extensions;
@@ -53,6 +54,10 @@ public class Parser
         {
             return _tokens.Last();
         }
+        if (index < 0)
+        {
+            return _tokens.First();
+        }
 
         return _tokens[index];
     }
@@ -77,11 +82,16 @@ public class Parser
         return Option.None;
     }
     
+    bool _lastMatchFailed = false;
     SyntaxToken Match(SyntaxKind kind)
     {
         if (AssertIsTokenKind(kind))
+        {
+            _lastMatchFailed = false;
             return NextToken();
+        }
         
+        _lastMatchFailed = true;
         return new SyntaxToken(_syntaxTree, kind, Current.Position, string.Empty, null);
     }
 
@@ -149,8 +159,12 @@ public class Parser
             if (Current.Kind == syntaxKind)
                 return true;
         }
-        
-        _diagnostics.ReportUnexpectedToken(new TextLocation(_sourceText, Current.Span), Current.Kind, kind);
+
+        if (!_lastMatchFailed)
+        {
+            _diagnostics.ReportUnexpectedToken(new TextLocation(_sourceText, Current.Span), Current.Kind, kind);
+        }
+
         return false;
     }
 
@@ -267,6 +281,10 @@ public class Parser
                             break;
                         case SyntaxKind.IdentifierToken:
                             members.Add(ParseFieldDeclaration());
+                            break;
+                        default:
+                            NextToken();
+                            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, [SyntaxKind.FunctionKeyword, SyntaxKind.IdentifierToken]);
                             break;
                     }
                     break;
@@ -704,30 +722,6 @@ public class Parser
         return _syntaxTree.NewNewExpression(newKeyword, namedTypeExpression, openParenthesis, closeParenthesis);
     }
 
-    AssignmentExpressionSyntax ParseAssignmentExpression()
-    {
-        // a + b + 5
-        // is left associative
-        //      +
-        //     / \
-        //    +   5
-        //   / \
-        //  a   b
-        //
-        // a = b = 5
-        // assignment is right associative
-        //      =
-        //     / \
-        //    a   =
-        //       / \
-        //      b   5
-
-        var identifier = Match(SyntaxKind.IdentifierToken);
-        var equalsToken = Match(SyntaxKind.EqualsToken);
-        var right = ParseExpression();
-        return _syntaxTree.NewAssignmentExpression(identifier, equalsToken, right);
-    }
-
     ExpressionSyntax ParsePrimaryExpression()
     {
         return Current.Kind switch
@@ -766,12 +760,16 @@ public class Parser
     ExpressionSyntax ParseMemberAccessOrAssignment()
     {
         var memberAccessOrNameExpression = ParseMemberAccessOrNameExpression();
+        
+        
         if (Current.Kind is SyntaxKind.EqualsToken)
         {
+            Debug.Assert(memberAccessOrNameExpression is NameExpressionSyntax or MemberAccessExpressionSyntax);
+            
             var equals = Match(SyntaxKind.EqualsToken);
             var right = ParseExpression();
             
-            return _syntaxTree.NewMemberAssignmentExpression(memberAccessOrNameExpression, equals, right);
+            return _syntaxTree.NewAssignmentExpression(memberAccessOrNameExpression, equals, right);
         }
 
         return memberAccessOrNameExpression;

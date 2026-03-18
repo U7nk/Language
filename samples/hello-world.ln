@@ -3,28 +3,50 @@ namespace HelloWorldSample
 {
 	class Program
 	{
-		static function main(){
+		static function main() : int {
 			for (var i = 0; i < 101; i = i + 1){
 				if ((i / 2) * 2 == i){
-					Console.Print("i: is even");
+					Console.Print(((string)i) + ": is even\n");
 				}
 				else {
-					Console.Print("i: is odd");
-					Console.Print("here is factorial of i: " + (string)factorial(i));
+					Console.Print(((string)i) + ": is odd\n");
 				}
-		
+
 			}
+			var f : int = 10;
+			Console.Print("Factorial of " + ((string)f) + " - " + ((string)factorial(f)) + "\n");
+			foo(53);
+			for (var r = 2; r != 1; r = r + 1)
+			{
+				var x = new Barabas();
+				x.Papados = 1;
+				Console.Print((string)x.Papados);
+			}
+			return 0;
+		}
+
+		static function foo(x : int)
+		{
+			var b : int = x ;
+			var c : int = x ;
+			if ((c / 2) == 1)
+			{
+				b = x;
+			}
+			x = b;
+			Console.Print((string)x );
+			Console.Print("\n");
 		}
 		
-		function factorial(n : int) : int{
+		static function factorial(n : int) : int{
 			if (n == 0){
 				return 1;
 			}
 			return add(n, factorial(n - 1));
 		}
 		
-		function add(x : int, y : int) : int {
-			return x + y;
+		static function add(x : int, y : int) : int {
+			return x * y;
 		}
 	}
 	

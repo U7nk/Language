@@ -6,7 +6,7 @@ namespace Language.Analysis.CodeAnalysis.Syntax;
 internal static class SyntaxFacts
 {
 
-    public const string START_TYPE_NAME = "Program";
+    public const string PROGRAM_TYPE_NAME = "Program";
     public const string MAIN_METHOD_NAME = "main";
     public const string SCRIPT_MAIN_METHOD_NAME = "$main";
     

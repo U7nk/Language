@@ -26,7 +26,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     [Program] : int;
                 }
@@ -49,7 +51,9 @@ public class SymbolScopes
             {
                 class Program
                 {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function Foo([a] : int) {
                         var [a] : int = 0;
@@ -75,7 +79,9 @@ public class SymbolScopes
             {
                 class Program
                 {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function Foo([a] : int, [a] : int) {
                         
@@ -101,7 +107,9 @@ public class SymbolScopes
             {
                 class Program
                 {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function Foo([[a]] : int, [[a]] : int) {
                         var [a] : int = 5;
@@ -170,7 +178,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     function [Program]() {
@@ -196,7 +206,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     [field] : int;
                     function [field]() {
@@ -223,7 +235,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function [FunctionName]() {
                         
@@ -258,7 +272,9 @@ public class SymbolScopes
                     function [FunctionName]() { }
                 } 
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                 }
             } 
@@ -287,7 +303,9 @@ public class SymbolScopes
                     function virtual [[FunctionName]]() { }
                 } 
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                 }
             } 
@@ -317,7 +335,9 @@ public class SymbolScopes
                     function override FunctionName() { }
                 } 
                 class Program {
-                    static function main(){
+                    static function main() : int 
+                    {
+                        return 0;
                     }
                 }
             } 
@@ -342,7 +362,7 @@ public class SymbolScopes
                 }
                 
                 class Program {
-                    static function main() { }
+                    static function main() : int { return 0; }
                 }
             } 
             """;
@@ -362,7 +382,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     [field] : int;
@@ -388,7 +410,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     function [field]() { }
@@ -422,7 +446,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     function [FunctionName]() {
@@ -450,7 +476,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program {
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     
                     field : int;
@@ -475,7 +503,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program { 
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function FunctionName()
                     { 
@@ -498,7 +528,9 @@ public class SymbolScopes
             namespace Project
             {
                 class Program { 
-                    static function main(){
+                    static function main() : int
+                    {
+                        return 0;
                     }
                     function FunctionName()
                     { 

@@ -222,8 +222,16 @@ public class Lexer
         
         LOOP_START:
         Next();
+        
         switch (Current)
         {
+            case '\\':
+                if (Lookahead is 'n')
+                {
+                    sb.Append('\n');
+                    Next();
+                }
+                goto LOOP_START;
             case '\0':
             case '\r':
             case '\n':

@@ -29,11 +29,12 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int 
                     {
                         var derived = new Derived();
                         var base : Base = derived;
                         base.[DerivedMethod]();   
+                        return 0;
                     }
                 }
             }
@@ -63,10 +64,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var base : Base = new Derived();
-                        base.[DerivedMethod]();   
+                        base.[DerivedMethod]();  
+                        return 0; 
                     }
                 }
             }
@@ -96,11 +98,12 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var derived = new Derived();
                         var casted : Base = derived;
                         let x = casted.[DerivedField];   
+                        return 0;
                     }
                 }
             }
@@ -130,10 +133,11 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var casted : Base = new Derived();
                         let x = casted.[DerivedField];   
+                        return 0;
                     }
                 }
             }
@@ -158,8 +162,9 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
+                        return 0;
                     }
                 }
             }
@@ -191,8 +196,9 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
+                        return 0;
                     }
                 }
             }
@@ -228,8 +234,9 @@ public class InheritanceTests
                 
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
+                        return 0;
                     }
                 }
             }
@@ -269,8 +276,9 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
+                                return 0;
                             }
                         }
                     }
@@ -304,8 +312,9 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
+                                return 0;
                             }
                         }
                     }
@@ -336,8 +345,9 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int 
                             {
+                                return 0;
                             }
                         }
                     }
@@ -370,8 +380,9 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int 
                             {
+                                return 0;
                             }
                         }
                     }
@@ -405,8 +416,9 @@ public class InheritanceTests
                         }
                         class Program
                         {
-                            static function main()
+                            static function main() : int 
                             {
+                                return 0;
                             }
                         }
                     }

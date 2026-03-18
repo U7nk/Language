@@ -113,7 +113,7 @@ internal sealed class ProgramBinder
         foreach (var function in methods.Where(x => x.Name == "main"))
         {
             if (function.Parameters.Any()
-                || !Equals(function.ReturnType, TypeSymbol.BuiltIn.Void()) 
+                || !Equals(function.ReturnType, TypeSymbol.BuiltIn.Int()) 
                 || !function.IsStatic )
             {
                 var identifierLocation = function.DeclarationSyntax.UnwrapAs<MethodDeclarationSyntax>()

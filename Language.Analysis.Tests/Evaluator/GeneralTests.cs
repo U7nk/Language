@@ -211,9 +211,10 @@ public class EvaluatorTests
                         {
                             class Program
                             {
-                                static function main()
+                                static function main() : int
                                 {
                                     {{expression}}
+                                    return 0;
                                 }
                             }
                         }
@@ -229,10 +230,11 @@ public class EvaluatorTests
             {
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod()
@@ -260,10 +262,11 @@ public class EvaluatorTests
                 {
                     Fieldo : int;
                     
-                    static function main() 
+                    static function main() : int 
                     {
                          var p = new Program();
                          p.TestMethod();
+                         return 0;
                     }
                     
                     function TestMethod() {
@@ -292,10 +295,11 @@ public class EvaluatorTests
                         {
                             Fieldo : int;
                             
-                            static function main() 
+                            static function main() : int 
                             {
                                 var p = new Program();
                                 p.TestMethod();
+                                return 0;
                             }
                             
                             function TestMethod() {
@@ -329,10 +333,11 @@ public class EvaluatorTests
                 {
                     Fieldo : int;
                     
-                    static function main() 
+                    static function main() : int 
                     {
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod(){
@@ -371,10 +376,11 @@ public class EvaluatorTests
                     Fieldo : int;
                     ProgramField : Program;
                     
-                    static function main() 
+                    static function main() : int 
                     {
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod(){
@@ -421,10 +427,11 @@ public class EvaluatorTests
                     Fieldo : Program;
                     IntField : int;
                     
-                    static function main() 
+                    static function main() : int 
                     { 
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod() {
@@ -472,10 +479,11 @@ public class EvaluatorTests
             {
                 class Program
                 {                
-                    static function main()
+                    static function main() : int
                     {  
                         var variable : int;
                         variable = {{val}};
+                        return 0;
                     }
                 }
             }
@@ -493,10 +501,11 @@ public class EvaluatorTests
             {
                 class Program
                 {
-                    static function main() 
+                    static function main() : int 
                     {
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod() {
@@ -529,10 +538,11 @@ public class EvaluatorTests
                 class Program
                 {
                     Field : int;
-                    static function main()
+                    static function main() : int
                     {
                         var p = new Program();
                         p.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod() {
@@ -567,11 +577,12 @@ public class EvaluatorTests
                 {
                     Field : int;
                     
-                    static function main()
+                    static function main() : int
                     { 
                         var program = new Program();
                         program.Field = 10;
                         Program.ten(program.Field);
+                        return 0;
                     }
                     
                     static function ten(input : int) : int
@@ -597,9 +608,10 @@ public class EvaluatorTests
                 {
                     static Field : int;
                     
-                    static function main()
+                    static function main() : int
                     {  
                         Program.Field = {{val}};
+                        return 0;
                     }
                 }
             }
@@ -621,10 +633,11 @@ public class EvaluatorTests
                 {
                     static Field : int;
                     
-                    static function main()
+                    static function main() : int
                     {  
                         Program.Field = {{val}};
                         var x = Program.Field;
+                        return 0;
                     }
                 }
             }
@@ -645,9 +658,10 @@ public class EvaluatorTests
                 {
                     static Field : int;
                     
-                    static function main()
+                    static function main() : int
                     {  
                         Field = {{val}};
+                        return 0;
                     }
                 }
             }
@@ -668,10 +682,11 @@ public class EvaluatorTests
                 {
                     static Field : int;
                     
-                    static function main()
+                    static function main() : int
                     {  
                         Field = {{val}};
                         var x = Field;
+                        return 0;
                     }
                 }
             }
@@ -692,11 +707,12 @@ public class EvaluatorTests
                 {
                     static Field : InstanceClass;
                     
-                    static function main()
+                    static function main() : int
                     {
                         Field.InstanceClass = new InstanceClass();
                         Field.InstanceClass.Foo = {{val}};
                         var x = Field.InstanceClass.Foo;
+                        return 0;
                     }
                 }
                 class Field {
@@ -722,10 +738,11 @@ public class EvaluatorTests
                 class Program
                 {
                     static Field : int;
-                    static function main()
+                    static function main() : int
                     {
                         Field = 10; 
                         ten(Field);
+                        return 0;
                     }
                     
                     static function ten(input : int) : int
@@ -749,10 +766,11 @@ public class EvaluatorTests
                 class Program
                 {
                     Field : int;
-                    static function main()
+                    static function main() : int
                     {
                         var program = new Program();
                         program.TestMethod();
+                        return 0;
                     }
                     
                     function TestMethod() {
@@ -793,11 +811,12 @@ public class EvaluatorTests
                 class Program
                 {
                     Field : int;
-                    static function main()
+                    static function main() : int
                     {
                         var program = new MyClass();
                         program.Field = new MyClass();
                         program.TestMethodTwo();
+                        return 0;
                     }
                 }
             }
@@ -830,11 +849,12 @@ public class EvaluatorTests
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClass = new MyClass();
                         myClass.TestMethod<int>(10);
                         myClass.TestMethod<string>("foo");
+                        return 0;
                     }
                 }
             }
@@ -867,12 +887,13 @@ public class EvaluatorTests
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var myClassString = new MyClass<string>();
                         var myClassInt = new MyClass<int>();
                         myClassInt.TestMethod(10);
                         myClassString.TestMethod("foo");
+                        return 0;
                     }
                 }
             }
@@ -911,9 +932,10 @@ public class EvaluatorTests
                 }
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
                         var result = new MyClass().TestMethod<MyClass>(new MyClass());
+                        return result;
                     }
                 }
             }
@@ -931,9 +953,9 @@ public class EvaluatorTests
             {
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
-                        
+                        return 0;
                     }
                 }
             }
@@ -950,9 +972,9 @@ public class EvaluatorTests
             {
                 class Program
                 {
-                    static function main()
+                    static function main() : int
                     {
-                        
+                        return 0;   
                     }
                 }
             }
@@ -969,9 +991,9 @@ public class EvaluatorTests
                      {
                          class Program
                          {
-                             static function main()
+                             static function main() : int
                              {
-                                 
+                                 return 0;
                              }
                          }
                      }
@@ -980,9 +1002,9 @@ public class EvaluatorTests
                      {
                         class Program
                         {
-                            static function main()
+                            static function main() : int
                             {
-                         
+                                return 0;
                             }
                         }
                      }
@@ -999,9 +1021,10 @@ public class EvaluatorTests
                      {
                          class Program
                          {
-                             static function main()
+                             static function main() : int
                              {
                                 var x = new MyNamespace.MyProgram.My.Everything.Program();
+                                return 0;
                              }
                          }
                      }
@@ -1022,8 +1045,9 @@ public class EvaluatorTests
                      {
                          class Program
                          {
-                             static function main()
+                             static function main() : int
                              {
+                                return 0;
                              }
                          }
                      }
@@ -1049,8 +1073,9 @@ public class EvaluatorTests
                          }
                          class Program
                          {
-                             static function main()
+                             static function main() : int
                              {
+                                return 0;
                              }
                          }
                      }
@@ -1077,9 +1102,9 @@ public class EvaluatorTests
                      {
                          class Program
                          {
-                             static function main()
+                             static function main() : int
                              {
-                                Foo.Class.method();
+                                return Foo.Class.method();
                              }
                          }
                      }

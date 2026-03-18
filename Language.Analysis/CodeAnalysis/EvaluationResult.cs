@@ -8,11 +8,13 @@ public class EvaluationResult
 {
     public ImmutableArray<Diagnostic> Diagnostics { get; }
     public ObjectInstance? Result { get; }
+    public ObjectInstance? MainMethodResult { get; }
 
-    public EvaluationResult(ImmutableArray<Diagnostic> diagnostics, ObjectInstance? result)
+    public EvaluationResult(ImmutableArray<Diagnostic> diagnostics, ObjectInstance? result, ObjectInstance? mainMethodResult)
     {
         Diagnostics = diagnostics;
         Result = result;
+        MainMethodResult = mainMethodResult;
     }
     
     public static implicit operator Result<ObjectInstance?, ImmutableArray<Diagnostic>>(EvaluationResult result) 

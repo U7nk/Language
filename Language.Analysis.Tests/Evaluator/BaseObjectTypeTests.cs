@@ -27,10 +27,11 @@ public class BaseObjectTypeTests
                 class Program
                 {
                     
-                    static function main()
+                    static function main() : int
                     {
                         let myClass = new MyClass();
                         let obj : object = myClass;
+                        return 0;
                     }
                 }
             }
@@ -61,10 +62,11 @@ public class BaseObjectTypeTests
                 class Program
                 {  
                     
-                    static function main()
+                    static function main() : int
                     {
                         let myClass = new MyClass();
                         let obj : object = myClass;
+                        return 0;
                     }
                 }
             }
@@ -91,12 +93,12 @@ public class BaseObjectTypeTests
                 
                 class Program
                 {   
-                    static function main()
+                    static function main() : int
                     {
                         let myClass = new MyClass();
                         let myClassSame : object = myClass;
                         let refEquality = myClassSame == myClass;
-                        
+                        return 0;
                     }
                 }
             }
@@ -120,11 +122,12 @@ public class BaseObjectTypeTests
                 
                 class Program
                 {   
-                    static function main()
+                    static function main() : int
                     {
                         let myClass = new MyClass();
                         let myClassSame = new MyClass();
                         let refEquality = myClassSame == myClass;
+                        return 0;
                     }
                 }
             }

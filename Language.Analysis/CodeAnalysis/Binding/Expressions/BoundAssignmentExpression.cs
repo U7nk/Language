@@ -3,17 +3,17 @@ using Language.Analysis.CodeAnalysis.Syntax;
 
 namespace Language.Analysis.CodeAnalysis.Binding;
 
-internal class BoundAssignmentExpression : BoundExpression
+class BoundAssignmentExpression : BoundExpression
 {
-    public VariableSymbol Variable { get; }
-    public BoundExpression Expression { get; }
+    public BoundExpression Left { get; }
+    public BoundExpression Initializer { get; }
 
-    public BoundAssignmentExpression(Option<SyntaxNode> syntax, VariableSymbol variable, BoundExpression expression) : base(syntax)
+    public BoundAssignmentExpression(Option<SyntaxNode> syntax, BoundExpression left, BoundExpression initializer) : base(syntax)
     {
-        Variable = variable;
-        Expression = expression;
+        Left = left;
+        Initializer = initializer;
     }
 
     internal override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
-    internal override TypeSymbol Type => Expression.Type;
+    internal override TypeSymbol Type => Left.Type;
 }

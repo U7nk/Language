@@ -46,6 +46,12 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         HasValue = hasValue;
     }
     
+    public Option()
+    {
+        Value = default;
+        HasValue = false;
+    }
+    
     bool HasValue { get; }
 
     public T SomeOr(T defaultValue)

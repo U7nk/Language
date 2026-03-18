@@ -5,15 +5,16 @@ namespace Language.Analysis.CodeAnalysis.Binding;
 
 internal sealed class BoundConditionalGotoStatement : BoundStatement
 {
-    public BoundConditionalGotoStatement(Option<SyntaxNode> syntax, LabelSymbol label, BoundExpression condition, bool jumpIfTrue) : base(syntax)
+    public BoundConditionalGotoStatement(Option<SyntaxNode> syntax, LabelSymbol onTrueLabel, LabelSymbol onFalseLabel, BoundExpression condition) : base(syntax)
     {
-        Label = label;
+        OnTrueLabel = onTrueLabel;
+        OnFalseLabel = onFalseLabel;
         Condition = condition;
-        JumpIfTrue = jumpIfTrue;
     }
-
-    public bool JumpIfTrue { get; }
+    
+    
     public BoundExpression Condition { get; }
-    public LabelSymbol Label { get; }
+    public LabelSymbol OnTrueLabel { get; }
+    public LabelSymbol OnFalseLabel { get; }
     internal override BoundNodeKind Kind => BoundNodeKind.ConditionalGotoStatement;
 }
